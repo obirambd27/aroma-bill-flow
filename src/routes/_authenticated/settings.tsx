@@ -119,12 +119,12 @@ function SettingsPage() {
       toast.error(error.message);
       return;
     }
-    const { data } = supabase.storage.from("branding").getPublicUrl(path);
-    set("business_logo_url", data.publicUrl);
-    await supabase
-      .from("settings")
-      .update({ business_logo_url: data.publicUrl })
-      .eq("id", settings.id);
+    const { data } = await supabase.storage
+      .from("branding")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = data?.signedUrl ?? null;
+    set("business_logo_url", url);
+    await supabase.from("settings").update({ business_logo_url: url }).eq("id", settings.id);
     setUploading(false);
     toast.success("Logo uploaded");
     queryClient.invalidateQueries({ queryKey: ["settings"] });
