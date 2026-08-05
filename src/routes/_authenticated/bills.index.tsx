@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ReceiptText, Search, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -42,6 +42,7 @@ function syncTone(status: string) {
 }
 
 function BillsPage() {
+  const navigate = useNavigate();
   const { data: bills = [], isLoading } = useBills();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -127,7 +128,8 @@ function BillsPage() {
                 {visible.map((b) => (
                   <tr
                     key={b.id}
-                    className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
+                    className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
+                    onClick={() => navigate({ to: "/bills/$billId", params: { billId: b.id } })}
                   >
                     <td className="px-4 py-3 text-sm font-medium">{b.bill_number}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -161,7 +163,12 @@ function BillsPage() {
 
             <div className="divide-y divide-border/60 md:hidden">
               {visible.map((b) => (
-                <div key={b.id} className="space-y-2 p-4">
+                <Link
+                  key={b.id}
+                  to="/bills/$billId"
+                  params={{ billId: b.id }}
+                  className="block space-y-2 p-4 active:bg-muted/60"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{b.bill_number}</p>
@@ -184,7 +191,7 @@ function BillsPage() {
                       {b.zoho_sync_status}
                     </StatusBadge>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </>
