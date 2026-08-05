@@ -19,6 +19,7 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills.index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
+import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,12 @@ const AuthenticatedCustomersIndexRoute =
     path: '/customers/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCustomersCustomerIdRoute =
+  AuthenticatedCustomersCustomerIdRouteImport.update({
+    id: '/customers/$customerId',
+    path: '/customers/$customerId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/products': typeof AuthenticatedProductsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
 }
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/products': typeof AuthenticatedProductsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
 }
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/new-bill': typeof AuthenticatedNewBillRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
 }
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/new-bill'
     | '/products'
     | '/settings'
+    | '/customers/$customerId'
     | '/bills/'
     | '/customers/'
   fileRoutesByTo: FileRoutesByTo
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/new-bill'
     | '/products'
     | '/settings'
+    | '/customers/$customerId'
     | '/bills'
     | '/customers'
   id:
@@ -139,6 +151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/new-bill'
     | '/_authenticated/products'
     | '/_authenticated/settings'
+    | '/_authenticated/customers/$customerId'
     | '/_authenticated/bills/'
     | '/_authenticated/customers/'
   fileRoutesById: FileRoutesById
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/customers/$customerId': {
+      id: '/_authenticated/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -230,6 +250,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNewBillRoute: typeof AuthenticatedNewBillRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
 }
@@ -239,6 +260,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNewBillRoute: AuthenticatedNewBillRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
 }
