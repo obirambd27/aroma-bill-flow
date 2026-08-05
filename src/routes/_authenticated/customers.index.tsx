@@ -74,8 +74,9 @@ function CustomersPage() {
                 ? "Add a customer directly, or sync contacts from Zoho Books."
                 : "Try a different name or phone number."
             }
-            actionLabel={customers.length === 0 ? "New Customer" : undefined}
-            onAction={customers.length === 0 ? () => setDialogOpen(true) : undefined}
+            {...(customers.length === 0
+              ? { actionLabel: "New Customer", onAction: () => setDialogOpen(true) }
+              : {})}
           />
         ) : (
           <>
