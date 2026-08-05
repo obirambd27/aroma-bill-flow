@@ -23,6 +23,7 @@ export type Database = {
           product_name_snapshot: string
           quantity: number
           unit_price: number
+          warehouse_id: string | null
         }
         Insert: {
           bill_id: string
@@ -32,6 +33,7 @@ export type Database = {
           product_name_snapshot: string
           quantity?: number
           unit_price?: number
+          warehouse_id?: string | null
         }
         Update: {
           bill_id?: string
@@ -41,6 +43,7 @@ export type Database = {
           product_name_snapshot?: string
           quantity?: number
           unit_price?: number
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -57,6 +60,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bill_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bills: {
@@ -66,6 +76,8 @@ export type Database = {
           created_at: string
           customer_id: string | null
           discount_amount: number
+          discount_type: string
+          discount_value: number
           id: string
           is_taxed: boolean
           payment_method: string | null
@@ -75,6 +87,7 @@ export type Database = {
           tax_amount: number
           tax_rate: number
           total_amount: number
+          warehouse_id: string | null
           zoho_adjustment_id: string | null
           zoho_sync_status: string
         }
@@ -84,6 +97,8 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           discount_amount?: number
+          discount_type?: string
+          discount_value?: number
           id?: string
           is_taxed?: boolean
           payment_method?: string | null
@@ -93,6 +108,7 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           total_amount?: number
+          warehouse_id?: string | null
           zoho_adjustment_id?: string | null
           zoho_sync_status?: string
         }
@@ -102,6 +118,8 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           discount_amount?: number
+          discount_type?: string
+          discount_value?: number
           id?: string
           is_taxed?: boolean
           payment_method?: string | null
@@ -111,6 +129,7 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           total_amount?: number
+          warehouse_id?: string | null
           zoho_adjustment_id?: string | null
           zoho_sync_status?: string
         }
@@ -120,6 +139,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -160,8 +186,102 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          bill_id: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          payment_date: string
+          payment_method: string | null
+          status: string
+        }
+        Insert: {
+          amount?: number
+          bill_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_stock: {
+        Row: {
+          committed_stock: number
+          created_at: string
+          id: string
+          product_id: string
+          stock_on_hand: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          committed_stock?: number
+          created_at?: string
+          id?: string
+          product_id: string
+          stock_on_hand?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          committed_stock?: number
+          created_at?: string
+          id?: string
+          product_id?: string
+          stock_on_hand?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          brand: string | null
           created_at: string
           id: string
           image_url: string | null
@@ -174,6 +294,7 @@ export type Database = {
           zoho_item_id: string | null
         }
         Insert: {
+          brand?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -186,6 +307,7 @@ export type Database = {
           zoho_item_id?: string | null
         }
         Update: {
+          brand?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -259,6 +381,33 @@ export type Database = {
           zoho_connection_status?: string
           zoho_org_id?: string | null
           zoho_refresh_token?: string | null
+        }
+        Relationships: []
+      }
+      warehouses: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          zoho_location_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          zoho_location_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          zoho_location_id?: string | null
         }
         Relationships: []
       }

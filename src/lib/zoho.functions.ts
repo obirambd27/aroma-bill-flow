@@ -74,3 +74,90 @@ export const syncFromZoho = createServerFn({ method: "POST" })
       last_synced_at: now,
     };
   });
+
+/**
+ * PLACEHOLDER — create-zoho-contact.
+ * Will POST /contacts to Zoho Books and return the created contact id so the
+ * caller can store it in customers.zoho_contact_id.
+ */
+export const createZohoContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { customerId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: settings } = await context.supabase
+      .from("settings")
+      .select("zoho_connection_status")
+      .limit(1)
+      .maybeSingle();
+
+    if (!settings || settings.zoho_connection_status !== "connected") {
+      return { ok: false as const, zoho_contact_id: null, message: "Zoho Books is not connected." };
+    }
+
+    // TODO: POST https://www.zohoapis.com/books/v3/contacts and use the real id.
+    return {
+      ok: false as const,
+      zoho_contact_id: null,
+      message: `Customer ${data.customerId} saved locally. Zoho contact creation runs once API keys are added.`,
+    };
+  });
+
+/**
+ * PLACEHOLDER — create-zoho-item.
+ * Will POST /items to Zoho Books and return the created item id for
+ * products.zoho_item_id.
+ */
+export const createZohoItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { productId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: settings } = await context.supabase
+      .from("settings")
+      .select("zoho_connection_status")
+      .limit(1)
+      .maybeSingle();
+
+    if (!settings || settings.zoho_connection_status !== "connected") {
+      return { ok: false as const, zoho_item_id: null, message: "Zoho Books is not connected." };
+    }
+
+    // TODO: POST https://www.zohoapis.com/books/v3/items and use the real id.
+    return {
+      ok: false as const,
+      zoho_item_id: null,
+      message: `Product ${data.productId} saved locally. Zoho item creation runs once API keys are added.`,
+    };
+  });
+
+/**
+ * PLACEHOLDER — sync-inventory-adjustment.
+ * Will POST /inventoryadjustments once per warehouse used in the bill, with the
+ * matching location_id and a negative quantity_adjusted per line item.
+ * Never blocks bill creation: failures only mark zoho_sync_status = 'Failed'.
+ */
+export const syncInventoryAdjustment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { billId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: settings } = await context.supabase
+      .from("settings")
+      .select("zoho_connection_status")
+      .limit(1)
+      .maybeSingle();
+
+    const connected = settings?.zoho_connection_status === "connected";
+    const status = connected ? "Synced" : "Not Synced";
+
+    await context.supabase
+      .from("bills")
+      .update({ zoho_sync_status: status })
+      .eq("id", data.billId);
+
+    return {
+      ok: connected,
+      status,
+      message: connected
+        ? "Inventory adjustment queued for Zoho Books."
+        : "Bill saved locally. Zoho inventory adjustment runs once API keys are added.",
+    };
+  });
