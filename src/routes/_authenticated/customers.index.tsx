@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { Users, Search } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Users, Search, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { CustomerFormDialog } from "@/components/CustomerFormDialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useCustomers } from "@/lib/data";
 import { formatDate, formatMoney } from "@/lib/format";
 
-export const Route = createFileRoute("/_authenticated/customers")({
+export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({
     meta: [
       { title: "Customers — Fragrance Billing" },
@@ -25,21 +27,28 @@ export const Route = createFileRoute("/_authenticated/customers")({
 function CustomersPage() {
   const { data: customers = [], isLoading } = useCustomers();
   const [query, setQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return customers;
     return customers.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.phone ?? "").toLowerCase().includes(q) ||
-        (c.email ?? "").toLowerCase().includes(q),
+      (c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q),
     );
   }, [customers, query]);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Customers" description="Everyone who has shopped with you." />
+      <PageHeader
+        title="Customers"
+        description="Everyone who has shopped with you."
+        actions={
+          <Button className="h-11" onClick={() => setDialogOpen(true)}>
+            <Plus />
+            New Customer
+          </Button>
+        }
+      />
 
       <div className="surface-card overflow-hidden">
         <div className="border-b border-border p-4">
@@ -47,7 +56,7 @@ function CustomersPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="h-11 pl-9"
-              placeholder="Search by name, phone or email"
+              placeholder="Search by name or phone"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -62,9 +71,11 @@ function CustomersPage() {
             title={customers.length === 0 ? "No customers yet" : "No matches"}
             description={
               customers.length === 0
-                ? "Customers are created as you issue bills, or synced from Zoho Books."
-                : "Try a different name, phone number or email."
+                ? "Add a customer directly, or sync contacts from Zoho Books."
+                : "Try a different name or phone number."
             }
+            actionLabel={customers.length === 0 ? "New Customer" : undefined}
+            onAction={customers.length === 0 ? () => setDialogOpen(true) : undefined}
           />
         ) : (
           <>
@@ -73,7 +84,6 @@ function CustomersPage() {
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3 text-right">Total spend</th>
                   <th className="px-4 py-3 text-right">Last purchase</th>
                 </tr>
@@ -84,9 +94,16 @@ function CustomersPage() {
                     key={c.id}
                     className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
                   >
-                    <td className="px-4 py-3 text-sm font-medium">{c.name}</td>
+                    <td className="px-4 py-0 text-sm font-medium">
+                      <Link
+                        to="/customers/$customerId"
+                        params={{ customerId: c.id }}
+                        className="block py-3 hover:text-primary"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{c.phone ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{c.email ?? "—"}</td>
                     <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                       {formatMoney(c.total_spend)}
                     </td>
@@ -100,7 +117,12 @@ function CustomersPage() {
 
             <div className="divide-y divide-border/60 md:hidden">
               {visible.map((c) => (
-                <div key={c.id} className="p-4">
+                <Link
+                  key={c.id}
+                  to="/customers/$customerId"
+                  params={{ customerId: c.id }}
+                  className="block p-4 active:bg-muted/60"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{c.name}</p>
@@ -113,12 +135,14 @@ function CustomersPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     Last purchase: {formatDate(c.last_purchase_at)}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </>
         )}
       </div>
+
+      <CustomerFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }

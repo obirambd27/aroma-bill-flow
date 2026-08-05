@@ -16,7 +16,7 @@ import {
 import { useBills } from "@/lib/data";
 import { formatDate, formatMoney } from "@/lib/format";
 
-export const Route = createFileRoute("/_authenticated/bills")({
+export const Route = createFileRoute("/_authenticated/bills/")({
   head: () => ({
     meta: [
       { title: "Bill History — Fragrance Billing" },
