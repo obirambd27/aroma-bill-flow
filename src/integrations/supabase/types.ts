@@ -88,8 +88,6 @@ export type Database = {
           tax_rate: number
           total_amount: number
           warehouse_id: string | null
-          zoho_adjustment_id: string | null
-          zoho_sync_status: string
         }
         Insert: {
           bill_date?: string
@@ -109,8 +107,6 @@ export type Database = {
           tax_rate?: number
           total_amount?: number
           warehouse_id?: string | null
-          zoho_adjustment_id?: string | null
-          zoho_sync_status?: string
         }
         Update: {
           bill_date?: string
@@ -130,8 +126,6 @@ export type Database = {
           tax_rate?: number
           total_amount?: number
           warehouse_id?: string | null
-          zoho_adjustment_id?: string | null
-          zoho_sync_status?: string
         }
         Relationships: [
           {
@@ -160,7 +154,6 @@ export type Database = {
           name: string
           phone: string | null
           total_spend: number
-          zoho_contact_id: string | null
         }
         Insert: {
           address?: string | null
@@ -171,7 +164,6 @@ export type Database = {
           name: string
           phone?: string | null
           total_spend?: number
-          zoho_contact_id?: string | null
         }
         Update: {
           address?: string | null
@@ -182,7 +174,6 @@ export type Database = {
           name?: string
           phone?: string | null
           total_spend?: number
-          zoho_contact_id?: string | null
         }
         Relationships: []
       }
@@ -286,12 +277,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
-          last_synced_at: string | null
           name: string
           price: number
           sku: string | null
-          stock_on_hand: number
-          zoho_item_id: string | null
         }
         Insert: {
           brand?: string | null
@@ -299,12 +287,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          last_synced_at?: string | null
           name: string
           price?: number
           sku?: string | null
-          stock_on_hand?: number
-          zoho_item_id?: string | null
         }
         Update: {
           brand?: string | null
@@ -312,12 +297,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          last_synced_at?: string | null
           name?: string
           price?: number
           sku?: string | null
-          stock_on_hand?: number
-          zoho_item_id?: string | null
         }
         Relationships: []
       }
@@ -333,14 +315,8 @@ export type Database = {
           id: string
           invoice_footer_note: string | null
           invoice_prefix: string
-          last_synced_at: string | null
           low_stock_threshold: number
           tax_id: string | null
-          zoho_client_id: string | null
-          zoho_client_secret: string | null
-          zoho_connection_status: string
-          zoho_org_id: string | null
-          zoho_refresh_token: string | null
         }
         Insert: {
           business_address?: string
@@ -353,14 +329,8 @@ export type Database = {
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
-          last_synced_at?: string | null
           low_stock_threshold?: number
           tax_id?: string | null
-          zoho_client_id?: string | null
-          zoho_client_secret?: string | null
-          zoho_connection_status?: string
-          zoho_org_id?: string | null
-          zoho_refresh_token?: string | null
         }
         Update: {
           business_address?: string
@@ -373,41 +343,145 @@ export type Database = {
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
-          last_synced_at?: string | null
           low_stock_threshold?: number
           tax_id?: string | null
-          zoho_client_id?: string | null
-          zoho_client_secret?: string | null
-          zoho_connection_status?: string
-          zoho_org_id?: string | null
-          zoho_refresh_token?: string | null
         }
         Relationships: []
       }
-      warehouses: {
+      stock_movements: {
         Row: {
           created_at: string
           id: string
-          is_active: boolean
-          name: string
-          sort_order: number
-          zoho_location_id: string | null
+          movement_type: string
+          product_id: string
+          quantity_change: number
+          reason: string | null
+          related_bill_id: string | null
+          warehouse_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          is_active?: boolean
-          name: string
-          sort_order?: number
-          zoho_location_id?: string | null
+          movement_type: string
+          product_id: string
+          quantity_change?: number
+          reason?: string | null
+          related_bill_id?: string | null
+          warehouse_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          movement_type?: string
+          product_id?: string
+          quantity_change?: number
+          reason?: string | null
+          related_bill_id?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_related_bill_id_fkey"
+            columns: ["related_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          from_warehouse_id: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          to_warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_warehouse_id: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity?: number
+          to_warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          from_warehouse_id?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          to_warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
           is_active?: boolean
+          is_default?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
           name?: string
           sort_order?: number
-          zoho_location_id?: string | null
         }
         Relationships: []
       }
