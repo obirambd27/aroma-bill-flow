@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useAllWarehouses, useBill, useSettings } from "@/lib/data";
+import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -48,6 +48,7 @@ function BillDetailPage() {
   const { data: bill, isLoading } = useBill(billId);
   const { data: settings } = useSettings();
   const { data: warehouses = [] } = useAllWarehouses();
+  const { data: products = [] } = useAllProducts();
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
@@ -317,7 +318,9 @@ function BillDetailPage() {
                         From {warehouseName(item.warehouse_id)}
                       </p>
                     </td>
-                    <td className="px-2 py-3 text-xs text-muted-foreground">—</td>
+                    <td className="px-2 py-3 text-xs text-muted-foreground">
+                      {products.find((p) => p.id === item.product_id)?.sku ?? "—"}
+                    </td>
                     <td className="numeric px-2 py-3 text-right">{item.quantity}</td>
                     <td className="numeric px-2 py-3 text-right">
                       {formatMoney(item.unit_price)}
