@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 import { accountIdByName } from "@/lib/payments";
 
 export type EditLine = {
@@ -152,7 +153,7 @@ export type ApplyEditInput = {
     product_name_snapshot: string;
   }[];
   lines: EditLine[];
-  billFields: Record<string, unknown>;
+  billFields: TablesUpdate<"bills">;
   billDate: string;
   customerName: string;
   amountPaid: number;
@@ -287,7 +288,7 @@ export async function applyBillEdit(input: ApplyEditInput) {
   if (fields.length > 0) {
     await supabase.from("bill_edit_history").insert({
       bill_id: input.billId,
-      changes_summary: changes,
+      changes_summary: changes as unknown as Json,
       edited_fields: fields,
     });
   }
