@@ -214,9 +214,51 @@ function ReturnBadge({ row }: { row: BillHistoryRow }) {
 }
 
 function RelatedDetail({ row }: { row: BillHistoryRow }) {
-  const has = row.returns.length > 0 || row.creditNotes.length > 0;
+  const has =
+    row.returns.length > 0 ||
+    row.creditNotes.length > 0 ||
+    Boolean(row.salesOrder) ||
+    row.deliveryNotes.length > 0;
   return (
-    <div className="grid gap-4 border-t border-border/60 bg-muted/30 p-4 text-sm sm:grid-cols-3">
+    <div className="grid gap-4 border-t border-border/60 bg-muted/30 p-4 text-sm sm:grid-cols-4">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Sales order
+        </p>
+        {row.salesOrder ? (
+          <Link
+            to="/sales-orders/$orderId"
+            params={{ orderId: row.salesOrder.id }}
+            className="mt-1 block text-primary hover:underline"
+          >
+            {row.salesOrder.order_number ?? "Order"}
+          </Link>
+        ) : (
+          <p className="mt-1 text-muted-foreground">None</p>
+        )}
+        <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Delivery notes
+        </p>
+        {row.deliveryNotes.length === 0 ? (
+          <p className="mt-1 text-muted-foreground">None</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {row.deliveryNotes.map((d) => (
+              <li key={d.id}>
+                <Link
+                  to="/delivery-notes/$deliveryId"
+                  params={{ deliveryId: d.id }}
+                  className="text-primary hover:underline"
+                >
+                  {d.delivery_number ?? "Delivery"}
+                </Link>{" "}
+                <span className="text-xs text-muted-foreground">{d.status}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Sales returns
