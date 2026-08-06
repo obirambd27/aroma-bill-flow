@@ -64,7 +64,7 @@ function PaymentsPage() {
       <PageHeader
         title="Payments Received"
         description="Payments collected against finalized bills."
-        action={
+        actions={
           <Button onClick={() => setOpen(true)}>
             <Plus />
             Record Payment
