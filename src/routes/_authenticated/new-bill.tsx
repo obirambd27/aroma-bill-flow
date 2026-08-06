@@ -309,6 +309,7 @@ function NewBillPage() {
       .insert({
         customer_id: isWalkIn ? null : customerId,
         is_walk_in: isWalkIn,
+        sales_order_id: sourceOrder?.id ?? null,
         bill_date: billDate,
         warehouse_id: activeWarehouseId || null,
         is_taxed: isTaxed,
