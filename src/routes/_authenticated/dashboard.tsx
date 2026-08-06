@@ -154,13 +154,50 @@ function DashboardPage() {
         </div>
       </div>
 
-      <div className="surface-card flex items-center gap-3 p-5">
-        <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Sales reports and Zoho stock adjustments will expand here as the next parts of the app are
-          built.
-        </p>
+      <div className="surface-card">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-destructive" />
+            <h2 className="text-sm font-semibold">Reminders due today / overdue</h2>
+          </div>
+          <Link to="/customers" className="text-xs font-medium text-primary hover:underline">
+            Customers
+          </Link>
+        </div>
+        {dueReminders.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title="Nothing due"
+            description="Customer follow-ups you schedule will appear here on their due date."
+          />
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {dueReminders.map((r) => {
+              const overdue = r.due_date < today;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to="/customers/$customerId"
+                    params={{ customerId: r.customer_id }}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{r.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {r.customers?.name ?? "Customer"} · {formatDate(r.due_date)}
+                      </p>
+                    </div>
+                    <StatusBadge tone={overdue ? "error" : "warning"}>
+                      {overdue ? "Overdue" : "Due today"}
+                    </StatusBadge>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
 }
+
