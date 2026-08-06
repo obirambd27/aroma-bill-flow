@@ -507,7 +507,12 @@ function SalesOrderBuilder() {
         onOpenChange={setCustomerDialog}
         onSaved={(c) => setCustomerId(c.id)}
       />
-      <ProductFormDialog open={productDialog} onOpenChange={setProductDialog} />
+      <ProductFormDialog
+        open={productDialog}
+        onOpenChange={setProductDialog}
+        warehouses={warehouses}
+        {...(activeWarehouseId ? { defaultWarehouseId: activeWarehouseId } : {})}
+      />
     </div>
   );
 }
