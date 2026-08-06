@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Search, RefreshCw, ArrowUpDown, LayoutGrid, List } from "lucide-react";
+import { Package, Search, ArrowUpDown, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge, stockTone } from "@/components/StatusBadge";
@@ -16,8 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProducts, useSettings } from "@/lib/data";
-import { syncFromZoho } from "@/lib/zoho.functions";
+import { useProducts, useSettings, useStockTotals } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/products")({
@@ -42,67 +40,31 @@ function ProductsPage() {
   const queryClient = useQueryClient();
   const { data: products = [], isLoading } = useProducts();
   const { data: settings } = useSettings();
-  const sync = useServerFn(syncFromZoho);
+  const { data: stockTotals = {} } = useStockTotals();
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("name-asc");
   const [view, setView] = useState<"table" | "grid">("table");
-  const [syncing, setSyncing] = useState(false);
 
   const threshold = Number(settings?.low_stock_threshold ?? 5);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = products.filter(
-      (p) =>
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        (p.sku ?? "").toLowerCase().includes(q),
+      (p) => !q || p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q),
     );
     const [key, dir] = sort.split("-") as ["name" | "price" | "stock", "asc" | "desc"];
     const sorted = [...filtered].sort((a, b) => {
       if (key === "name") return a.name.localeCompare(b.name);
       if (key === "price") return Number(a.price) - Number(b.price);
-      return Number(a.stock_on_hand) - Number(b.stock_on_hand);
+      return (stockTotals[a.id] ?? 0) - (stockTotals[b.id] ?? 0);
     });
     return dir === "desc" ? sorted.reverse() : sorted;
-  }, [products, query, sort]);
-
-  const runSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await sync({ data: undefined });
-      if (res.ok) {
-        toast.success(res.message);
-        queryClient.invalidateQueries({ queryKey: ["settings"] });
-        queryClient.invalidateQueries({ queryKey: ["products"] });
-      } else {
-        toast.warning(res.message);
-      }
-    } catch {
-      toast.error("Sync failed. Check your Zoho connection in Settings.");
-    } finally {
-      setSyncing(false);
-    }
-  };
+  }, [products, query, sort, stockTotals]);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Products"
-        description="Catalogue and stock levels."
-        actions={
-          <Button variant="outline" onClick={runSync} disabled={syncing}>
-            <RefreshCw className={syncing ? "animate-spin" : ""} />
-            Sync Now
-          </Button>
-        }
-      />
-
-      <p className="rounded-lg bg-accent px-4 py-3 text-sm text-accent-foreground">
-        Products are synced from Zoho Books. To add or edit products, use Zoho Books directly, then
-        click Sync Now in Settings.
-      </p>
+      <PageHeader title="Products" description="Catalogue and stock levels." />
 
       <div className="surface-card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
@@ -148,9 +110,7 @@ function ProductsPage() {
           <EmptyState
             icon={Package}
             title="No products yet"
-            description="Connect your Zoho Books account to pull your perfume catalogue and stock levels into the app."
-            actionLabel="Go to Settings to connect Zoho"
-            onAction={() => navigate({ to: "/settings" })}
+            description="Add your first product to start building your perfume catalogue."
           />
         ) : visible.length === 0 ? (
           <EmptyState
@@ -161,9 +121,7 @@ function ProductsPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <table
-              className={`w-full ${view === "table" ? "hidden md:table" : "hidden"}`}
-            >
+            <table className={`w-full ${view === "table" ? "hidden md:table" : "hidden"}`}>
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Product</th>
@@ -175,7 +133,7 @@ function ProductsPage() {
               </thead>
               <tbody>
                 {visible.map((p) => {
-                  const s = stockTone(Number(p.stock_on_hand), threshold);
+                  const s = stockTone(stockTotals[p.id] ?? 0, threshold);
                   return (
                     <tr
                       key={p.id}
@@ -203,7 +161,7 @@ function ProductsPage() {
                         {formatMoney(p.price)}
                       </td>
                       <td className="numeric px-4 py-3 text-right text-sm font-semibold">
-                        {Number(p.stock_on_hand)}
+                        {stockTotals[p.id] ?? 0}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <StatusBadge tone={s.tone}>{s.label}</StatusBadge>
@@ -221,7 +179,7 @@ function ProductsPage() {
               }`}
             >
               {visible.map((p) => {
-                const s = stockTone(Number(p.stock_on_hand), threshold);
+                const s = stockTone(stockTotals[p.id] ?? 0, threshold);
                 return (
                   <div key={p.id} className="rounded-xl border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -235,7 +193,7 @@ function ProductsPage() {
                       <p className="numeric text-xl font-bold">{formatMoney(p.price)}</p>
                       <p className="text-xs text-muted-foreground">
                         <span className="numeric text-sm font-semibold text-foreground">
-                          {Number(p.stock_on_hand)}
+                          {stockTotals[p.id] ?? 0}
                         </span>{" "}
                         in stock
                       </p>

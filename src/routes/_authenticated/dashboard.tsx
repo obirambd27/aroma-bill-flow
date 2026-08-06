@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { useBills, useProducts, useSettings } from "@/lib/data";
+import { useBills, useProducts, useSettings, useStockTotals } from "@/lib/data";
 import { formatDate, formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -37,6 +37,7 @@ function DashboardPage() {
   const { data: bills = [] } = useBills();
   const { data: products = [] } = useProducts();
   const { data: settings } = useSettings();
+  const { data: stockTotals = {} } = useStockTotals();
 
   const threshold = Number(settings?.low_stock_threshold ?? 5);
   const today = new Date().toISOString().slice(0, 10);
@@ -50,9 +51,9 @@ function DashboardPage() {
     const monthSales = finalized
       .filter((b) => b.bill_date.startsWith(monthPrefix))
       .reduce((sum, b) => sum + Number(b.total_amount), 0);
-    const lowStock = products.filter((p) => Number(p.stock_on_hand) <= threshold);
+    const lowStock = products.filter((p) => (stockTotals[p.id] ?? 0) <= threshold);
     return { todaySales, monthSales, billCount: finalized.length, lowStock };
-  }, [bills, products, threshold, today]);
+  }, [bills, products, stockTotals, threshold, today]);
 
   return (
     <div className="space-y-6">
@@ -119,9 +120,7 @@ function DashboardPage() {
                     >
                       {b.payment_status}
                     </StatusBadge>
-                    <span className="numeric text-sm font-bold">
-                      {formatMoney(b.total_amount)}
-                    </span>
+                    <span className="numeric text-sm font-bold">{formatMoney(b.total_amount)}</span>
                   </div>
                 </li>
               ))}
@@ -145,8 +144,8 @@ function DashboardPage() {
               {stats.lowStock.slice(0, 8).map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <span className="truncate text-sm">{p.name}</span>
-                  <StatusBadge tone={Number(p.stock_on_hand) === 0 ? "error" : "warning"}>
-                    {Number(p.stock_on_hand)} left
+                  <StatusBadge tone={(stockTotals[p.id] ?? 0) === 0 ? "error" : "warning"}>
+                    {stockTotals[p.id] ?? 0} left
                   </StatusBadge>
                 </li>
               ))}

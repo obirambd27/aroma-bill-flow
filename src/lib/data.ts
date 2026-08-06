@@ -10,6 +10,26 @@ export type BillItem = Tables<"bill_items">;
 export type Warehouse = Tables<"warehouses">;
 export type ProductStock = Tables<"product_stock">;
 export type Payment = Tables<"payments">;
+export type StockMovement = Tables<"stock_movements">;
+export type StockTransfer = Tables<"stock_transfers">;
+
+/** Total stock per product, summed across every warehouse. */
+export function useStockTotals() {
+  return useQuery({
+    queryKey: ["stock-totals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_stock")
+        .select("product_id, stock_on_hand, committed_stock");
+      if (error) throw error;
+      const totals: Record<string, number> = {};
+      for (const row of data ?? []) {
+        totals[row.product_id] = (totals[row.product_id] ?? 0) + Number(row.stock_on_hand);
+      }
+      return totals;
+    },
+  });
+}
 
 export function useSettings() {
   return useQuery({

@@ -10,11 +10,11 @@ export const Route = createFileRoute("/_authenticated/bills/$billId")({
   head: () => ({
     meta: [
       { title: "Bill Detail — Fragrance Billing" },
-      { name: "description", content: "Invoice detail with line items, totals and sync status." },
+      { name: "description", content: "Invoice detail with line items and totals." },
       { property: "og:title", content: "Bill Detail — Fragrance Billing" },
       {
         property: "og:description",
-        content: "Invoice detail with line items, totals and sync status.",
+        content: "Invoice detail with line items and totals.",
       },
     ],
   }),
@@ -68,9 +68,6 @@ function BillDetailPage() {
               }
             >
               {bill.payment_status}
-            </StatusBadge>
-            <StatusBadge tone={bill.zoho_sync_status === "Synced" ? "success" : "neutral"}>
-              Zoho: {bill.zoho_sync_status}
             </StatusBadge>
           </>
         }

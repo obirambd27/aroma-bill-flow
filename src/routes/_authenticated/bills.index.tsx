@@ -20,9 +20,9 @@ export const Route = createFileRoute("/_authenticated/bills/")({
   head: () => ({
     meta: [
       { title: "Bill History — Fragrance Billing" },
-      { name: "description", content: "Every bill issued, with payment and sync status." },
+      { name: "description", content: "Every bill issued, with payment status." },
       { property: "og:title", content: "Bill History — Fragrance Billing" },
-      { property: "og:description", content: "Every bill issued, with payment and sync status." },
+      { property: "og:description", content: "Every bill issued, with payment status." },
     ],
   }),
   component: BillsPage,
@@ -31,13 +31,6 @@ export const Route = createFileRoute("/_authenticated/bills/")({
 function paymentTone(status: string) {
   if (status === "Paid") return "success" as const;
   if (status === "Partial") return "warning" as const;
-  return "neutral" as const;
-}
-
-function syncTone(status: string) {
-  if (status === "Synced") return "success" as const;
-  if (status === "Pending") return "warning" as const;
-  if (status === "Failed") return "error" as const;
   return "neutral" as const;
 }
 
@@ -120,7 +113,6 @@ function BillsPage() {
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Payment</th>
-                  <th className="px-4 py-3">Zoho</th>
                   <th className="px-4 py-3 text-right">Total</th>
                 </tr>
               </thead>
@@ -148,11 +140,7 @@ function BillsPage() {
                         {b.payment_status}
                       </StatusBadge>
                     </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge tone={syncTone(b.zoho_sync_status)}>
-                        {b.zoho_sync_status}
-                      </StatusBadge>
-                    </td>
+                    <td className="px-4 py-3"></td>
                     <td className="numeric px-4 py-3 text-right text-sm font-bold">
                       {formatMoney(b.total_amount)}
                     </td>
@@ -186,9 +174,6 @@ function BillsPage() {
                     </StatusBadge>
                     <StatusBadge tone={paymentTone(b.payment_status)}>
                       {b.payment_status}
-                    </StatusBadge>
-                    <StatusBadge tone={syncTone(b.zoho_sync_status)}>
-                      {b.zoho_sync_status}
                     </StatusBadge>
                   </div>
                 </Link>

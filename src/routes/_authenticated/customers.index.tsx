@@ -71,7 +71,7 @@ function CustomersPage() {
             title={customers.length === 0 ? "No customers yet" : "No matches"}
             description={
               customers.length === 0
-                ? "Add a customer directly, or sync contacts from Zoho Books."
+                ? "Add your first customer to start tracking purchases."
                 : "Try a different name or phone number."
             }
             {...(customers.length === 0

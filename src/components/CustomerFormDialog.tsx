@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { createZohoContact } from "@/lib/zoho.functions";
 import type { Customer } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,19 +89,6 @@ export function CustomerFormDialog({
       return;
     }
 
-    // Placeholder for the Zoho Books contact creation (create-zoho-contact).
-    try {
-      const result = await createZohoContact({ data: { customerId: data.id } });
-      if (result.ok && result.zoho_contact_id) {
-        await supabase
-          .from("customers")
-          .update({ zoho_contact_id: result.zoho_contact_id })
-          .eq("id", data.id);
-      }
-    } catch {
-      // Never block local customer creation on Zoho.
-    }
-
     setSaving(false);
     queryClient.invalidateQueries();
     toast.success(`${data.name} added`);
@@ -115,9 +101,7 @@ export function CustomerFormDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{customer ? "Edit customer" : "New customer"}</DialogTitle>
-          <DialogDescription>
-            Saved here and pushed to Zoho Books contacts once your API keys are added.
-          </DialogDescription>
+          <DialogDescription>Stored in your own customer directory.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
