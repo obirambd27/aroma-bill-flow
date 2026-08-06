@@ -366,7 +366,7 @@ function NewBillPage() {
       }
       await supabase
         .from("sales_orders")
-        .update({ status: "Converted to Bill", converted_bill_id: bill.id })
+        .update({ status: "Converted to Bill" })
         .eq("id", sourceOrder.id);
     }
 
