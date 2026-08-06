@@ -45,7 +45,7 @@ function AccountDetailPage() {
         description={
           account
             ? `${account.account_type}${account.bank_name ? ` · ${account.bank_name}` : ""}`
-            : undefined
+            : ""
         }
         actions={
           account ? (
@@ -58,7 +58,7 @@ function AccountDetailPage() {
                 {account.is_active ? "Active" : "Inactive"}
               </StatusBadge>
             </div>
-          ) : undefined
+          ) : null
         }
       />
 

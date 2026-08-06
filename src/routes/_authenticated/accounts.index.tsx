@@ -43,7 +43,7 @@ function AccountsPage() {
       .from("accounts")
       .update({ is_active: next })
       .eq("id", account.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(next ? "Account activated" : "Account deactivated");
     await queryClient.invalidateQueries();
   };
@@ -58,7 +58,7 @@ function AccountsPage() {
       return;
     }
     const { error } = await supabase.from("accounts").delete().eq("id", account.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Account deleted");
     await queryClient.invalidateQueries();
   };
