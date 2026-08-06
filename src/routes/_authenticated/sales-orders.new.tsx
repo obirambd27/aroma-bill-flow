@@ -25,8 +25,8 @@ import { adjustCommitted, useSalesOrder } from "@/lib/sales";
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/sales-orders/new")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    edit: typeof search["edit"] === "string" ? (search["edit"] as string) : undefined,
+  validateSearch: (search: Record<string, unknown>): { edit?: string } => ({
+    ...(typeof search["edit"] === "string" ? { edit: search["edit"] as string } : {}),
   }),
   head: () => ({
     meta: [

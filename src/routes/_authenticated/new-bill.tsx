@@ -52,11 +52,15 @@ import { adjustCommitted, useSalesOrder } from "@/lib/sales";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    customerId:
-      typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
-    fromOrder:
-      typeof search["fromOrder"] === "string" ? (search["fromOrder"] as string) : undefined,
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { customerId?: string; fromOrder?: string } => ({
+    ...(typeof search["customerId"] === "string"
+      ? { customerId: search["customerId"] as string }
+      : {}),
+    ...(typeof search["fromOrder"] === "string"
+      ? { fromOrder: search["fromOrder"] as string }
+      : {}),
   }),
   head: () => ({
     meta: [

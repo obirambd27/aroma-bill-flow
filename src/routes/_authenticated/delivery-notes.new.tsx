@@ -20,8 +20,8 @@ import { useCustomers, useProducts, useWarehouses } from "@/lib/data";
 import { useSalesOrder } from "@/lib/sales";
 
 export const Route = createFileRoute("/_authenticated/delivery-notes/new")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    orderId: typeof search["orderId"] === "string" ? (search["orderId"] as string) : undefined,
+  validateSearch: (search: Record<string, unknown>): { orderId?: string } => ({
+    ...(typeof search["orderId"] === "string" ? { orderId: search["orderId"] as string } : {}),
   }),
   head: () => ({
     meta: [

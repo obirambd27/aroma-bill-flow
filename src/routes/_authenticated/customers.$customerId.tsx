@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useCustomer, useCustomerBills } from "@/lib/data";
 import { useCustomerPaymentsReceived } from "@/lib/payments";
+import { useCustomerCredit } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ function CustomerDetailPage() {
   const { data: customer, isLoading } = useCustomer(customerId);
   const { data: bills = [] } = useCustomerBills(customerId);
   const { data: payments = [] } = useCustomerPaymentsReceived(customerId);
+  const { data: credit } = useCustomerCredit(customerId);
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
 
@@ -174,6 +176,34 @@ function CustomerDetailPage() {
               tone={outstanding > 0 ? "warning" : "success"}
             />
           </div>
+
+          {credit && credit.remaining > 0.001 && (
+            <div className="surface-card flex flex-wrap items-center justify-between gap-4 border-success/30 bg-success/5 p-5">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Credits available
+                </p>
+                <p className="numeric mt-1 text-2xl font-bold text-success">
+                  {formatMoney(credit.remaining)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Across {credit.notes.length} open credit note
+                  {credit.notes.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {credit.notes.map((n) => (
+                  <Button key={n.id} asChild variant="outline" size="sm">
+                    <Link to="/credit-notes/$creditNoteId" params={{ creditNoteId: n.id }}>
+                      {n.credit_note_number}
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+
 
           <div className="surface-card p-5">
             <h2 className="text-sm font-semibold">Contact information</h2>
