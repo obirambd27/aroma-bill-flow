@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,10 +16,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
+import { JournalSection } from "@/components/JournalSection";
+import { ThermalReceipt } from "@/components/ThermalReceipt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+type PrintView = "a4" | "thermal";
+/** Session-level memory of the last chosen print view. */
+let lastPrintView: PrintView = "a4";
+
 
 export const Route = createFileRoute("/_authenticated/bills/$billId")({
   head: () => ({
