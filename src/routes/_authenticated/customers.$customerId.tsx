@@ -55,7 +55,7 @@ function CustomerDetailPage() {
   const navigate = useNavigate();
   const { data: customer, isLoading } = useCustomer(customerId);
   const { data: bills = [] } = useCustomerBills(customerId);
-  const { data: payments = [] } = useCustomerPayments(customerId);
+  const { data: payments = [] } = useCustomerPaymentsReceived(customerId);
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
 
