@@ -424,7 +424,7 @@ function BillsPage() {
         description="Every bill with payments, warehouses, returns and credits."
         actions={
           <Button asChild>
-            <Link to="/new-bill" search={{ customerId: undefined }}>
+            <Link to="/new-bill" search={{}}>
               <Plus />
               New Bill
             </Link>
@@ -664,7 +664,7 @@ function BillsPage() {
               ? {
                   actionLabel: "Create Your First Bill",
                   onAction: () => {
-                    void navigate({ to: "/new-bill", search: { customerId: undefined } });
+                    void navigate({ to: "/new-bill", search: {} });
                   },
                 }
               : {})}
