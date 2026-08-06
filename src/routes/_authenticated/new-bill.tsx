@@ -38,7 +38,15 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCustomers, useProducts, useProductStock, useSettings, useWarehouses } from "@/lib/data";
+import {
+  useBill,
+  useCustomers,
+  useProducts,
+  useProductStock,
+  useSettings,
+  useWarehouses,
+} from "@/lib/data";
+import { applyBillEdit, type BillSnapshot } from "@/lib/bill-edit";
 import { useAccounts } from "@/lib/accounting";
 import {
   PAYMENT_METHODS,
@@ -54,12 +62,15 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { customerId?: string; fromOrder?: string } => ({
+  ): { customerId?: string; fromOrder?: string; editBill?: string } => ({
     ...(typeof search["customerId"] === "string"
       ? { customerId: search["customerId"] as string }
       : {}),
     ...(typeof search["fromOrder"] === "string"
       ? { fromOrder: search["fromOrder"] as string }
+      : {}),
+    ...(typeof search["editBill"] === "string"
+      ? { editBill: search["editBill"] as string }
       : {}),
   }),
   head: () => ({
@@ -165,12 +176,48 @@ function NewBillPage() {
   }, [sourceOrder, orderHydrated]);
 
 
+  // Editing an existing bill: hydrate the builder with its current contents.
+  const { data: editingBill } = useBill(search.editBill ?? "");
+  const isEditing = Boolean(search.editBill && editingBill);
+  const [editHydrated, setEditHydrated] = useState(false);
+  useEffect(() => {
+    if (!editingBill || editHydrated) return;
+    setCustomerId(editingBill.customer_id ?? "walk-in");
+    setBillDate(editingBill.bill_date);
+    if (editingBill.warehouse_id) setWarehouseId(editingBill.warehouse_id);
+    setIsTaxed(editingBill.is_taxed);
+    setTaxRateInput(String(editingBill.tax_rate));
+    setDiscountType(editingBill.discount_type === "percent" ? "percent" : "amount");
+    setDiscountValue(String(editingBill.discount_value ?? 0));
+    setAmountPaidInput(String(editingBill.amount_paid ?? 0));
+    setLines(
+      editingBill.bill_items
+        .map((i) => ({
+          productId: i.product_id ?? "",
+          name: i.product_name_snapshot,
+          unitPrice: Number(i.unit_price),
+          quantity: Number(i.quantity),
+          warehouseId: i.warehouse_id ?? editingBill.warehouse_id ?? "",
+        }))
+        .filter((l) => l.productId),
+    );
+    setEditHydrated(true);
+  }, [editingBill, editHydrated]);
+
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
   const stockFor = (productId: string, wId: string) => {
     const row = stock.find((s) => s.product_id === productId && s.warehouse_id === wId);
-    const onHand = Number(row?.stock_on_hand ?? 0);
+    // While editing a finalized bill the original quantities are reversed first,
+    // so they count as available again.
+    const credited =
+      editingBill && editingBill.status === "Finalized"
+        ? editingBill.bill_items
+            .filter((i) => i.product_id === productId && i.warehouse_id === wId)
+            .reduce((sum, i) => sum + Number(i.quantity), 0)
+        : 0;
+    const onHand = Number(row?.stock_on_hand ?? 0) + credited;
     const committed = Number(row?.committed_stock ?? 0);
     return { onHand, committed, available: Math.max(onHand - committed, 0) };
   };
