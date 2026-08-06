@@ -14,11 +14,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CustomerTagEditor } from "@/components/CustomerTags";
+import {
+  CustomerActivityPanel,
+  CustomerRemindersPanel,
+} from "@/components/CustomerActivityPanel";
 import { useCustomer, useCustomerBills } from "@/lib/data";
 import { useCustomerPaymentsReceived } from "@/lib/payments";
 import { useCustomerCredit } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+function formatOptionalDate(value: string | null) {
+  return value ? formatDate(value) : null;
+}
+
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
   head: () => ({
