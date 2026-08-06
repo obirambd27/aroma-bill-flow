@@ -1130,14 +1130,16 @@ function NewBillPage() {
                     ? "Save Changes"
                     : "Finalize Bill"}
               </Button>
-              <Button
-                variant="outline"
-                className="h-11 w-full"
-                disabled={saving}
-                onClick={() => save("Draft")}
-              >
-                Save as Draft
-              </Button>
+              {(!isEditing || editingBill?.status === "Draft") && (
+                <Button
+                  variant="outline"
+                  className="h-11 w-full"
+                  disabled={saving}
+                  onClick={() => save("Draft")}
+                >
+                  Save as Draft
+                </Button>
+              )}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               Finalizing deducts stock from the selected warehouse and records a stock movement for
@@ -1156,14 +1158,16 @@ function NewBillPage() {
           <span className="numeric text-xl font-bold">{formatMoney(total)}</span>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="h-12 flex-1"
-            disabled={saving}
-            onClick={() => save("Draft")}
-          >
-            Draft
-          </Button>
+          {(!isEditing || editingBill?.status === "Draft") && (
+            <Button
+              variant="outline"
+              className="h-12 flex-1"
+              disabled={saving}
+              onClick={() => save("Draft")}
+            >
+              Draft
+            </Button>
+          )}
           <Button className="h-12 flex-[2]" disabled={saving} onClick={() => save("Finalized")}>
             <Plus />
             {saving ? "Saving…" : isEditing ? "Save Changes" : "Review & Finalize"}
