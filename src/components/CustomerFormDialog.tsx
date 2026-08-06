@@ -22,6 +22,9 @@ const schema = z.object({
   phone: z.string().trim().max(30, "Phone is too long"),
   email: z.union([z.string().trim().email("Enter a valid email").max(255), z.literal("")]),
   address: z.string().trim().max(500, "Address is too long"),
+  date_of_birth: z.string().trim(),
+  anniversary_date: z.string().trim(),
+  notes: z.string().trim().max(2000, "Notes are too long"),
 });
 
 export function CustomerFormDialog({
@@ -36,7 +39,15 @@ export function CustomerFormDialog({
   onSaved?: (customer: Customer) => void;
 }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    date_of_birth: "",
+    anniversary_date: "",
+    notes: "",
+  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,8 +57,12 @@ export function CustomerFormDialog({
       phone: customer?.phone ?? "",
       email: customer?.email ?? "",
       address: customer?.address ?? "",
+      date_of_birth: customer?.date_of_birth ?? "",
+      anniversary_date: customer?.anniversary_date ?? "",
+      notes: customer?.notes ?? "",
     });
   }, [open, customer]);
+
 
   const save = async () => {
     const parsed = schema.safeParse(form);
