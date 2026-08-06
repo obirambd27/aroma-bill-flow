@@ -250,6 +250,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cheques_purchase_fk"
+            columns: ["related_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cheques_related_bill_id_fkey"
             columns: ["related_bill_id"]
             isOneToOne: false
@@ -771,6 +778,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ledger_entries_purchase_fk"
+            columns: ["related_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ledger_entries_related_bill_id_fkey"
             columns: ["related_bill_id"]
             isOneToOne: false
@@ -1022,6 +1036,245 @@ export type Database = {
           unit?: string
         }
         Relationships: []
+      }
+      purchase_bill_items: {
+        Row: {
+          id: string
+          line_total: number
+          product_id: string | null
+          product_name_snapshot: string
+          purchase_bill_id: string
+          quantity: number
+          unit_cost: number
+          warehouse_id: string | null
+        }
+        Insert: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot: string
+          purchase_bill_id: string
+          quantity?: number
+          unit_cost?: number
+          warehouse_id?: string | null
+        }
+        Update: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot?: string
+          purchase_bill_id?: string
+          quantity?: number
+          unit_cost?: number
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bill_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bill_items_purchase_bill_id_fkey"
+            columns: ["purchase_bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bill_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_bills: {
+        Row: {
+          amount_paid: number
+          bill_date: string
+          bill_number: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          payment_status: string
+          purchase_order_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          vendor_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          amount_paid?: number
+          bill_date?: string
+          bill_number?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_status?: string
+          purchase_order_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          bill_date?: string
+          bill_number?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_status?: string
+          purchase_order_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bills_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_order_items: {
+        Row: {
+          id: string
+          line_total: number
+          product_id: string | null
+          product_name_snapshot: string
+          purchase_order_id: string
+          quantity: number
+          quantity_received: number
+          unit_cost: number
+        }
+        Insert: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot: string
+          purchase_order_id: string
+          quantity?: number
+          quantity_received?: number
+          unit_cost?: number
+        }
+        Update: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot?: string
+          purchase_order_id?: string
+          quantity?: number
+          quantity_received?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          vendor_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_order_items: {
         Row: {
@@ -1391,6 +1644,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_movements_purchase_fk"
+            columns: ["related_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stock_movements_related_bill_id_fkey"
             columns: ["related_bill_id"]
             isOneToOne: false
@@ -1457,6 +1717,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          total_outstanding: number
+          total_purchased: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          total_outstanding?: number
+          total_purchased?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          total_outstanding?: number
+          total_purchased?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       warehouses: {
         Row: {
