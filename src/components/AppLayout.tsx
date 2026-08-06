@@ -21,17 +21,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/new-bill", label: "New Bill", icon: Plus },
-  { to: "/products", label: "Products", icon: Package },
-  { to: "/warehouses", label: "Warehouses", icon: Warehouse },
-  { to: "/customers", label: "Customers", icon: Users },
-  { to: "/bills", label: "Bill History", icon: ReceiptText },
-  { to: "/payments", label: "Payments", icon: Wallet },
-  { to: "/cash-bank", label: "Cash & Bank", icon: Landmark },
-  { to: "/cheques", label: "Cheques", icon: ScrollText },
-  { to: "/accounts", label: "Accounts", icon: BookOpen },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, group: "" },
+  { to: "/new-bill", label: "New Bill", icon: Plus, group: "Sales" },
+  { to: "/bills", label: "Bill History", icon: ReceiptText, group: "Sales" },
+  { to: "/sales-orders", label: "Sales Orders", icon: ClipboardList, group: "Sales" },
+  { to: "/delivery-notes", label: "Delivery Notes", icon: Truck, group: "Sales" },
+  { to: "/products", label: "Products", icon: Package, group: "Inventory" },
+  { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
+  { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
+  { to: "/payments", label: "Payments", icon: Wallet, group: "Finance" },
+  { to: "/cash-bank", label: "Cash & Bank", icon: Landmark, group: "Finance" },
+  { to: "/cheques", label: "Cheques", icon: ScrollText, group: "Finance" },
+  { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
