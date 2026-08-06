@@ -263,7 +263,6 @@ function PurchaseBillDetail() {
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle className="sr-only">Void purchase bill</AlertDialogTitle>
           <AlertDialogHeader>
             <AlertDialogTitle>Void this purchase bill?</AlertDialogTitle>
             <AlertDialogDescription>
