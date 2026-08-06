@@ -201,4 +201,16 @@
   .invoice-sheet footer {
     page-break-inside: avoid;
   }
+
+  .thermal-sheet {
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
 }
+
