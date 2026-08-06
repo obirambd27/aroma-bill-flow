@@ -258,6 +258,156 @@ export type Database = {
           },
         ]
       }
+      credit_note_applications: {
+        Row: {
+          amount_applied: number
+          applied_date: string
+          bill_id: string
+          created_at: string
+          credit_note_id: string
+          id: string
+        }
+        Insert: {
+          amount_applied?: number
+          applied_date?: string
+          bill_id: string
+          created_at?: string
+          credit_note_id: string
+          id?: string
+        }
+        Update: {
+          amount_applied?: number
+          applied_date?: string
+          bill_id?: string
+          created_at?: string
+          credit_note_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_note_applications_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_note_applications_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_note_items: {
+        Row: {
+          credit_note_id: string
+          description: string
+          id: string
+          line_total: number
+          product_id: string | null
+          quantity: number | null
+          unit_price: number
+        }
+        Insert: {
+          credit_note_id: string
+          description: string
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          quantity?: number | null
+          unit_price?: number
+        }
+        Update: {
+          credit_note_id?: string
+          description?: string
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          quantity?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_note_items_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_note_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_notes: {
+        Row: {
+          amount_applied: number
+          created_at: string
+          credit_note_date: string
+          credit_note_number: string | null
+          customer_id: string | null
+          id: string
+          reason: string | null
+          sales_return_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_applied?: number
+          created_at?: string
+          credit_note_date?: string
+          credit_note_number?: string | null
+          customer_id?: string | null
+          id?: string
+          reason?: string | null
+          sales_return_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_applied?: number
+          created_at?: string
+          credit_note_date?: string
+          credit_note_number?: string | null
+          customer_id?: string | null
+          id?: string
+          reason?: string | null
+          sales_return_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_sales_return_id_fkey"
+            columns: ["sales_return_id"]
+            isOneToOne: false
+            referencedRelation: "sales_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -866,6 +1016,144 @@ export type Database = {
           },
           {
             foreignKeyName: "sales_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_return_items: {
+        Row: {
+          bill_item_id: string | null
+          id: string
+          line_total: number
+          product_id: string | null
+          product_name_snapshot: string
+          quantity: number
+          sales_return_id: string
+          unit_price: number
+        }
+        Insert: {
+          bill_item_id?: string | null
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot: string
+          quantity?: number
+          sales_return_id: string
+          unit_price?: number
+        }
+        Update: {
+          bill_item_id?: string | null
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot?: string
+          quantity?: number
+          sales_return_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_return_items_bill_item_id_fkey"
+            columns: ["bill_item_id"]
+            isOneToOne: false
+            referencedRelation: "bill_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_sales_return_id_fkey"
+            columns: ["sales_return_id"]
+            isOneToOne: false
+            referencedRelation: "sales_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_returns: {
+        Row: {
+          bill_id: string | null
+          created_at: string
+          credit_note_id: string | null
+          customer_id: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          return_date: string
+          return_number: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          bill_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          return_date?: string
+          return_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          bill_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          return_date?: string
+          return_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_returns_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
