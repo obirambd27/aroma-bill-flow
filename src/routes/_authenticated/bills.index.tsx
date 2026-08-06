@@ -411,9 +411,9 @@ function BillsPage() {
           </p>
         </div>
         <div className="surface-card flex flex-wrap items-center gap-2 p-4">
-          <StatusBadge tone="success">Paid {summary.counts.Paid ?? 0}</StatusBadge>
-          <StatusBadge tone="warning">Partial {summary.counts.Partial ?? 0}</StatusBadge>
-          <StatusBadge tone="error">Unpaid {summary.counts.Unpaid ?? 0}</StatusBadge>
+          <StatusBadge tone="success">Paid {summary.counts["Paid"] ?? 0}</StatusBadge>
+          <StatusBadge tone="warning">Partial {summary.counts["Partial"] ?? 0}</StatusBadge>
+          <StatusBadge tone="error">Unpaid {summary.counts["Unpaid"] ?? 0}</StatusBadge>
         </div>
       </div>
 
@@ -618,12 +618,14 @@ function BillsPage() {
                 ? "Create your first sales bill — it only takes a few seconds."
                 : "Try a different search, date range or filter combination."
             }
-            actionLabel={bills.length === 0 ? "Create Your First Bill" : undefined}
-            onAction={
-              bills.length === 0
-                ? () => navigate({ to: "/new-bill", search: { customerId: undefined } })
-                : undefined
-            }
+            {...(bills.length === 0
+              ? {
+                  actionLabel: "Create Your First Bill",
+                  onAction: () => {
+                    void navigate({ to: "/new-bill", search: { customerId: undefined } });
+                  },
+                }
+              : {})}
           />
         ) : (
           <>
@@ -874,8 +876,10 @@ function BillsPage() {
 
       <RecordPaymentDialog
         open={paymentFor !== null}
-        onOpenChange={(open) => !open && setPaymentFor(null)}
-        defaultCustomerId={paymentFor?.customer_id ?? undefined}
+        onOpenChange={(open) => {
+          if (!open) setPaymentFor(null);
+        }}
+        {...(paymentFor?.customer_id ? { defaultCustomerId: paymentFor.customer_id } : {})}
       />
     </div>
   );
