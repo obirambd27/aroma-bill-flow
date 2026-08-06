@@ -617,34 +617,97 @@ function NewBillPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment-status">Payment status</Label>
-              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                <SelectTrigger id="payment-status" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Paid">Paid</SelectItem>
-                  <SelectItem value="Partial">Partial</SelectItem>
-                  <SelectItem value="Unpaid">Unpaid</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="amount-paid">Amount paid now</Label>
+                <span className="text-xs font-medium text-muted-foreground">{derivedStatus}</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  id="amount-paid"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="numeric h-11"
+                  value={amountPaidInput}
+                  onChange={(e) => setAmountPaidInput(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0"
+                  onClick={() => setAmountPaidInput(String(total.toFixed(2)))}
+                >
+                  Full
+                </Button>
+              </div>
             </div>
 
-            {paymentStatus !== "Unpaid" && (
-              <div className="space-y-2">
-                <Label htmlFor="payment-method">Payment method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger id="payment-method" className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {amountPaidNow > 0 && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-method">Payment method</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                  >
+                    <SelectTrigger id="payment-method" className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-account">
+                    {paymentMethod === "Cheque" ? "Cheque deposit account" : "Deposit into"}
+                  </Label>
+                  <Select value={accountId} onValueChange={setAccountId}>
+                    <SelectTrigger id="deposit-account" className="h-11">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cashBankAccounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {paymentMethod === "Cheque" && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cheque-number">Cheque number</Label>
+                      <Input
+                        id="cheque-number"
+                        className="h-11"
+                        value={chequeNumber}
+                        onChange={(e) => setChequeNumber(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cheque-date">Cheque date</Label>
+                      <Input
+                        id="cheque-date"
+                        type="date"
+                        className="h-11"
+                        value={chequeDate}
+                        onChange={(e) => setChequeDate(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground sm:col-span-2">
+                      Cheques are recorded as Pending and only affect account balances once cleared.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
