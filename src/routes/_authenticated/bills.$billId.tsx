@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,10 +16,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
+import { JournalSection } from "@/components/JournalSection";
+import { ThermalReceipt } from "@/components/ThermalReceipt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+type PrintView = "a4" | "thermal";
+/** Session-level memory of the last chosen print view. */
+let lastPrintView: PrintView = "a4";
+
 
 export const Route = createFileRoute("/_authenticated/bills/$billId")({
   head: () => ({
@@ -52,6 +60,20 @@ function BillDetailPage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const [printView, setPrintView] = useState<PrintView>(lastPrintView);
+
+  useEffect(() => {
+    lastPrintView = printView;
+    const style = document.createElement("style");
+    style.textContent =
+      printView === "thermal"
+        ? "@page { size: 80mm auto; margin: 4mm; }"
+        : "@page { size: A4; margin: 12mm; }";
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [printView]);
+
+
 
   if (isLoading) {
     return <p className="p-8 text-center text-sm text-muted-foreground">Loading invoice…</p>;
@@ -180,7 +202,25 @@ function BillDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              {(["a4", "thermal"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setPrintView(view)}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    printView === view
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {view === "a4" ? "A4" : "Thermal (80mm)"}
+                </button>
+              ))}
+            </div>
             <Button variant="outline" size="sm" onClick={handlePdf}>
+
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
@@ -215,7 +255,11 @@ function BillDetailPage() {
       </div>
 
       {/* Invoice document */}
+      {printView === "thermal" ? (
+        <ThermalReceipt bill={bill} settings={settings} />
+      ) : (
       <article className="invoice-sheet mx-auto w-full max-w-3xl rounded-2xl bg-card p-6 shadow-lg sm:p-10">
+
         <header className="flex flex-col gap-6 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             {settings?.business_logo_url && (
@@ -406,6 +450,14 @@ function BillDetailPage() {
           </div>
         </footer>
       </article>
+      )}
+
+      <JournalSection
+        linkColumn="related_bill_id"
+        linkId={bill.id}
+        locationName={bill.warehouses?.name ?? null}
+      />
+
 
       {bill.customer_id && (
         <RecordPaymentDialog
