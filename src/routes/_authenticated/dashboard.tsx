@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, TrendingUp, ReceiptText, AlertTriangle, Package } from "lucide-react";
+import { Plus, ReceiptText, AlertTriangle, Package, Bell } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { useBills, useProducts, useSettings, useStockTotals } from "@/lib/data";
+import { useDueReminders } from "@/lib/crm";
 import { formatDate, formatMoney } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
