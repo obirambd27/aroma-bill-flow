@@ -10,6 +10,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
+  Warehouse,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/new-bill", label: "New Bill", icon: Plus },
   { to: "/products", label: "Products", icon: Package },
+  { to: "/warehouses", label: "Warehouses", icon: Warehouse },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/bills", label: "Bill History", icon: ReceiptText },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
@@ -123,7 +125,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom tabs */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-border bg-card md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-7 border-t border-border bg-card md:hidden">
         {NAV.map((item) => {
           const active = pathname.startsWith(item.to);
           return (

@@ -62,7 +62,7 @@ function DashboardPage() {
         description="Your store at a glance."
         actions={
           <Button asChild>
-            <Link to="/new-bill">
+            <Link to="/new-bill" search={{ customerId: undefined }}>
               <Plus />
               New Bill
             </Link>
