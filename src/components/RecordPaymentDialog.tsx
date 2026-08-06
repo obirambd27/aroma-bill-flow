@@ -31,6 +31,12 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
+import {
+  allocateOldestFirst,
+  billBalance,
+  round2,
+  validatePayment,
+} from "@/lib/payment-math";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -99,7 +105,7 @@ export function RecordPaymentDialog({
   const customer = customers.find((c) => c.id === customerId) ?? null;
 
   const balanceOf = (bill: { total_amount: number; amount_paid: number }) =>
-    Number(bill.total_amount) - Number(bill.amount_paid);
+    billBalance(bill as never);
 
   const totalOpen = openBills.reduce((s, b) => s + balanceOf(b), 0);
 
@@ -113,26 +119,18 @@ export function RecordPaymentDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, prefilled, defaultBillId, openBills.length]);
 
+  const autoAllocate = (value: number) => {
+    if (openBills.length === 0 || value <= 0) return {};
+    const next: Record<string, string> = {};
+    for (const a of allocateOldestFirst(openBills as never, value, defaultBillId ?? null)) {
+      next[a.billId] = String(a.amount);
+    }
+    return next;
+  };
+
   // Auto-suggest allocation: the originating bill first, then oldest-first.
   useEffect(() => {
-    if (openBills.length === 0 || amount <= 0) {
-      setAlloc({});
-      return;
-    }
-    const ordered = defaultBillId
-      ? [...openBills].sort(
-          (a, b) => Number(b.id === defaultBillId) - Number(a.id === defaultBillId),
-        )
-      : openBills;
-    let left = amount;
-    const next: Record<string, string> = {};
-    for (const b of ordered) {
-      const take = Math.min(left, balanceOf(b));
-      if (take > 0) next[b.id] = String(Number(take.toFixed(2)));
-      left -= take;
-      if (left <= 0) break;
-    }
-    setAlloc(next);
+    setAlloc(autoAllocate(amount));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, customerId, openBills.length, defaultBillId]);
 
@@ -152,29 +150,29 @@ export function RecordPaymentDialog({
     return list.slice(0, 20);
   }, [customers, debounced]);
 
+  const allocationsPayload = openBills
+    .map((b) => ({
+      billId: b.id,
+      billNumber: b.bill_number,
+      amount: round2(Number(alloc[b.id] ?? 0) || 0),
+    }))
+    .filter((a) => a.amount > 0);
+
+  const errors = validatePayment({
+    customerId,
+    amount,
+    method,
+    accountId: method === "Cheque" ? "cheque" : accountId || null,
+    paymentDate,
+    chequeNumber: method === "Cheque" ? chequeNumber : "n/a",
+    allocations: allocationsPayload.map((a) => ({ billId: a.billId, amount: a.amount })),
+    bills: openBills as never,
+  });
+
   const submit = async () => {
-    if (!customerId) {
-      toast.error("Select a customer");
+    if (errors.length > 0) {
+      toast.error(errors[0]!);
       return;
-    }
-    if (amount <= 0) {
-      toast.error("Enter a payment amount");
-      return;
-    }
-    if (method !== "Cheque" && !accountId) {
-      toast.error("Select an account");
-      return;
-    }
-    if (Math.abs(unallocated) > 0.01) {
-      toast.error("Allocated amounts must add up to the payment amount");
-      return;
-    }
-    for (const b of openBills) {
-      const v = Number(alloc[b.id] ?? 0);
-      if (v > balanceOf(b) + 0.01) {
-        toast.error(`Allocation exceeds the balance on ${b.bill_number ?? "a bill"}`);
-        return;
-      }
     }
 
     setSaving(true);
@@ -190,13 +188,7 @@ export function RecordPaymentDialog({
         notes: notes.trim() || null,
         chequeNumber: chequeNumber.trim() || null,
         chequeDate,
-        allocations: openBills
-          .map((b) => ({
-            billId: b.id,
-            billNumber: b.bill_number,
-            amount: Number(alloc[b.id] ?? 0),
-          }))
-          .filter((a) => a.amount > 0),
+        allocations: allocationsPayload,
       });
       queryClient.invalidateQueries();
       toast.success("Payment recorded");
@@ -432,7 +424,7 @@ export function RecordPaymentDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={saving}>
+          <Button onClick={submit} disabled={saving || errors.length > 0}>
             {saving ? "Saving…" : "Record payment"}
           </Button>
         </DialogFooter>
