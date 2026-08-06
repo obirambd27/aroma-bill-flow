@@ -602,8 +602,8 @@ function NewBillPage() {
               </Button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Finalizing deducts stock locally and queues a Zoho inventory adjustment per
-              warehouse. A Zoho failure never blocks the bill.
+              Finalizing deducts stock from the selected warehouse and records a stock
+              movement for every line.
             </p>
           </div>
         </aside>
