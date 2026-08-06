@@ -175,3 +175,144 @@ export function useBill(billId: string) {
     },
   });
 }
+
+/* ---------- Warehouse management ---------- */
+
+export function useAllWarehouses() {
+  return useQuery({
+    queryKey: ["warehouses-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warehouses")
+        .select("*")
+        .order("sort_order")
+        .order("name");
+      if (error) throw error;
+      return data as Warehouse[];
+    },
+  });
+}
+
+export function useWarehouse(warehouseId: string) {
+  return useQuery({
+    queryKey: ["warehouse", warehouseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warehouses")
+        .select("*")
+        .eq("id", warehouseId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Warehouse | null;
+    },
+  });
+}
+
+/** All products including inactive ones — used by management screens. */
+export function useAllProducts() {
+  return useQuery({
+    queryKey: ["products-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*").order("name");
+      if (error) throw error;
+      return data as Product[];
+    },
+  });
+}
+
+export function useProduct(productId: string) {
+  return useQuery({
+    queryKey: ["product", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", productId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Product | null;
+    },
+  });
+}
+
+/** Stock rows for one warehouse, joined with the product record. */
+export function useWarehouseStock(warehouseId: string) {
+  return useQuery({
+    queryKey: ["warehouse-stock", warehouseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_stock")
+        .select("*, products(*)")
+        .eq("warehouse_id", warehouseId);
+      if (error) throw error;
+      return data as (ProductStock & { products: Product | null })[];
+    },
+  });
+}
+
+/** Stock rows for one product across every warehouse. */
+export function useProductStockRows(productId: string) {
+  return useQuery({
+    queryKey: ["product-stock-rows", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_stock")
+        .select("*, warehouses(name)")
+        .eq("product_id", productId);
+      if (error) throw error;
+      return data as (ProductStock & { warehouses: { name: string } | null })[];
+    },
+  });
+}
+
+export type MovementRow = StockMovement & {
+  products: { name: string; sku: string | null } | null;
+  warehouses: { name: string } | null;
+  bills: { bill_number: string | null } | null;
+};
+
+export function useStockMovements(filter: { warehouseId?: string; productId?: string }) {
+  return useQuery({
+    queryKey: ["stock-movements", filter.warehouseId ?? null, filter.productId ?? null],
+    queryFn: async () => {
+      let q = supabase
+        .from("stock_movements")
+        .select("*, products(name, sku), warehouses(name), bills:related_bill_id(bill_number)")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (filter.warehouseId) q = q.eq("warehouse_id", filter.warehouseId);
+      if (filter.productId) q = q.eq("product_id", filter.productId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as MovementRow[];
+    },
+  });
+}
+
+export type ProductSaleRow = BillItem & {
+  bills:
+    | (Pick<Bill, "id" | "bill_number" | "bill_date" | "payment_status" | "status"> & {
+        customers: { name: string } | null;
+      })
+    | null;
+  warehouses: { name: string } | null;
+};
+
+export function useProductSales(productId: string) {
+  return useQuery({
+    queryKey: ["product-sales", productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bill_items")
+        .select(
+          "*, warehouses(name), bills(id, bill_number, bill_date, payment_status, status, customers(name))",
+        )
+        .eq("product_id", productId);
+      if (error) throw error;
+      const rows = data as unknown as ProductSaleRow[];
+      return rows.sort((a, b) =>
+        (b.bills?.bill_date ?? "").localeCompare(a.bills?.bill_date ?? ""),
+      );
+    },
+  });
+}
