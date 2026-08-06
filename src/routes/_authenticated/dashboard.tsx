@@ -105,7 +105,7 @@ function StatCard({
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p
         className={[
-          "numeric mt-2 text-2xl font-bold sm:text-[1.75rem]",
+          "numeric mt-2 truncate text-2xl font-bold xl:text-xl 2xl:text-2xl",
           tone === "warning" ? "text-warning-foreground" : "",
           tone === "success" ? "text-success" : "",
         ].join(" ")}
