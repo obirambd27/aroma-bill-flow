@@ -202,7 +202,25 @@ function BillDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              {(["a4", "thermal"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setPrintView(view)}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    printView === view
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {view === "a4" ? "A4" : "Thermal (80mm)"}
+                </button>
+              ))}
+            </div>
             <Button variant="outline" size="sm" onClick={handlePdf}>
+
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
