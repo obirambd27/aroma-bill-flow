@@ -67,7 +67,7 @@ function WarehousesPage() {
       .from("warehouses")
       .update({ is_active: active })
       .eq("id", w.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries();
   };
 
@@ -78,7 +78,7 @@ function WarehousesPage() {
     }
     if (!confirm(`Delete ${w.name}? This cannot be undone.`)) return;
     const { error } = await supabase.from("warehouses").delete().eq("id", w.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries();
     toast.success("Warehouse deleted");
   };
