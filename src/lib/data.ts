@@ -316,3 +316,85 @@ export function useProductSales(productId: string) {
     },
   });
 }
+
+/* ---------- Bill history (rich rows for the Bill History page) ---------- */
+
+export type BillHistoryRow = Bill & {
+  customers: { id: string; name: string } | null;
+  bill_items: { warehouse_id: string | null }[];
+  warehouseNames: string[];
+  returns: { id: string; return_number: string | null; total_amount: number; status: string }[];
+  returnedAmount: number;
+  creditNotes: { id: string; credit_note_number: string | null; amount_applied: number }[];
+  balanceDue: number;
+};
+
+export function useBillHistory() {
+  return useQuery({
+    queryKey: ["bill-history"],
+    queryFn: async () => {
+      const [billsRes, whRes, returnsRes, creditRes] = await Promise.all([
+        supabase
+          .from("bills")
+          .select("*, customers(id, name), bill_items(warehouse_id)")
+          .order("bill_date", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase.from("warehouses").select("id, name"),
+        supabase
+          .from("sales_returns")
+          .select("id, return_number, bill_id, total_amount, status"),
+        supabase
+          .from("credit_note_applications")
+          .select("bill_id, amount_applied, credit_notes(id, credit_note_number)"),
+      ]);
+      if (billsRes.error) throw billsRes.error;
+      if (whRes.error) throw whRes.error;
+      if (returnsRes.error) throw returnsRes.error;
+      if (creditRes.error) throw creditRes.error;
+
+      const whName: Record<string, string> = {};
+      for (const w of whRes.data ?? []) whName[w.id] = w.name;
+
+      const rows = (billsRes.data ?? []) as unknown as (Bill & {
+        customers: { id: string; name: string } | null;
+        bill_items: { warehouse_id: string | null }[];
+      })[];
+
+      return rows.map((b) => {
+        const ids = new Set<string>();
+        for (const it of b.bill_items ?? []) {
+          const id = it.warehouse_id ?? b.warehouse_id;
+          if (id) ids.add(id);
+        }
+        if (ids.size === 0 && b.warehouse_id) ids.add(b.warehouse_id);
+        const returns = (returnsRes.data ?? [])
+          .filter((r) => r.bill_id === b.id && r.status !== "Cancelled")
+          .map((r) => ({
+            id: r.id,
+            return_number: r.return_number,
+            total_amount: Number(r.total_amount),
+            status: r.status,
+          }));
+        const creditNotes = ((creditRes.data ?? []) as unknown as {
+          bill_id: string;
+          amount_applied: number;
+          credit_notes: { id: string; credit_note_number: string | null } | null;
+        }[])
+          .filter((c) => c.bill_id === b.id && c.credit_notes)
+          .map((c) => ({
+            id: c.credit_notes!.id,
+            credit_note_number: c.credit_notes!.credit_note_number,
+            amount_applied: Number(c.amount_applied),
+          }));
+        return {
+          ...b,
+          warehouseNames: [...ids].map((id) => whName[id] ?? "Unknown").sort(),
+          returns,
+          returnedAmount: returns.reduce((s, r) => s + r.total_amount, 0),
+          creditNotes,
+          balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
+        } as BillHistoryRow;
+      });
+    },
+  });
+}
