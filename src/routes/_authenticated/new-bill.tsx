@@ -356,6 +356,21 @@ function NewBillPage() {
       return;
     }
 
+    // Converting a sales order: release its reservation and close it out.
+    if (sourceOrder) {
+      for (const item of sourceOrder.sales_order_items) {
+        const wId = item.warehouse_id ?? sourceOrder.warehouse_id;
+        if (item.product_id && wId) {
+          await adjustCommitted(item.product_id, wId, -Number(item.quantity));
+        }
+      }
+      await supabase
+        .from("sales_orders")
+        .update({ status: "Converted to Bill", converted_bill_id: bill.id })
+        .eq("id", sourceOrder.id);
+    }
+
+
     // Deduct stock per warehouse and log a stock movement for each line.
     for (const l of lines) {
       const row = stock.find(
