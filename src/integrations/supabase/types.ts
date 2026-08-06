@@ -272,34 +272,55 @@ export type Database = {
       }
       products: {
         Row: {
+          additional_images: string[]
           brand: string | null
+          category: string | null
+          cost_price: number | null
           created_at: string
+          description: string | null
           id: string
           image_url: string | null
           is_active: boolean
+          low_stock_threshold: number | null
           name: string
+          opening_stock_note: number | null
           price: number
           sku: string | null
+          unit: string
         }
         Insert: {
+          additional_images?: string[]
           brand?: string | null
+          category?: string | null
+          cost_price?: number | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          low_stock_threshold?: number | null
           name: string
+          opening_stock_note?: number | null
           price?: number
           sku?: string | null
+          unit?: string
         }
         Update: {
+          additional_images?: string[]
           brand?: string | null
+          category?: string | null
+          cost_price?: number | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          low_stock_threshold?: number | null
           name?: string
+          opening_stock_note?: number | null
           price?: number
           sku?: string | null
+          unit?: string
         }
         Relationships: []
       }
@@ -357,6 +378,7 @@ export type Database = {
           quantity_change: number
           reason: string | null
           related_bill_id: string | null
+          related_purchase_id: string | null
           warehouse_id: string
         }
         Insert: {
@@ -367,6 +389,7 @@ export type Database = {
           quantity_change?: number
           reason?: string | null
           related_bill_id?: string | null
+          related_purchase_id?: string | null
           warehouse_id: string
         }
         Update: {
@@ -377,6 +400,7 @@ export type Database = {
           quantity_change?: number
           reason?: string | null
           related_bill_id?: string | null
+          related_purchase_id?: string | null
           warehouse_id?: string
         }
         Relationships: [
