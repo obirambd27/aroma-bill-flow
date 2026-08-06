@@ -559,6 +559,7 @@ function NewBillPage() {
                   const wName =
                     warehouses.find((w) => w.id === l.warehouseId)?.name ?? "No warehouse";
                   const over = l.quantity > available;
+                  const lastSold = lastPrices[l.productId];
                   return (
                     <div key={l.productId} className="space-y-2 py-3">
                       <div className="flex items-start gap-3">
@@ -573,6 +574,12 @@ function NewBillPage() {
                             <span className="truncate">{wName}</span>
                             <span className="numeric">· {available} available</span>
                           </button>
+                          {lastSold && selectedCustomer && (
+                            <p className="mt-1 text-xs text-primary">
+                              Last sold to {selectedCustomer.name}: {formatMoney(lastSold.price)} on{" "}
+                              {formatDate(lastSold.date)}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
