@@ -450,6 +450,14 @@ function BillDetailPage() {
           </div>
         </footer>
       </article>
+      )}
+
+      <JournalSection
+        linkColumn="related_bill_id"
+        linkId={bill.id}
+        locationName={bill.warehouses?.name ?? null}
+      />
+
 
       {bill.customer_id && (
         <RecordPaymentDialog
