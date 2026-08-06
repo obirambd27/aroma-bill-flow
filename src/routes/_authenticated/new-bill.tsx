@@ -48,6 +48,7 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
+import { adjustCommitted, useSalesOrder } from "@/lib/sales";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
