@@ -51,10 +51,7 @@ function ProductsPage() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = products.filter(
-      (p) =>
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        (p.sku ?? "").toLowerCase().includes(q),
+      (p) => !q || p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q),
     );
     const [key, dir] = sort.split("-") as ["name" | "price" | "stock", "asc" | "desc"];
     const sorted = [...filtered].sort((a, b) => {
@@ -67,10 +64,7 @@ function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Products"
-        description="Catalogue and stock levels."
-      />
+      <PageHeader title="Products" description="Catalogue and stock levels." />
 
       <div className="surface-card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
@@ -117,7 +111,6 @@ function ProductsPage() {
             icon={Package}
             title="No products yet"
             description="Add your first product to start building your perfume catalogue."
-            
           />
         ) : visible.length === 0 ? (
           <EmptyState
@@ -128,9 +121,7 @@ function ProductsPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <table
-              className={`w-full ${view === "table" ? "hidden md:table" : "hidden"}`}
-            >
+            <table className={`w-full ${view === "table" ? "hidden md:table" : "hidden"}`}>
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Product</th>

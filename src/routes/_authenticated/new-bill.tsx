@@ -26,19 +26,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  useCustomers,
-  useProducts,
-  useProductStock,
-  useSettings,
-  useWarehouses,
-} from "@/lib/data";
+import { useCustomers, useProducts, useProductStock, useSettings, useWarehouses } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (search: Record<string, unknown>) => ({
-    customerId: typeof search['customerId'] === "string" ? (search['customerId'] as string) : undefined,
+    customerId:
+      typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -602,8 +597,8 @@ function NewBillPage() {
               </Button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Finalizing deducts stock from the selected warehouse and records a stock
-              movement for every line.
+              Finalizing deducts stock from the selected warehouse and records a stock movement for
+              every line.
             </p>
           </div>
         </aside>
@@ -646,10 +641,7 @@ function NewBillPage() {
         onSaved={(p) => addLine(p.id)}
       />
 
-      <Dialog
-        open={Boolean(pickerLine)}
-        onOpenChange={(o) => !o && setWarehousePickerFor(null)}
-      >
+      <Dialog open={Boolean(pickerLine)} onOpenChange={(o) => !o && setWarehousePickerFor(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Select warehouse</DialogTitle>

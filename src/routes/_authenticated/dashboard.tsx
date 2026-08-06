@@ -120,9 +120,7 @@ function DashboardPage() {
                     >
                       {b.payment_status}
                     </StatusBadge>
-                    <span className="numeric text-sm font-bold">
-                      {formatMoney(b.total_amount)}
-                    </span>
+                    <span className="numeric text-sm font-bold">{formatMoney(b.total_amount)}</span>
                   </div>
                 </li>
               ))}

@@ -55,7 +55,6 @@ function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-
   useEffect(() => {
     if (settings) setForm(settings);
   }, [settings]);
@@ -114,7 +113,6 @@ function SettingsPage() {
     toast.success("Logo uploaded");
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
-
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading settings…</p>;
@@ -260,7 +258,6 @@ function SettingsPage() {
           </Button>
         </div>
       </Section>
-
     </div>
   );
 }

@@ -101,9 +101,7 @@ export function CustomerFormDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{customer ? "Edit customer" : "New customer"}</DialogTitle>
-          <DialogDescription>
-            Stored in your own customer directory.
-          </DialogDescription>
+          <DialogDescription>Stored in your own customer directory.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
