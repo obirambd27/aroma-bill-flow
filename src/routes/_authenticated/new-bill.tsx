@@ -54,6 +54,8 @@ export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (search: Record<string, unknown>) => ({
     customerId:
       typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
+    fromOrder:
+      typeof search["fromOrder"] === "string" ? (search["fromOrder"] as string) : undefined,
   }),
   head: () => ({
     meta: [
