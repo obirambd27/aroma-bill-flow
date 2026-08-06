@@ -974,6 +974,14 @@ function NewBillPage() {
         defaultWarehouseId={activeWarehouseId}
         onSaved={(p) => addLine(p.id)}
       />
+      <BulkAddDialog
+        open={bulkDialog}
+        onOpenChange={setBulkDialog}
+        products={products}
+        onAdd={addMany}
+      />
+
+
 
       <Dialog open={Boolean(pickerLine)} onOpenChange={(o) => !o && setWarehousePickerFor(null)}>
         <DialogContent className="sm:max-w-lg">
