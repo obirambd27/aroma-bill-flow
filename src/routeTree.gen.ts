@@ -24,6 +24,9 @@ import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCashBankIndexRouteImport } from './routes/_authenticated/cash-bank.index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
+import { Route as AuthenticatedDeliveryNotesIndexRouteImport } from './routes/_authenticated/delivery-notes.index'
+import { Route as AuthenticatedDeliveryNotesDeliveryIdRouteImport } from './routes/_authenticated/delivery-notes.$deliveryId'
+import { Route as AuthenticatedDeliveryNotesNewRouteImport } from './routes/_authenticated/delivery-notes.new'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments.index'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
@@ -113,6 +116,24 @@ const AuthenticatedCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDeliveryNotesIndexRoute =
+  AuthenticatedDeliveryNotesIndexRouteImport.update({
+    id: '/delivery-notes/',
+    path: '/delivery-notes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDeliveryNotesDeliveryIdRoute =
+  AuthenticatedDeliveryNotesDeliveryIdRouteImport.update({
+    id: '/delivery-notes/$deliveryId',
+    path: '/delivery-notes/$deliveryId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDeliveryNotesNewRoute =
+  AuthenticatedDeliveryNotesNewRouteImport.update({
+    id: '/delivery-notes/new',
+    path: '/delivery-notes/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPaymentsIndexRoute =
   AuthenticatedPaymentsIndexRouteImport.update({
     id: '/payments/',
@@ -173,6 +194,8 @@ export interface FileRoutesByFullPath {
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/delivery-notes/$deliveryId': typeof AuthenticatedDeliveryNotesDeliveryIdRoute
+  '/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
@@ -181,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/bills/': typeof AuthenticatedBillsIndexRoute
   '/cash-bank/': typeof AuthenticatedCashBankIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/delivery-notes/': typeof AuthenticatedDeliveryNotesIndexRoute
   '/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/sales-orders/': typeof AuthenticatedSalesOrdersIndexRoute
@@ -197,6 +221,8 @@ export interface FileRoutesByTo {
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/delivery-notes/$deliveryId': typeof AuthenticatedDeliveryNotesDeliveryIdRoute
+  '/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
@@ -205,6 +231,7 @@ export interface FileRoutesByTo {
   '/bills': typeof AuthenticatedBillsIndexRoute
   '/cash-bank': typeof AuthenticatedCashBankIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/delivery-notes': typeof AuthenticatedDeliveryNotesIndexRoute
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/sales-orders': typeof AuthenticatedSalesOrdersIndexRoute
@@ -223,6 +250,8 @@ export interface FileRoutesById {
   '/_authenticated/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/_authenticated/delivery-notes/$deliveryId': typeof AuthenticatedDeliveryNotesDeliveryIdRoute
+  '/_authenticated/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/_authenticated/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/_authenticated/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
@@ -231,6 +260,7 @@ export interface FileRoutesById {
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
   '/_authenticated/cash-bank/': typeof AuthenticatedCashBankIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/_authenticated/delivery-notes/': typeof AuthenticatedDeliveryNotesIndexRoute
   '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/sales-orders/': typeof AuthenticatedSalesOrdersIndexRoute
@@ -249,6 +279,8 @@ export interface FileRouteTypes {
     | '/accounts/$accountId'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/delivery-notes/$deliveryId'
+    | '/delivery-notes/new'
     | '/products/$productId'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
@@ -257,6 +289,7 @@ export interface FileRouteTypes {
     | '/bills/'
     | '/cash-bank/'
     | '/customers/'
+    | '/delivery-notes/'
     | '/payments/'
     | '/products/'
     | '/sales-orders/'
@@ -273,6 +306,8 @@ export interface FileRouteTypes {
     | '/accounts/$accountId'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/delivery-notes/$deliveryId'
+    | '/delivery-notes/new'
     | '/products/$productId'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
@@ -281,6 +316,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/cash-bank'
     | '/customers'
+    | '/delivery-notes'
     | '/payments'
     | '/products'
     | '/sales-orders'
@@ -298,6 +334,8 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/$accountId'
     | '/_authenticated/bills/$billId'
     | '/_authenticated/customers/$customerId'
+    | '/_authenticated/delivery-notes/$deliveryId'
+    | '/_authenticated/delivery-notes/new'
     | '/_authenticated/products/$productId'
     | '/_authenticated/sales-orders/$orderId'
     | '/_authenticated/sales-orders/new'
@@ -306,6 +344,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bills/'
     | '/_authenticated/cash-bank/'
     | '/_authenticated/customers/'
+    | '/_authenticated/delivery-notes/'
     | '/_authenticated/payments/'
     | '/_authenticated/products/'
     | '/_authenticated/sales-orders/'
@@ -426,6 +465,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/delivery-notes/': {
+      id: '/_authenticated/delivery-notes/'
+      path: '/delivery-notes'
+      fullPath: '/delivery-notes/'
+      preLoaderRoute: typeof AuthenticatedDeliveryNotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/delivery-notes/$deliveryId': {
+      id: '/_authenticated/delivery-notes/$deliveryId'
+      path: '/delivery-notes/$deliveryId'
+      fullPath: '/delivery-notes/$deliveryId'
+      preLoaderRoute: typeof AuthenticatedDeliveryNotesDeliveryIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/delivery-notes/new': {
+      id: '/_authenticated/delivery-notes/new'
+      path: '/delivery-notes/new'
+      fullPath: '/delivery-notes/new'
+      preLoaderRoute: typeof AuthenticatedDeliveryNotesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/payments/': {
       id: '/_authenticated/payments/'
       path: '/payments'
@@ -493,6 +553,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsAccountIdRoute: typeof AuthenticatedAccountsAccountIdRoute
   AuthenticatedBillsBillIdRoute: typeof AuthenticatedBillsBillIdRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
+  AuthenticatedDeliveryNotesDeliveryIdRoute: typeof AuthenticatedDeliveryNotesDeliveryIdRoute
+  AuthenticatedDeliveryNotesNewRoute: typeof AuthenticatedDeliveryNotesNewRoute
   AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRoute
   AuthenticatedSalesOrdersOrderIdRoute: typeof AuthenticatedSalesOrdersOrderIdRoute
   AuthenticatedSalesOrdersNewRoute: typeof AuthenticatedSalesOrdersNewRoute
@@ -501,6 +563,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
   AuthenticatedCashBankIndexRoute: typeof AuthenticatedCashBankIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
+  AuthenticatedDeliveryNotesIndexRoute: typeof AuthenticatedDeliveryNotesIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedSalesOrdersIndexRoute: typeof AuthenticatedSalesOrdersIndexRoute
@@ -515,6 +578,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsAccountIdRoute: AuthenticatedAccountsAccountIdRoute,
   AuthenticatedBillsBillIdRoute: AuthenticatedBillsBillIdRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
+  AuthenticatedDeliveryNotesDeliveryIdRoute:
+    AuthenticatedDeliveryNotesDeliveryIdRoute,
+  AuthenticatedDeliveryNotesNewRoute: AuthenticatedDeliveryNotesNewRoute,
   AuthenticatedProductsProductIdRoute: AuthenticatedProductsProductIdRoute,
   AuthenticatedSalesOrdersOrderIdRoute: AuthenticatedSalesOrdersOrderIdRoute,
   AuthenticatedSalesOrdersNewRoute: AuthenticatedSalesOrdersNewRoute,
@@ -524,6 +590,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
   AuthenticatedCashBankIndexRoute: AuthenticatedCashBankIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
+  AuthenticatedDeliveryNotesIndexRoute: AuthenticatedDeliveryNotesIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedSalesOrdersIndexRoute: AuthenticatedSalesOrdersIndexRoute,
