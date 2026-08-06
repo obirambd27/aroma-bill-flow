@@ -75,7 +75,7 @@ function CustomerDetailPage() {
         id: `pay-${p.id}`,
         date: p.payment_date,
         label: `Payment${p.payment_method ? ` · ${p.payment_method}` : ""}`,
-        billId: p.bill_id,
+        billId: p.payment_allocations[0]?.bill_id ?? null,
         debit: 0,
         credit: Number(p.amount),
       })),
