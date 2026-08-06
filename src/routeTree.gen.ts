@@ -40,6 +40,7 @@ import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_
 import { Route as AuthenticatedPurchaseOrdersOrderIdRouteImport } from './routes/_authenticated/purchase-orders.$orderId'
 import { Route as AuthenticatedPurchaseOrdersNewRouteImport } from './routes/_authenticated/purchase-orders.new'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
+import { Route as AuthenticatedReportsSalesRouteImport } from './routes/_authenticated/reports.sales'
 import { Route as AuthenticatedSalesOrdersIndexRouteImport } from './routes/_authenticated/sales-orders.index'
 import { Route as AuthenticatedSalesOrdersOrderIdRouteImport } from './routes/_authenticated/sales-orders.$orderId'
 import { Route as AuthenticatedSalesOrdersNewRouteImport } from './routes/_authenticated/sales-orders.new'
@@ -227,6 +228,12 @@ const AuthenticatedReportsIndexRoute =
     path: '/reports/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSalesRoute =
+  AuthenticatedReportsSalesRouteImport.update({
+    id: '/reports/sales',
+    path: '/reports/sales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesOrdersIndexRoute =
   AuthenticatedSalesOrdersIndexRouteImport.update({
     id: '/sales-orders/',
@@ -308,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -350,6 +358,7 @@ export interface FileRoutesByTo {
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -394,6 +403,7 @@ export interface FileRoutesById {
   '/_authenticated/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/_authenticated/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/_authenticated/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/_authenticated/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/_authenticated/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/_authenticated/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/purchase-bills/new'
     | '/purchase-orders/$orderId'
     | '/purchase-orders/new'
+    | '/reports/sales'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
     | '/sales-returns/$returnId'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/purchase-bills/new'
     | '/purchase-orders/$orderId'
     | '/purchase-orders/new'
+    | '/reports/sales'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
     | '/sales-returns/$returnId'
@@ -523,6 +535,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchase-bills/new'
     | '/_authenticated/purchase-orders/$orderId'
     | '/_authenticated/purchase-orders/new'
+    | '/_authenticated/reports/sales'
     | '/_authenticated/sales-orders/$orderId'
     | '/_authenticated/sales-orders/new'
     | '/_authenticated/sales-returns/$returnId'
@@ -772,6 +785,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sales': {
+      id: '/_authenticated/reports/sales'
+      path: '/reports/sales'
+      fullPath: '/reports/sales'
+      preLoaderRoute: typeof AuthenticatedReportsSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales-orders/': {
       id: '/_authenticated/sales-orders/'
       path: '/sales-orders'
@@ -862,6 +882,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchaseBillsNewRoute: typeof AuthenticatedPurchaseBillsNewRoute
   AuthenticatedPurchaseOrdersOrderIdRoute: typeof AuthenticatedPurchaseOrdersOrderIdRoute
   AuthenticatedPurchaseOrdersNewRoute: typeof AuthenticatedPurchaseOrdersNewRoute
+  AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
   AuthenticatedSalesOrdersOrderIdRoute: typeof AuthenticatedSalesOrdersOrderIdRoute
   AuthenticatedSalesOrdersNewRoute: typeof AuthenticatedSalesOrdersNewRoute
   AuthenticatedSalesReturnsReturnIdRoute: typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -906,6 +927,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchaseOrdersOrderIdRoute:
     AuthenticatedPurchaseOrdersOrderIdRoute,
   AuthenticatedPurchaseOrdersNewRoute: AuthenticatedPurchaseOrdersNewRoute,
+  AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRoute,
   AuthenticatedSalesOrdersOrderIdRoute: AuthenticatedSalesOrdersOrderIdRoute,
   AuthenticatedSalesOrdersNewRoute: AuthenticatedSalesOrdersNewRoute,
   AuthenticatedSalesReturnsReturnIdRoute:
