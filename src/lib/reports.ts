@@ -218,9 +218,13 @@ export function useTransactions(range: { from: string; to: string }) {
     queryKey: ["report-transactions", range.from, range.to],
     queryFn: async () => {
       const { from, to } = range;
-      const accountsRes = await supabase.from("accounts").select("id, name");
+      const accountsRes = await supabase.from("accounts").select("id, name, account_type");
       const accName: Record<string, string> = {};
-      for (const a of accountsRes.data ?? []) accName[a.id] = a.name;
+      const isCashAccount: Record<string, boolean> = {};
+      for (const a of accountsRes.data ?? []) {
+        accName[a.id] = a.name;
+        isCashAccount[a.id] = a.account_type === "Cash" || a.account_type === "Bank";
+      }
 
       const [bills, purchases, received, salesReturns, transfers, ledger] = await Promise.all([
         supabase
