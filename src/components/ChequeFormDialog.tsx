@@ -56,11 +56,11 @@ export function ChequeFormDialog({
   }, [open]);
 
   const submit = async () => {
-    if (!number.trim()) return toast.error("Cheque number is required");
-    if (!party.trim()) return toast.error("Party name is required");
-    if (!accountId) return toast.error("Select a linked account");
+    if (!number.trim()) { toast.error("Cheque number is required"); return; }
+    if (!party.trim()) { toast.error("Party name is required"); return; }
+    if (!accountId) { toast.error("Select a linked account"); return; }
     const amt = Number(amount) || 0;
-    if (amt <= 0) return toast.error("Enter an amount greater than zero");
+    if (amt <= 0) { toast.error("Enter an amount greater than zero"); return; }
 
     setSaving(true);
     try {

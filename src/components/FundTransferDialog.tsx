@@ -65,9 +65,9 @@ export function FundTransferDialog({
   );
 
   const submit = async () => {
-    if (!fromId || !toId) return toast.error("Choose both accounts");
-    if (fromId === toId) return toast.error("Pick two different accounts");
-    if (amt <= 0) return toast.error("Enter an amount greater than zero");
+    if (!fromId || !toId) { toast.error("Choose both accounts"); return; }
+    if (fromId === toId) { toast.error("Pick two different accounts"); return; }
+    if (amt <= 0) { toast.error("Enter an amount greater than zero"); return; }
 
     setSaving(true);
     try {
