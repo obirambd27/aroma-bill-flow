@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedChequesRouteImport } from './routes/_authenticated/cheques'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedNewBillRouteImport } from './routes/_authenticated/new-bill'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -20,6 +21,7 @@ import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAccountsAccountIdRouteImport } from './routes/_authenticated/accounts.$accountId'
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills.index'
 import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenticated/bills.$billId'
+import { Route as AuthenticatedCashBankIndexRouteImport } from './routes/_authenticated/cash-bank.index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
@@ -45,6 +47,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedChequesRoute = AuthenticatedChequesRouteImport.update({
+  id: '/cheques',
+  path: '/cheques',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -82,6 +89,12 @@ const AuthenticatedBillsBillIdRoute =
   AuthenticatedBillsBillIdRouteImport.update({
     id: '/bills/$billId',
     path: '/bills/$billId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCashBankIndexRoute =
+  AuthenticatedCashBankIndexRouteImport.update({
+    id: '/cash-bank/',
+    path: '/cash-bank/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCustomersIndexRoute =
@@ -125,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/cheques': typeof AuthenticatedChequesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -135,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
+  '/cash-bank/': typeof AuthenticatedCashBankIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/warehouses/': typeof AuthenticatedWarehousesIndexRoute
@@ -143,6 +158,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/cheques': typeof AuthenticatedChequesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -153,6 +169,7 @@ export interface FileRoutesByTo {
   '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
+  '/cash-bank': typeof AuthenticatedCashBankIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/warehouses': typeof AuthenticatedWarehousesIndexRoute
@@ -163,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/cheques': typeof AuthenticatedChequesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/new-bill': typeof AuthenticatedNewBillRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -173,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
+  '/_authenticated/cash-bank/': typeof AuthenticatedCashBankIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/warehouses/': typeof AuthenticatedWarehousesIndexRoute
@@ -183,6 +202,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/cheques'
     | '/dashboard'
     | '/new-bill'
     | '/settings'
@@ -193,6 +213,7 @@ export interface FileRouteTypes {
     | '/warehouses/$warehouseId'
     | '/accounts/'
     | '/bills/'
+    | '/cash-bank/'
     | '/customers/'
     | '/products/'
     | '/warehouses/'
@@ -201,6 +222,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/cheques'
     | '/dashboard'
     | '/new-bill'
     | '/settings'
@@ -211,6 +233,7 @@ export interface FileRouteTypes {
     | '/warehouses/$warehouseId'
     | '/accounts'
     | '/bills'
+    | '/cash-bank'
     | '/customers'
     | '/products'
     | '/warehouses'
@@ -220,6 +243,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/cheques'
     | '/_authenticated/dashboard'
     | '/_authenticated/new-bill'
     | '/_authenticated/settings'
@@ -230,6 +254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/warehouses/$warehouseId'
     | '/_authenticated/accounts/'
     | '/_authenticated/bills/'
+    | '/_authenticated/cash-bank/'
     | '/_authenticated/customers/'
     | '/_authenticated/products/'
     | '/_authenticated/warehouses/'
@@ -271,6 +296,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/cheques': {
+      id: '/_authenticated/cheques'
+      path: '/cheques'
+      fullPath: '/cheques'
+      preLoaderRoute: typeof AuthenticatedChequesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -321,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBillsBillIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cash-bank/': {
+      id: '/_authenticated/cash-bank/'
+      path: '/cash-bank'
+      fullPath: '/cash-bank/'
+      preLoaderRoute: typeof AuthenticatedCashBankIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/customers'
@@ -367,6 +406,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedChequesRoute: typeof AuthenticatedChequesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedNewBillRoute: typeof AuthenticatedNewBillRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -377,12 +417,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWarehousesWarehouseIdRoute: typeof AuthenticatedWarehousesWarehouseIdRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
   AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
+  AuthenticatedCashBankIndexRoute: typeof AuthenticatedCashBankIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedWarehousesIndexRoute: typeof AuthenticatedWarehousesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedChequesRoute: AuthenticatedChequesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedNewBillRoute: AuthenticatedNewBillRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -394,6 +436,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedWarehousesWarehouseIdRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
   AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
+  AuthenticatedCashBankIndexRoute: AuthenticatedCashBankIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedWarehousesIndexRoute: AuthenticatedWarehousesIndexRoute,
