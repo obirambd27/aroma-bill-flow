@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Bill } from "@/lib/data";
-import { recalcBillBalance } from "@/lib/payment-math";
+import { derivePaymentStatus, recalcBillBalance } from "@/lib/payment-math";
 
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
@@ -10,7 +10,7 @@ export type PaymentAllocation = Tables<"payment_allocations">;
 export const PAYMENT_METHODS = ["Cash", "Bank Transfer", "Card", "Cheque"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-export { derivePaymentStatus } from "@/lib/payment-math";
+export { derivePaymentStatus };
 
 
 /** Resolve a system account id by its name (e.g. "Sales Revenue"). */
@@ -161,13 +161,11 @@ export async function recordPayment(input: RecordPaymentInput) {
       .eq("id", a.billId)
       .maybeSingle();
     if (!bill) continue;
-    const paid = Number(bill.amount_paid) + a.amount;
+    // Guard: recompute from the freshly-read row and clamp into [0, total].
+    const next = recalcBillBalance(bill, a.amount);
     await supabase
       .from("bills")
-      .update({
-        amount_paid: paid,
-        payment_status: derivePaymentStatus(paid, Number(bill.total_amount)),
-      })
+      .update({ amount_paid: next.amountPaid, payment_status: next.status })
       .eq("id", a.billId);
   }
 
