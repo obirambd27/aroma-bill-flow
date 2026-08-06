@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCustomer, useCustomerBills, useCustomerPayments } from "@/lib/data";
+import { useCustomer, useCustomerBills } from "@/lib/data";
+import { useCustomerPaymentsReceived } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
