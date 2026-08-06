@@ -89,12 +89,35 @@ function NewBillPage() {
   const [taxRateInput, setTaxRateInput] = useState<string | null>(null);
   const [discountType, setDiscountType] = useState<"amount" | "percent">("amount");
   const [discountValue, setDiscountValue] = useState("0");
-  const [paymentStatus, setPaymentStatus] = useState("Paid");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [amountPaidInput, setAmountPaidInput] = useState("0");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
+  const [accountId, setAccountId] = useState<string>("");
+  const [chequeNumber, setChequeNumber] = useState("");
+  const [chequeDate, setChequeDate] = useState(todayISO());
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customerDialog, setCustomerDialog] = useState(false);
   const [productDialog, setProductDialog] = useState(false);
   const [warehousePickerFor, setWarehousePickerFor] = useState<string | null>(null);
+
+  const { data: accounts = [] } = useAccounts(true);
+  const cashBankAccounts = accounts.filter(
+    (a) => a.account_type === "Cash" || a.account_type === "Bank",
+  );
+  const { data: lastPrices = {} } = useCustomerLastPrices(
+    customerId === "walk-in" ? null : customerId,
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(customerQuery), 250);
+    return () => clearTimeout(t);
+  }, [customerQuery]);
+
+  useEffect(() => {
+    if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
+  }, [accountId, cashBankAccounts]);
 
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
