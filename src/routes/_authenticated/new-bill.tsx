@@ -398,7 +398,9 @@ function NewBillPage() {
           },
         );
 
-        const keptPaid = Math.min(Number(editingBill.amount_paid ?? 0), total);
+        // Use the amount entered on the form so partial payments update the balance.
+        const keptPaid =
+          status === "Finalized" ? Math.min(Math.max(amountPaidNow, 0), total) : 0;
 
         await applyBillEdit({
           billId: editingBill.id,
