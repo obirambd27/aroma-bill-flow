@@ -166,7 +166,41 @@ export function CustomerFormDialog({
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="cust-dob">Date of birth</Label>
+              <Input
+                id="cust-dob"
+                type="date"
+                className="h-11"
+                value={form.date_of_birth}
+                onChange={(e) => setForm((f) => ({ ...f, date_of_birth: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cust-anniv">Anniversary</Label>
+              <Input
+                id="cust-anniv"
+                type="date"
+                className="h-11"
+                value={form.anniversary_date}
+                onChange={(e) => setForm((f) => ({ ...f, anniversary_date: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cust-notes">Notes</Label>
+            <Textarea
+              id="cust-notes"
+              rows={3}
+              maxLength={2000}
+              placeholder="Preferences, sizes, anything worth remembering"
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </div>
         </div>
+
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="ghost" className="h-11" onClick={() => onOpenChange(false)}>
