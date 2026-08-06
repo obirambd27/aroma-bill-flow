@@ -68,13 +68,31 @@ function BillDetailPage() {
   useEffect(() => {
     lastPrintView = printView;
     const style = document.createElement("style");
-    style.textContent =
-      printView === "thermal"
-        ? "@page { size: 80mm auto; margin: 4mm; }"
-        : "@page { size: A4; margin: 12mm; }";
     document.head.appendChild(style);
-    return () => style.remove();
+    document.body.classList.toggle("print-thermal", printView === "thermal");
+
+    /** Thermal rolls are continuous: size the page to the receipt so no paper is wasted. */
+    const applyPageRule = () => {
+      if (printView !== "thermal") {
+        style.textContent = "@media print { @page { size: A4; margin: 12mm; } }";
+        return;
+      }
+      const sheet = document.querySelector<HTMLElement>(".thermal-sheet");
+      const heightMm = sheet
+        ? Math.max(Math.ceil((sheet.scrollHeight / 96) * 25.4) + 8, 60)
+        : 200;
+      style.textContent = `@media print { @page { size: 80mm ${heightMm}mm; margin: 3mm; } }`;
+    };
+
+    applyPageRule();
+    window.addEventListener("beforeprint", applyPageRule);
+    return () => {
+      window.removeEventListener("beforeprint", applyPageRule);
+      document.body.classList.remove("print-thermal");
+      style.remove();
+    };
   }, [printView]);
+
 
 
 
