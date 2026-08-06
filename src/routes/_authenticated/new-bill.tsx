@@ -2,10 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, Warehouse as WarehouseIcon, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Search,
+  Warehouse as WarehouseIcon,
+  AlertTriangle,
+  Package,
+  Layers,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
+import { BulkAddDialog } from "@/components/BulkAddDialog";
+import { RecentSalesPopover } from "@/components/RecentSalesPopover";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +111,8 @@ function NewBillPage() {
   const [saving, setSaving] = useState(false);
   const [customerDialog, setCustomerDialog] = useState(false);
   const [productDialog, setProductDialog] = useState(false);
+  const [bulkDialog, setBulkDialog] = useState(false);
+
   const [warehousePickerFor, setWarehousePickerFor] = useState<string | null>(null);
 
   const { data: accounts = [] } = useAccounts(true);
@@ -204,8 +217,39 @@ function NewBillPage() {
     setProductSearch("");
   };
 
+  /** Add several products at once from the bulk entry modal. */
+  const addMany = (items: { productId: string; quantity: number }[]) => {
+    setLines((prev) => {
+      let next = [...prev];
+      for (const item of items) {
+        const p = products.find((x) => x.id === item.productId);
+        if (!p) continue;
+        const existing = next.find((l) => l.productId === item.productId);
+        if (existing) {
+          const cap = stockFor(item.productId, existing.warehouseId).available;
+          next = next.map((l) =>
+            l.productId === item.productId
+              ? { ...l, quantity: Math.min(l.quantity + item.quantity, Math.max(cap, 1)) }
+              : l,
+          );
+        } else {
+          const cap = stockFor(p.id, activeWarehouseId).available;
+          next.push({
+            productId: p.id,
+            name: p.name,
+            unitPrice: Number(p.price),
+            quantity: Math.max(1, Math.min(item.quantity, Math.max(cap, 1))),
+            warehouseId: activeWarehouseId,
+          });
+        }
+      }
+      return next;
+    });
+  };
+
   const patchLine = (productId: string, patch: Partial<Line>) =>
     setLines((prev) => prev.map((l) => (l.productId === productId ? { ...l, ...patch } : l)));
+
 
   const removeLine = (productId: string) =>
     setLines((prev) => prev.filter((l) => l.productId !== productId));
@@ -506,14 +550,25 @@ function NewBillPage() {
           <div className="surface-card p-5">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="product-search">Add products</Label>
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:underline"
-                onClick={() => setProductDialog(true)}
-              >
-                + New Product
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  onClick={() => setBulkDialog(true)}
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Add Items in Bulk
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() => setProductDialog(true)}
+                >
+                  + New Product
+                </button>
+              </div>
             </div>
+
             <div className="relative mt-2">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
