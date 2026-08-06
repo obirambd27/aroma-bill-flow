@@ -173,6 +173,7 @@ export function useBill(billId: string) {
           })
         | null;
     },
+    enabled: Boolean(billId),
   });
 }
 

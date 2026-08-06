@@ -349,6 +349,106 @@ function NewBillPage() {
     }
 
     setSaving(true);
+
+    if (isEditing && editingBill) {
+      try {
+        const customerName =
+          customerId === "walk-in"
+            ? "Walk-in customer"
+            : (customers.find((x) => x.id === customerId)?.name ?? "Customer");
+        const snapshot = (
+          l: { name: string; quantity: number; unitPrice: number; warehouseId: string | null }[],
+          fields: Omit<BillSnapshot, "lines">,
+        ): BillSnapshot => ({ ...fields, lines: l });
+
+        const before = snapshot(
+          editingBill.bill_items.map((i) => ({
+            name: i.product_name_snapshot,
+            quantity: Number(i.quantity),
+            unitPrice: Number(i.unit_price),
+            warehouseId: i.warehouse_id,
+          })),
+          {
+            customerName: editingBill.customers?.name ?? "Walk-in customer",
+            warehouseId: editingBill.warehouse_id,
+            isTaxed: editingBill.is_taxed,
+            taxRate: Number(editingBill.tax_rate),
+            subtotal: Number(editingBill.subtotal),
+            discountAmount: Number(editingBill.discount_amount),
+            taxAmount: Number(editingBill.tax_amount),
+            total: Number(editingBill.total_amount),
+          },
+        );
+        const after = snapshot(
+          lines.map((l) => ({
+            name: l.name,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            warehouseId: l.warehouseId || null,
+          })),
+          {
+            customerName,
+            warehouseId: activeWarehouseId || null,
+            isTaxed,
+            taxRate: isTaxed ? taxRate : 0,
+            subtotal,
+            discountAmount,
+            taxAmount,
+            total,
+          },
+        );
+
+        const keptPaid = Math.min(Number(editingBill.amount_paid ?? 0), total);
+
+        await applyBillEdit({
+          billId: editingBill.id,
+          billNumber: editingBill.bill_number,
+          originalStatus: editingBill.status,
+          originalItems: editingBill.bill_items.map((i) => ({
+            product_id: i.product_id,
+            warehouse_id: i.warehouse_id,
+            quantity: Number(i.quantity),
+            product_name_snapshot: i.product_name_snapshot,
+          })),
+          lines: lines.map((l) => ({
+            ...l,
+            costPrice: products.find((p) => p.id === l.productId)?.cost_price ?? null,
+          })),
+          billFields: {
+            customer_id: customerId === "walk-in" ? null : customerId,
+            is_walk_in: customerId === "walk-in",
+            bill_date: billDate,
+            warehouse_id: activeWarehouseId || null,
+            is_taxed: isTaxed,
+            tax_rate: isTaxed ? taxRate : 0,
+            subtotal,
+            tax_amount: taxAmount,
+            discount_amount: discountAmount,
+            discount_type: discountType,
+            discount_value: Number(discountValue) || 0,
+            total_amount: total,
+            amount_paid: keptPaid,
+            status,
+          },
+          billDate,
+          customerName,
+          amountPaid: keptPaid,
+          paymentAccountId: accountId || null,
+          before,
+          after,
+        });
+
+        setSaving(false);
+        queryClient.invalidateQueries();
+        toast.success("Bill updated");
+        navigate({ to: "/bills/$billId", params: { billId: editingBill.id } });
+      } catch (err) {
+        setSaving(false);
+        toast.error(err instanceof Error ? err.message : "Could not update the bill");
+      }
+      return;
+    }
+
     const isWalkIn = customerId === "walk-in";
     const paidNow = status === "Finalized" ? amountPaidNow : 0;
     const { data: bill, error } = await supabase
@@ -525,7 +625,14 @@ function NewBillPage() {
 
   return (
     <div className="space-y-6 pb-28 lg:pb-0">
-      <PageHeader title="New Bill" description="Add products, confirm totals, finalize." />
+      <PageHeader
+        title={isEditing ? `Edit ${editingBill?.bill_number ?? "Bill"}` : "New Bill"}
+        description={
+          isEditing
+            ? "Changes are logged and stock and ledger entries are adjusted automatically."
+            : "Add products, confirm totals, finalize."
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-4">
@@ -1015,7 +1122,13 @@ function NewBillPage() {
             </dl>
             <div className="mt-5 hidden space-y-2 lg:block">
               <Button className="h-11 w-full" disabled={saving} onClick={() => save("Finalized")}>
-                {saving ? "Finalizing…" : "Finalize Bill"}
+                {saving
+                  ? isEditing
+                    ? "Saving…"
+                    : "Finalizing…"
+                  : isEditing
+                    ? "Save Changes"
+                    : "Finalize Bill"}
               </Button>
               <Button
                 variant="outline"
@@ -1053,7 +1166,7 @@ function NewBillPage() {
           </Button>
           <Button className="h-12 flex-[2]" disabled={saving} onClick={() => save("Finalized")}>
             <Plus />
-            {saving ? "Finalizing…" : "Review & Finalize"}
+            {saving ? "Saving…" : isEditing ? "Save Changes" : "Review & Finalize"}
           </Button>
         </div>
       </div>
