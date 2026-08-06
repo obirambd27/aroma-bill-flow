@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { syncInventoryAdjustment } from "@/lib/zoho.functions";
 import {
   useCustomers,
   useProducts,
@@ -231,15 +230,8 @@ function NewBillPage() {
       return;
     }
 
-    // Deduct stock locally, per warehouse and in the product total.
+    // Deduct stock per warehouse and log a stock movement for each line.
     for (const l of lines) {
-      const p = products.find((x) => x.id === l.productId);
-      if (p) {
-        await supabase
-          .from("products")
-          .update({ stock_on_hand: Number(p.stock_on_hand) - l.quantity })
-          .eq("id", l.productId);
-      }
       const row = stock.find(
         (s) => s.product_id === l.productId && s.warehouse_id === l.warehouseId,
       );
@@ -248,6 +240,15 @@ function NewBillPage() {
           .from("product_stock")
           .update({ stock_on_hand: Number(row.stock_on_hand) - l.quantity })
           .eq("id", row.id);
+      }
+      if (l.warehouseId) {
+        await supabase.from("stock_movements").insert({
+          product_id: l.productId,
+          warehouse_id: l.warehouseId,
+          movement_type: "Sale",
+          quantity_change: -l.quantity,
+          related_bill_id: bill.id,
+        });
       }
     }
 
@@ -273,15 +274,6 @@ function NewBillPage() {
           })
           .eq("id", c.id);
       }
-    }
-
-    // Placeholder for sync-inventory-adjustment. Never blocks the bill.
-    try {
-      const result = await syncInventoryAdjustment({ data: { billId: bill.id } });
-      if (!result.ok) toast.info(result.message);
-    } catch {
-      await supabase.from("bills").update({ zoho_sync_status: "Failed" }).eq("id", bill.id);
-      toast.warning("Bill saved. Zoho inventory sync failed and can be retried.");
     }
 
     setSaving(false);

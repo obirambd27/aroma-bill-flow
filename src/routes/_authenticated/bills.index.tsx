@@ -113,7 +113,6 @@ function BillsPage() {
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Payment</th>
-                  <th className="px-4 py-3">Zoho</th>
                   <th className="px-4 py-3 text-right">Total</th>
                 </tr>
               </thead>
