@@ -263,55 +263,156 @@ export function RecordPaymentDialog({
 
           {customerId && (
             <div className="rounded-xl border border-border p-3">
-              <div className="mb-2 flex items-center justify-between text-sm">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="font-medium">Open bills</span>
-                <span className="numeric text-muted-foreground">
-                  Total due {formatMoney(totalOpen)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="numeric text-muted-foreground">
+                    Total due {formatMoney(totalOpen)}
+                  </span>
+                  {openBills.length > 0 && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAlloc(autoAllocate(amount))}
+                        disabled={amount <= 0}
+                      >
+                        Auto-allocate
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAlloc({})}
+                      >
+                        Clear
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
+
+              {amount > 0 && (
+                <div className="mb-3 space-y-1.5">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={
+                        unallocated < -0.01
+                          ? "h-full bg-destructive transition-all"
+                          : "h-full bg-primary transition-all"
+                      }
+                      style={{
+                        width: `${Math.min((allocatedTotal / amount) * 100, 100).toFixed(1)}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span className="numeric">Allocated {formatMoney(allocatedTotal)}</span>
+                    <span
+                      className={
+                        Math.abs(unallocated) > 0.01
+                          ? "numeric font-medium text-destructive"
+                          : "numeric font-medium text-success"
+                      }
+                    >
+                      {Math.abs(unallocated) <= 0.01
+                        ? "Fully allocated"
+                        : unallocated > 0
+                          ? `${formatMoney(unallocated)} left to apply`
+                          : `Over by ${formatMoney(Math.abs(unallocated))}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {openBills.length === 0 ? (
                 <p className="py-3 text-sm text-muted-foreground">
                   This customer has no outstanding bills.
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
-                  {openBills.map((b) => (
-                    <li key={b.id} className="flex flex-wrap items-center gap-3 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{b.bill_number ?? "Bill"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(b.bill_date)} · Total {formatMoney(b.total_amount)} · Paid{" "}
-                          {formatMoney(b.amount_paid)}
-                        </p>
-                      </div>
-                      <div className="numeric text-right text-sm">
-                        <p className="text-xs text-muted-foreground">Balance</p>
-                        <p className="font-semibold">{formatMoney(balanceOf(b))}</p>
-                      </div>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        aria-label={`Amount applied to ${b.bill_number ?? "bill"}`}
-                        className="numeric h-10 w-28"
-                        value={alloc[b.id] ?? ""}
-                        onChange={(e) =>
-                          setAlloc((prev) => ({ ...prev, [b.id]: e.target.value }))
-                        }
-                      />
+                  {openBills.map((b) => {
+                    const applied = Number(alloc[b.id] ?? 0) || 0;
+                    const remaining = round2(balanceOf(b) - applied);
+                    return (
+                      <li key={b.id} className="flex flex-wrap items-center gap-3 py-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">
+                            {b.bill_number ?? "Bill"}
+                            {b.id === defaultBillId && (
+                              <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
+                                This bill
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(b.bill_date)} · Total {formatMoney(b.total_amount)} · Paid{" "}
+                            {formatMoney(b.amount_paid)}
+                          </p>
+                          {applied > 0 && (
+                            <p className="numeric text-xs text-muted-foreground">
+                              After this payment:{" "}
+                              <span
+                                className={
+                                  remaining <= 0.01 ? "text-success" : "text-foreground"
+                                }
+                              >
+                                {formatMoney(Math.max(remaining, 0))} due
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="numeric text-right text-sm">
+                          <p className="text-xs text-muted-foreground">Balance</p>
+                          <p className="font-semibold">{formatMoney(balanceOf(b))}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            max={balanceOf(b)}
+                            aria-label={`Amount applied to ${b.bill_number ?? "bill"}`}
+                            className="numeric h-10 w-28"
+                            value={alloc[b.id] ?? ""}
+                            onChange={(e) =>
+                              setAlloc((prev) => ({ ...prev, [b.id]: e.target.value }))
+                            }
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() =>
+                              setAlloc((prev) => ({
+                                ...prev,
+                                [b.id]: String(balanceOf(b)),
+                              }))
+                            }
+                          >
+                            Full
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {errors.length > 0 && amount > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {errors.map((e) => (
+                    <li key={e} className="text-xs text-destructive">
+                      {e}
                     </li>
                   ))}
                 </ul>
               )}
-              {amount > 0 && Math.abs(unallocated) > 0.01 && (
-                <p className="mt-2 text-xs text-destructive">
-                  {unallocated > 0
-                    ? `${formatMoney(unallocated)} still unallocated`
-                    : `Over-allocated by ${formatMoney(Math.abs(unallocated))}`}
-                </p>
-              )}
             </div>
           )}
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
