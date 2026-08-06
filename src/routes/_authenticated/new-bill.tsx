@@ -155,6 +155,9 @@ function NewBillPage() {
   const taxable = subtotal - discountAmount;
   const taxAmount = isTaxed ? (taxable * taxRate) / 100 : 0;
   const total = taxable + taxAmount;
+  const amountPaidNow = Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
+  const balanceDue = Math.max(total - amountPaidNow, 0);
+  const derivedStatus = derivePaymentStatus(amountPaidNow, total);
 
   const overselling = lines.filter(
     (l) => l.quantity > stockFor(l.productId, l.warehouseId).available,
