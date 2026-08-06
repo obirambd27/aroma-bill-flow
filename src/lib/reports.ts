@@ -412,15 +412,19 @@ export function useTransactions(range: { from: string; to: string }) {
       for (const l of (ledger.data ?? []) as unknown as Row[]) {
         const entryType = String(l["entry_type"]);
         const accountId = (l["account_id"] as string | null) ?? null;
+        // Ledger posts both sides; keep only the cash/bank leg to avoid duplicates.
+        if (!accountId || !isCashAccount[accountId]) continue;
+        // Payments recorded through the Payments module are already listed above.
+        if (entryType === "Sale Payment" && l["related_payment_id"]) continue;
         const type: TxnType =
-          entryType === "Purchase Payment"
-            ? "Payment Made"
-            : entryType === "Purchase Return"
-              ? "Purchase Return"
-              : "Expense";
-        // Ledger posts both sides; keep only the cash/bank side to avoid duplicates.
-        const accountName = accountId ? (accName[accountId] ?? "") : "";
-        if (type === "Payment Made" && !accountName) continue;
+          entryType === "Sale Payment"
+            ? "Payment Received"
+            : entryType === "Purchase Payment"
+              ? "Payment Made"
+              : entryType === "Purchase Return"
+                ? "Purchase Return"
+                : "Expense";
+        const accountName = accName[accountId] ?? "—";
         out.push({
           key: `ledger-${l["id"]}`,
           id: String(l["id"]),
@@ -428,15 +432,17 @@ export function useTransactions(range: { from: string; to: string }) {
           date: String(l["entry_date"]),
           at: ts(String(l["entry_date"]), l["created_at"]),
           reference: "—",
-          party: accountName || "—",
+          party: accountName,
           description: (l["description"] as string) || entryType,
           accountId,
-          account: accountName || "—",
+          account: accountName,
           amount: Math.abs(Number(l["amount"] ?? 0)),
-          direction: type === "Purchase Return" ? "in" : "out",
+          direction:
+            type === "Payment Received" || type === "Purchase Return" ? "in" : "out",
           status: "Posted",
         });
       }
+
 
       for (const e of expenseRows) {
         const accountId = (e["account_id"] as string | null) ?? null;
