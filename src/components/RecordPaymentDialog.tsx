@@ -133,16 +133,27 @@ export function RecordPaymentDialog({
   }, [customers, debounced]);
 
   const submit = async () => {
-    if (!customerId) return toast.error("Select a customer");
-    if (amount <= 0) return toast.error("Enter a payment amount");
-    if (method !== "Cheque" && !accountId) return toast.error("Select an account");
+    if (!customerId) {
+      toast.error("Select a customer");
+      return;
+    }
+    if (amount <= 0) {
+      toast.error("Enter a payment amount");
+      return;
+    }
+    if (method !== "Cheque" && !accountId) {
+      toast.error("Select an account");
+      return;
+    }
     if (Math.abs(unallocated) > 0.01) {
-      return toast.error("Allocated amounts must add up to the payment amount");
+      toast.error("Allocated amounts must add up to the payment amount");
+      return;
     }
     for (const b of openBills) {
       const v = Number(alloc[b.id] ?? 0);
       if (v > balanceOf(b) + 0.01) {
-        return toast.error(`Allocation exceeds the balance on ${b.bill_number ?? "a bill"}`);
+        toast.error(`Allocation exceeds the balance on ${b.bill_number ?? "a bill"}`);
+        return;
       }
     }
 
