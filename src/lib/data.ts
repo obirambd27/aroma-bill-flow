@@ -410,7 +410,6 @@ export function useBillHistory() {
           balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
         } as BillHistoryRow;
       });
-      });
     },
   });
 }
