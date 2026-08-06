@@ -159,6 +159,20 @@ function NewBillPage() {
   const balanceDue = Math.max(total - amountPaidNow, 0);
   const derivedStatus = derivePaymentStatus(amountPaidNow, total);
 
+  const selectedCustomer = customers.find((c) => c.id === customerId) ?? null;
+  const selectedCustomerLabel = selectedCustomer
+    ? `${selectedCustomer.name}${selectedCustomer.phone ? ` · ${selectedCustomer.phone}` : ""}`
+    : "Walk-in customer";
+  const customerResults = useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+    const list = q
+      ? customers.filter(
+          (c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q),
+        )
+      : customers;
+    return list.slice(0, 20);
+  }, [customers, debouncedQuery]);
+
   const overselling = lines.filter(
     (l) => l.quantity > stockFor(l.productId, l.warehouseId).available,
   );
