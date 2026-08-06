@@ -22,6 +22,7 @@ import {
   Factory,
   ShoppingCart,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const NAV = [
   { to: "/cash-bank", label: "Cash & Bank", icon: Landmark, group: "Finance" },
   { to: "/cheques", label: "Cheques", icon: ScrollText, group: "Finance" },
   { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
+  { to: "/reports", label: "Reports", icon: BarChart3, group: "Reports" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
 
