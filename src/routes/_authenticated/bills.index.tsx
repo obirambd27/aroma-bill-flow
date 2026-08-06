@@ -1,11 +1,35 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ReceiptText, Search, Plus } from "lucide-react";
+import {
+  ReceiptText,
+  Search,
+  Plus,
+  Eye,
+  Download,
+  Wallet,
+  RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  SlidersHorizontal,
+  Check,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
+import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -13,50 +37,349 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBills } from "@/lib/data";
+import { useBillHistory, useCustomers, useAllWarehouses, type BillHistoryRow } from "@/lib/data";
 import { formatDate, formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bills/")({
   head: () => ({
     meta: [
       { title: "Bill History — Fragrance Billing" },
-      { name: "description", content: "Every bill issued, with payment status." },
+      {
+        name: "description",
+        content: "Search, filter and track every bill: payments, warehouses, returns and credits.",
+      },
       { property: "og:title", content: "Bill History — Fragrance Billing" },
-      { property: "og:description", content: "Every bill issued, with payment status." },
+      {
+        property: "og:description",
+        content: "Search, filter and track every bill: payments, warehouses, returns and credits.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: BillsPage,
 });
 
+const PAGE_SIZE = 25;
+const PAYMENT_STATUSES = ["Paid", "Partial", "Unpaid"] as const;
+const BILL_STATUSES = ["Draft", "Finalized", "Voided"] as const;
+
 function paymentTone(status: string) {
   if (status === "Paid") return "success" as const;
   if (status === "Partial") return "warning" as const;
+  return "error" as const;
+}
+
+function billStatusTone(status: string) {
+  if (status === "Voided") return "error" as const;
+  if (status === "Finalized") return "accent" as const;
   return "neutral" as const;
+}
+
+function toISO(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function presetRange(preset: string): { from: string; to: string } | null {
+  const now = new Date();
+  const today = toISO(now);
+  if (preset === "today") return { from: today, to: today };
+  if (preset === "week") {
+    const d = new Date(now);
+    const day = (d.getDay() + 6) % 7; // Monday start
+    d.setDate(d.getDate() - day);
+    return { from: toISO(d), to: today };
+  }
+  if (preset === "month") {
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: toISO(d), to: today };
+  }
+  return null;
+}
+
+function MultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const summary = selected.length === 0 ? `All ${label.toLowerCase()}` : selected.join(", ");
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-11 justify-between font-normal">
+          <span className="truncate">{summary}</span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-52 p-2">
+        {options.map((opt) => {
+          const checked = selected.includes(opt);
+          return (
+            <label
+              key={opt}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+            >
+              <Checkbox
+                checked={checked}
+                onCheckedChange={() =>
+                  onChange(checked ? selected.filter((s) => s !== opt) : [...selected, opt])
+                }
+              />
+              {opt}
+            </label>
+          );
+        })}
+        {selected.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-1 w-full"
+            onClick={() => onChange([])}
+          >
+            Clear
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function WarehouseCell({ names }: { names: string[] }) {
+  if (names.length === 0) return <span className="text-sm text-muted-foreground">—</span>;
+  if (names.length === 1) return <span className="text-sm text-muted-foreground">{names[0]}</span>;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Multiple ({names.length})
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Warehouses
+        </p>
+        <ul className="space-y-1 text-sm">
+          {names.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ReturnBadge({ row }: { row: BillHistoryRow }) {
+  if (row.returns.length === 0) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button onClick={(e) => e.stopPropagation()}>
+          <StatusBadge tone="warning" className="gap-1">
+            <RotateCcw className="h-3 w-3" />
+            {row.returns.length}
+          </StatusBadge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-60 p-3" onClick={(e) => e.stopPropagation()}>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Returned {formatMoney(row.returnedAmount)}
+        </p>
+        <ul className="mt-2 space-y-1 text-sm">
+          {row.returns.map((r) => (
+            <li key={r.id} className="flex justify-between gap-3">
+              <Link
+                to="/sales-returns/$returnId"
+                params={{ returnId: r.id }}
+                className="text-primary hover:underline"
+              >
+                {r.return_number}
+              </Link>
+              <span className="numeric">{formatMoney(r.total_amount)}</span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function RelatedDetail({ row }: { row: BillHistoryRow }) {
+  const has = row.returns.length > 0 || row.creditNotes.length > 0;
+  return (
+    <div className="grid gap-4 border-t border-border/60 bg-muted/30 p-4 text-sm sm:grid-cols-3">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Sales returns
+        </p>
+        {row.returns.length === 0 ? (
+          <p className="mt-1 text-muted-foreground">None</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {row.returns.map((r) => (
+              <li key={r.id}>
+                <Link
+                  to="/sales-returns/$returnId"
+                  params={{ returnId: r.id }}
+                  className="text-primary hover:underline"
+                >
+                  {r.return_number}
+                </Link>{" "}
+                <span className="numeric text-muted-foreground">
+                  {formatMoney(r.total_amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Credit notes applied
+        </p>
+        {row.creditNotes.length === 0 ? (
+          <p className="mt-1 text-muted-foreground">None</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {row.creditNotes.map((c) => (
+              <li key={c.id}>
+                <Link
+                  to="/credit-notes/$creditNoteId"
+                  params={{ creditNoteId: c.id }}
+                  className="text-primary hover:underline"
+                >
+                  {c.credit_note_number}
+                </Link>{" "}
+                <span className="numeric text-muted-foreground">
+                  {formatMoney(c.amount_applied)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Warehouses
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          {row.warehouseNames.length ? row.warehouseNames.join(", ") : "—"}
+        </p>
+        {!has && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            No returns or credits issued against this bill.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function BillsPage() {
   const navigate = useNavigate();
-  const { data: bills = [], isLoading } = useBills();
+  const { data: bills = [], isLoading } = useBillHistory();
+  const { data: customers = [] } = useCustomers();
+  const { data: warehouses = [] } = useAllWarehouses();
+
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
+  const [preset, setPreset] = useState("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [customerId, setCustomerId] = useState("all");
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [warehouseId, setWarehouseId] = useState("all");
+  const [payStatuses, setPayStatuses] = useState<string[]>([]);
+  const [billStatuses, setBillStatuses] = useState<string[]>([]);
+  const [tax, setTax] = useState("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [paymentFor, setPaymentFor] = useState<BillHistoryRow | null>(null);
+
+  const range = preset === "custom" ? { from, to } : presetRange(preset);
+  const warehouseNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const w of warehouses) m[w.id] = w.name;
+    return m;
+  }, [warehouses]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return bills.filter((b) => {
-      const matchesQuery =
-        !q ||
-        (b.bill_number ?? "").toLowerCase().includes(q) ||
-        (b.customers?.name ?? "").toLowerCase().includes(q);
-      const matchesStatus = status === "all" || b.status === status;
-      return matchesQuery && matchesStatus;
+      if (
+        q &&
+        !(b.bill_number ?? "").toLowerCase().includes(q) &&
+        !(b.customers?.name ?? "walk-in customer").toLowerCase().includes(q)
+      )
+        return false;
+      if (range?.from && b.bill_date < range.from) return false;
+      if (range?.to && b.bill_date > range.to) return false;
+      if (customerId !== "all") {
+        if (customerId === "walk-in" ? b.customer_id : b.customer_id !== customerId) return false;
+      }
+      if (warehouseId !== "all" && !b.warehouseNames.includes(warehouseNameById[warehouseId] ?? ""))
+        return false;
+      if (payStatuses.length && !payStatuses.includes(b.payment_status)) return false;
+      if (billStatuses.length && !billStatuses.includes(b.status)) return false;
+      if (tax === "taxed" && !b.is_taxed) return false;
+      if (tax === "untaxed" && b.is_taxed) return false;
+      return true;
     });
-  }, [bills, query, status]);
+  }, [
+    bills,
+    query,
+    range?.from,
+    range?.to,
+    customerId,
+    warehouseId,
+    warehouseNameById,
+    payStatuses,
+    billStatuses,
+    tax,
+  ]);
+
+  const summary = useMemo(() => {
+    let revenue = 0;
+    let outstanding = 0;
+    const counts = { Paid: 0, Partial: 0, Unpaid: 0 } as Record<string, number>;
+    for (const b of visible) {
+      if (b.status === "Voided") continue;
+      revenue += Number(b.total_amount);
+      if (b.payment_status !== "Paid") outstanding += b.balanceDue;
+      counts[b.payment_status] = (counts[b.payment_status] ?? 0) + 1;
+    }
+    return { revenue, outstanding, counts };
+  }, [visible]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const resetPage = () => setPage(1);
+
+  const selectedCustomerLabel =
+    customerId === "all"
+      ? "All customers"
+      : customerId === "walk-in"
+        ? "Walk-in Customer"
+        : (customers.find((c) => c.id === customerId)?.name ?? "All customers");
+
+  const openBill = (id: string) => navigate({ to: "/bills/$billId", params: { billId: id } });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Bill History"
-        description="All bills, drafts and voided records."
+        description="Every bill with payments, warehouses, returns and credits."
         actions={
           <Button asChild>
             <Link to="/new-bill" search={{ customerId: undefined }}>
@@ -67,7 +390,35 @@ function BillsPage() {
         }
       />
 
+      {/* Summary bar */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="surface-card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bills</p>
+          <p className="numeric mt-1 text-2xl font-bold">{visible.length}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Revenue
+          </p>
+          <p className="numeric mt-1 text-2xl font-bold">{formatMoney(summary.revenue)}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Outstanding
+          </p>
+          <p className="numeric mt-1 text-2xl font-bold text-warning-foreground">
+            {formatMoney(summary.outstanding)}
+          </p>
+        </div>
+        <div className="surface-card flex flex-wrap items-center gap-2 p-4">
+          <StatusBadge tone="success">Paid {summary.counts.Paid ?? 0}</StatusBadge>
+          <StatusBadge tone="warning">Partial {summary.counts.Partial ?? 0}</StatusBadge>
+          <StatusBadge tone="error">Unpaid {summary.counts.Unpaid ?? 0}</StatusBadge>
+        </div>
+      </div>
+
       <div className="surface-card overflow-hidden">
+        {/* Search + filter toggle */}
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -75,20 +426,185 @@ function BillsPage() {
               className="h-11 pl-9"
               placeholder="Search bill number or customer"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                resetPage();
+              }}
             />
           </div>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11 sm:w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="Draft">Draft</SelectItem>
-              <SelectItem value="Finalized">Finalized</SelectItem>
-              <SelectItem value="Voided">Voided</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button
+            variant="outline"
+            className="h-11 sm:hidden"
+            onClick={() => setFiltersOpen((v) => !v)}
+          >
+            <SlidersHorizontal />
+            Filters
+          </Button>
+        </div>
+
+        <div
+          className={cn(
+            "grid gap-3 border-b border-border p-4 sm:grid-cols-2 xl:grid-cols-3",
+            filtersOpen ? "grid" : "hidden sm:grid",
+          )}
+        >
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Date range</Label>
+            <Select
+              value={preset}
+              onValueChange={(v) => {
+                setPreset(v);
+                resetPage();
+              }}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This week</SelectItem>
+                <SelectItem value="month">This month</SelectItem>
+                <SelectItem value="custom">Custom range</SelectItem>
+              </SelectContent>
+            </Select>
+            {preset === "custom" && (
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  className="h-11"
+                  value={from}
+                  onChange={(e) => {
+                    setFrom(e.target.value);
+                    resetPage();
+                  }}
+                />
+                <Input
+                  type="date"
+                  className="h-11"
+                  value={to}
+                  onChange={(e) => {
+                    setTo(e.target.value);
+                    resetPage();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Customer</Label>
+            <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-11 w-full justify-between font-normal">
+                  <span className="truncate">{selectedCustomerLabel}</span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[260px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search customers…" />
+                  <CommandList>
+                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandGroup>
+                      {[
+                        { id: "all", name: "All customers" },
+                        { id: "walk-in", name: "Walk-in Customer" },
+                        ...customers.map((c) => ({ id: c.id, name: c.name })),
+                      ].map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          onSelect={() => {
+                            setCustomerId(c.id);
+                            setCustomerOpen(false);
+                            resetPage();
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              customerId === c.id ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          {c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Warehouse</Label>
+            <Select
+              value={warehouseId}
+              onValueChange={(v) => {
+                setWarehouseId(v);
+                resetPage();
+              }}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All warehouses</SelectItem>
+                {warehouses.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Payment status</Label>
+            <MultiSelect
+              label="payments"
+              options={PAYMENT_STATUSES}
+              selected={payStatuses}
+              onChange={(v) => {
+                setPayStatuses(v);
+                resetPage();
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Bill status</Label>
+            <MultiSelect
+              label="statuses"
+              options={BILL_STATUSES}
+              selected={billStatuses}
+              onChange={(v) => {
+                setBillStatuses(v);
+                resetPage();
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Tax</Label>
+            <Select
+              value={tax}
+              onValueChange={(v) => {
+                setTax(v);
+                resetPage();
+              }}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All bills</SelectItem>
+                <SelectItem value="taxed">Taxed only</SelectItem>
+                <SelectItem value="untaxed">No tax only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {isLoading ? (
@@ -100,88 +616,267 @@ function BillsPage() {
             description={
               bills.length === 0
                 ? "Create your first sales bill — it only takes a few seconds."
-                : "Try a different bill number, customer or status."
+                : "Try a different search, date range or filter combination."
+            }
+            actionLabel={bills.length === 0 ? "Create Your First Bill" : undefined}
+            onAction={
+              bills.length === 0
+                ? () => navigate({ to: "/new-bill", search: { customerId: undefined } })
+                : undefined
             }
           />
         ) : (
           <>
-            <table className="hidden w-full md:table">
+            {/* Desktop table */}
+            <table className="hidden w-full lg:table">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <th className="w-8 px-2 py-3" />
                   <th className="px-4 py-3">Bill</th>
-                  <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Warehouse</th>
+                  <th className="px-4 py-3">Tax</th>
                   <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Total</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {visible.map((b) => (
-                  <tr
-                    key={b.id}
-                    className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
-                    onClick={() => navigate({ to: "/bills/$billId", params: { billId: b.id } })}
-                  >
-                    <td className="px-4 py-3 text-sm font-medium">{b.bill_number}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {b.customers?.name ?? "Walk-in"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {formatDate(b.bill_date)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge tone={b.status === "Voided" ? "error" : "neutral"}>
-                        {b.status}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge tone={paymentTone(b.payment_status)}>
-                        {b.payment_status}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-4 py-3"></td>
-                    <td className="numeric px-4 py-3 text-right text-sm font-bold">
-                      {formatMoney(b.total_amount)}
-                    </td>
-                  </tr>
+                {pageRows.map((b) => (
+                  <>
+                    <tr
+                      key={b.id}
+                      className="cursor-pointer border-b border-border/60 transition-colors hover:bg-muted/50"
+                      onClick={() => openBill(b.id)}
+                    >
+                      <td className="px-2 py-3">
+                        <button
+                          aria-label="Toggle related documents"
+                          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpanded(expanded === b.id ? null : b.id);
+                          }}
+                        >
+                          {expanded === b.id ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            b.status === "Voided" && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {b.bill_number}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {formatDate(b.bill_date)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {b.customers ? (
+                          <Link
+                            to="/customers/$customerId"
+                            params={{ customerId: b.customers.id }}
+                            className="text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {b.customers.name}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">Walk-in Customer</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <WarehouseCell names={b.warehouseNames} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge tone={b.is_taxed ? "accent" : "neutral"}>
+                          {b.is_taxed ? "Taxed" : "No Tax"}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge tone={paymentTone(b.payment_status)}>
+                          {b.payment_status}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
+                          <ReturnBadge row={b} />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="numeric text-sm font-bold">{formatMoney(b.total_amount)}</p>
+                        <p className="numeric text-xs text-muted-foreground">
+                          Paid {formatMoney(b.amount_paid)} · Due {formatMoney(b.balanceDue)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div
+                          className="flex justify-end gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="View bill"
+                            onClick={() => openBill(b.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Download PDF"
+                            onClick={() =>
+                              navigate({
+                                to: "/bills/$billId",
+                                params: { billId: b.id },
+                                search: { print: true },
+                              })
+                            }
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          {b.balanceDue > 0 && b.status !== "Voided" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label="Record payment"
+                              onClick={() => setPaymentFor(b)}
+                            >
+                              <Wallet className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded === b.id && (
+                      <tr key={`${b.id}-related`} className="border-b border-border/60">
+                        <td colSpan={10} className="p-0">
+                          <RelatedDetail row={b} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
 
-            <div className="divide-y divide-border/60 md:hidden">
-              {visible.map((b) => (
-                <Link
-                  key={b.id}
-                  to="/bills/$billId"
-                  params={{ billId: b.id }}
-                  className="block space-y-2 p-4 active:bg-muted/60"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{b.bill_number}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {b.customers?.name ?? "Walk-in"} · {formatDate(b.bill_date)}
-                      </p>
+            {/* Mobile cards */}
+            <div className="divide-y divide-border/60 lg:hidden">
+              {pageRows.map((b) => (
+                <div key={b.id}>
+                  <div
+                    className="space-y-2 p-4 active:bg-muted/60"
+                    onClick={() => openBill(b.id)}
+                    role="button"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "truncate text-sm font-semibold",
+                            b.status === "Voided" && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {b.bill_number}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {b.customers?.name ?? "Walk-in Customer"} · {formatDate(b.bill_date)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="numeric text-base font-bold">
+                          {formatMoney(b.total_amount)}
+                        </p>
+                        <p className="numeric text-xs text-muted-foreground">
+                          Due {formatMoney(b.balanceDue)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="numeric shrink-0 text-base font-bold">
-                      {formatMoney(b.total_amount)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge tone={paymentTone(b.payment_status)}>
+                        {b.payment_status}
+                      </StatusBadge>
+                      <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
+                      <ReturnBadge row={b} />
+                      <button
+                        className="ml-auto text-xs font-medium text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpanded(expanded === b.id ? null : b.id);
+                        }}
+                      >
+                        {expanded === b.id ? "Hide details" : "More details"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <StatusBadge tone={b.status === "Voided" ? "error" : "neutral"}>
-                      {b.status}
-                    </StatusBadge>
-                    <StatusBadge tone={paymentTone(b.payment_status)}>
-                      {b.payment_status}
-                    </StatusBadge>
-                  </div>
-                </Link>
+                  {expanded === b.id && (
+                    <>
+                      <RelatedDetail row={b} />
+                      <div className="flex gap-2 p-4 pt-3">
+                        <Button variant="outline" size="sm" onClick={() => openBill(b.id)}>
+                          <Eye className="h-4 w-4" />
+                          View
+                        </Button>
+                        {b.balanceDue > 0 && b.status !== "Voided" && (
+                          <Button size="sm" onClick={() => setPaymentFor(b)}>
+                            <Wallet className="h-4 w-4" />
+                            Record payment
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               ))}
+            </div>
+
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-border p-4 sm:flex-row">
+              <p className="text-xs text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, visible.length)} of {visible.length} bills
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage(currentPage - 1)}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </>
         )}
       </div>
+
+      <RecordPaymentDialog
+        open={paymentFor !== null}
+        onOpenChange={(open) => !open && setPaymentFor(null)}
+        defaultCustomerId={paymentFor?.customer_id ?? undefined}
+      />
     </div>
   );
 }
