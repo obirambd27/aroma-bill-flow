@@ -255,7 +255,11 @@ function BillDetailPage() {
       </div>
 
       {/* Invoice document */}
+      {printView === "thermal" ? (
+        <ThermalReceipt bill={bill} settings={settings} />
+      ) : (
       <article className="invoice-sheet mx-auto w-full max-w-3xl rounded-2xl bg-card p-6 shadow-lg sm:p-10">
+
         <header className="flex flex-col gap-6 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             {settings?.business_logo_url && (
