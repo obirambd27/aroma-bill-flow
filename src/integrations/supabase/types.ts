@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_number: string | null
+          account_type: string
+          bank_name: string | null
+          created_at: string
+          current_balance: number
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          opening_balance: number
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: string
+          bank_name?: string | null
+          created_at?: string
+          current_balance?: number
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          opening_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: string
+          bank_name?: string | null
+          created_at?: string
+          current_balance?: number
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          opening_balance?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bill_items: {
         Row: {
           bill_id: string
@@ -144,6 +186,69 @@ export type Database = {
           },
         ]
       }
+      cheques: {
+        Row: {
+          account_id: string
+          amount: number
+          cheque_date: string
+          cheque_number: string
+          created_at: string
+          id: string
+          notes: string | null
+          party_name: string
+          related_bill_id: string | null
+          related_purchase_id: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          cheque_date?: string
+          cheque_number: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          party_name: string
+          related_bill_id?: string | null
+          related_purchase_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          cheque_date?: string
+          cheque_number?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          party_name?: string
+          related_bill_id?: string | null
+          related_purchase_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheques_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_related_bill_id_fkey"
+            columns: ["related_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -176,6 +281,115 @@ export type Database = {
           total_spend?: number
         }
         Relationships: []
+      }
+      fund_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          from_account_id: string
+          id: string
+          notes: string | null
+          to_account_id: string
+          transfer_date: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          from_account_id: string
+          id?: string
+          notes?: string | null
+          to_account_id: string
+          transfer_date?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_account_id?: string
+          id?: string
+          notes?: string | null
+          to_account_id?: string
+          transfer_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fund_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_entries: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          description: string | null
+          entry_date: string
+          entry_type: string
+          id: string
+          related_bill_id: string | null
+          related_expense_id: string | null
+          related_payment_id: string | null
+          related_purchase_id: string | null
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          entry_type: string
+          id?: string
+          related_bill_id?: string | null
+          related_expense_id?: string | null
+          related_payment_id?: string | null
+          related_purchase_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          entry_type?: string
+          id?: string
+          related_bill_id?: string | null
+          related_expense_id?: string | null
+          related_payment_id?: string | null
+          related_purchase_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_related_bill_id_fkey"
+            columns: ["related_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_related_payment_id_fkey"
+            columns: ["related_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {

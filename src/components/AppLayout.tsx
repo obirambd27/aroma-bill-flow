@@ -11,6 +11,9 @@ import {
   PanelLeft,
   LogOut,
   Warehouse,
+  Landmark,
+  ScrollText,
+  BookOpen,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,6 +26,9 @@ const NAV = [
   { to: "/warehouses", label: "Warehouses", icon: Warehouse },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/bills", label: "Bill History", icon: ReceiptText },
+  { to: "/cash-bank", label: "Cash & Bank", icon: Landmark },
+  { to: "/cheques", label: "Cheques", icon: ScrollText },
+  { to: "/accounts", label: "Accounts", icon: BookOpen },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
@@ -125,7 +131,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom tabs */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-7 border-t border-border bg-card md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex snap-x overflow-x-auto border-t border-border bg-card md:hidden">
         {NAV.map((item) => {
           const active = pathname.startsWith(item.to);
           return (
@@ -133,7 +139,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                "flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
