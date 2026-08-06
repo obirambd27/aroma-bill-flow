@@ -237,8 +237,14 @@ function CustomerDetailPage() {
               Edit details
             </Button>
           </div>
-
         </TabsContent>
+
+        <TabsContent value="activity" className="mt-4 space-y-4">
+          <CustomerRemindersPanel customerId={customer.id} />
+          <CustomerActivityPanel customerId={customer.id} />
+        </TabsContent>
+
+
 
         <TabsContent value="transactions" className="mt-4 space-y-4">
           <Section
