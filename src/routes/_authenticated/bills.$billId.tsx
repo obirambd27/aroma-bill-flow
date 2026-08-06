@@ -60,6 +60,20 @@ function BillDetailPage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const [printView, setPrintView] = useState<PrintView>(lastPrintView);
+
+  useEffect(() => {
+    lastPrintView = printView;
+    const style = document.createElement("style");
+    style.textContent =
+      printView === "thermal"
+        ? "@page { size: 80mm auto; margin: 4mm; }"
+        : "@page { size: A4; margin: 12mm; }";
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [printView]);
+
+
 
   if (isLoading) {
     return <p className="p-8 text-center text-sm text-muted-foreground">Loading invoice…</p>;
