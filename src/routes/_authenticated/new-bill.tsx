@@ -135,6 +135,32 @@ function NewBillPage() {
     if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
   }, [accountId, cashBankAccounts]);
 
+  // Pre-fill from a sales order ("Convert to Bill") with the undelivered/unbilled quantities.
+  const { data: sourceOrder } = useSalesOrder(search.fromOrder ?? "");
+  const [orderHydrated, setOrderHydrated] = useState(false);
+  useEffect(() => {
+    if (!sourceOrder || orderHydrated) return;
+    setCustomerId(sourceOrder.customer_id ?? "walk-in");
+    if (sourceOrder.warehouse_id) setWarehouseId(sourceOrder.warehouse_id);
+    setIsTaxed(sourceOrder.is_taxed);
+    setTaxRateInput(String(sourceOrder.tax_rate));
+    setDiscountType(sourceOrder.discount_type === "percent" ? "percent" : "amount");
+    setDiscountValue(String(sourceOrder.discount_value ?? 0));
+    setLines(
+      sourceOrder.sales_order_items
+        .map((i) => ({
+          productId: i.product_id ?? "",
+          name: i.product_name_snapshot,
+          unitPrice: Number(i.unit_price),
+          quantity: Number(i.quantity),
+          warehouseId: i.warehouse_id ?? sourceOrder.warehouse_id ?? "",
+        }))
+        .filter((l) => l.productId && l.quantity > 0),
+    );
+    setOrderHydrated(true);
+  }, [sourceOrder, orderHydrated]);
+
+
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
