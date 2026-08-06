@@ -14,11 +14,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CustomerTagEditor } from "@/components/CustomerTags";
+import {
+  CustomerActivityPanel,
+  CustomerRemindersPanel,
+} from "@/components/CustomerActivityPanel";
 import { useCustomer, useCustomerBills } from "@/lib/data";
 import { useCustomerPaymentsReceived } from "@/lib/payments";
 import { useCustomerCredit } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+function formatOptionalDate(value: string | null) {
+  return value ? formatDate(value) : null;
+}
+
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
   head: () => ({
@@ -47,9 +57,11 @@ function paymentTone(status: string) {
 
 const TABS = [
   { value: "overview", label: "Overview" },
+  { value: "activity", label: "Activity & Notes" },
   { value: "transactions", label: "Transactions" },
   { value: "statement", label: "Statement" },
 ] as const;
+
 
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
@@ -203,7 +215,12 @@ function CustomerDetailPage() {
             </div>
           )}
 
-
+          <div className="surface-card p-5">
+            <h2 className="text-sm font-semibold">Tags</h2>
+            <div className="mt-3">
+              <CustomerTagEditor customerId={customer.id} />
+            </div>
+          </div>
 
           <div className="surface-card p-5">
             <h2 className="text-sm font-semibold">Contact information</h2>
@@ -211,9 +228,23 @@ function CustomerDetailPage() {
               <Field label="Phone" value={customer.phone} />
               <Field label="Email" value={customer.email} />
               <Field label="Address" value={customer.address} />
+              <Field label="Date of birth" value={formatOptionalDate(customer.date_of_birth)} />
+              <Field label="Anniversary" value={formatOptionalDate(customer.anniversary_date)} />
+              <Field label="Notes" value={customer.notes} />
             </dl>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+              Edit details
+            </Button>
           </div>
         </TabsContent>
+
+        <TabsContent value="activity" className="mt-4 space-y-4">
+          <CustomerRemindersPanel customerId={customer.id} />
+          <CustomerActivityPanel customerId={customer.id} />
+        </TabsContent>
+
+
 
         <TabsContent value="transactions" className="mt-4 space-y-4">
           <Section

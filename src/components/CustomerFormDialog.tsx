@@ -22,6 +22,9 @@ const schema = z.object({
   phone: z.string().trim().max(30, "Phone is too long"),
   email: z.union([z.string().trim().email("Enter a valid email").max(255), z.literal("")]),
   address: z.string().trim().max(500, "Address is too long"),
+  date_of_birth: z.string().trim(),
+  anniversary_date: z.string().trim(),
+  notes: z.string().trim().max(2000, "Notes are too long"),
 });
 
 export function CustomerFormDialog({
@@ -36,7 +39,15 @@ export function CustomerFormDialog({
   onSaved?: (customer: Customer) => void;
 }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    date_of_birth: "",
+    anniversary_date: "",
+    notes: "",
+  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,8 +57,12 @@ export function CustomerFormDialog({
       phone: customer?.phone ?? "",
       email: customer?.email ?? "",
       address: customer?.address ?? "",
+      date_of_birth: customer?.date_of_birth ?? "",
+      anniversary_date: customer?.anniversary_date ?? "",
+      notes: customer?.notes ?? "",
     });
   }, [open, customer]);
+
 
   const save = async () => {
     const parsed = schema.safeParse(form);
@@ -60,7 +75,11 @@ export function CustomerFormDialog({
       phone: parsed.data.phone || null,
       email: parsed.data.email || null,
       address: parsed.data.address || null,
+      date_of_birth: parsed.data.date_of_birth || null,
+      anniversary_date: parsed.data.anniversary_date || null,
+      notes: parsed.data.notes || null,
     };
+
 
     setSaving(true);
     if (customer) {
@@ -98,7 +117,7 @@ export function CustomerFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{customer ? "Edit customer" : "New customer"}</DialogTitle>
           <DialogDescription>Stored in your own customer directory.</DialogDescription>
@@ -147,7 +166,41 @@ export function CustomerFormDialog({
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="cust-dob">Date of birth</Label>
+              <Input
+                id="cust-dob"
+                type="date"
+                className="h-11"
+                value={form.date_of_birth}
+                onChange={(e) => setForm((f) => ({ ...f, date_of_birth: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cust-anniv">Anniversary</Label>
+              <Input
+                id="cust-anniv"
+                type="date"
+                className="h-11"
+                value={form.anniversary_date}
+                onChange={(e) => setForm((f) => ({ ...f, anniversary_date: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cust-notes">Notes</Label>
+            <Textarea
+              id="cust-notes"
+              rows={3}
+              maxLength={2000}
+              placeholder="Preferences, sizes, anything worth remembering"
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </div>
         </div>
+
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="ghost" className="h-11" onClick={() => onOpenChange(false)}>
