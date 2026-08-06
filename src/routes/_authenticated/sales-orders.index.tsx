@@ -129,10 +129,14 @@ function SalesOrdersPage() {
                 ? "Create a sales order to reserve stock for a customer before billing."
                 : "Try a different order number, customer, status or date range."
             }
-            actionLabel={orders.length === 0 ? "New Sales Order" : undefined}
-            onAction={
-              orders.length === 0 ? () => navigate({ to: "/sales-orders/new" }) : undefined
-            }
+            {...(orders.length === 0
+              ? {
+                  actionLabel: "New Sales Order",
+                  onAction: () => {
+                    void navigate({ to: "/sales-orders/new" });
+                  },
+                }
+              : {})}
           />
         ) : (
           <>
