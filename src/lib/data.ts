@@ -364,6 +364,8 @@ export function useBillHistory() {
       const rows = (billsRes.data ?? []) as unknown as (Bill & {
         customers: { id: string; name: string } | null;
         bill_items: { warehouse_id: string | null }[];
+        sales_orders: { id: string; order_number: string | null } | null;
+        sales_order_id: string | null;
       })[];
 
       return rows.map((b) => {
@@ -392,14 +394,22 @@ export function useBillHistory() {
             credit_note_number: c.credit_notes!.credit_note_number,
             amount_applied: Number(c.amount_applied),
           }));
+        const deliveryNotes = b.sales_order_id
+          ? (dnRes.data ?? [])
+              .filter((d) => d.sales_order_id === b.sales_order_id)
+              .map((d) => ({ id: d.id, delivery_number: d.delivery_number, status: d.status }))
+          : [];
         return {
           ...b,
           warehouseNames: [...ids].map((id) => whName[id] ?? "Unknown").sort(),
           returns,
           returnedAmount: returns.reduce((s, r) => s + r.total_amount, 0),
           creditNotes,
+          salesOrder: b.sales_orders ?? null,
+          deliveryNotes,
           balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
         } as BillHistoryRow;
+      });
       });
     },
   });
