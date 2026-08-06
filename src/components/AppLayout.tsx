@@ -19,6 +19,9 @@ import {
   Truck,
   RotateCcw,
   Ticket,
+  Factory,
+  ShoppingCart,
+  FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +35,9 @@ const NAV = [
   { to: "/delivery-notes", label: "Delivery Notes", icon: Truck, group: "Sales" },
   { to: "/sales-returns", label: "Returns", icon: RotateCcw, group: "Sales" },
   { to: "/credit-notes", label: "Credits", icon: Ticket, group: "Sales" },
+  { to: "/vendors", label: "Vendors", icon: Factory, group: "Purchases" },
+  { to: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart, group: "Purchases" },
+  { to: "/purchase-bills", label: "Purchase Bills", icon: FileText, group: "Purchases" },
   { to: "/products", label: "Products", icon: Package, group: "Inventory" },
   { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
   { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
