@@ -603,32 +603,54 @@ function NewBillPage() {
               )}
             </div>
 
-            <div className="mt-4 divide-y divide-border/60">
+            <div className="mt-4 space-y-3">
               {lines.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
                   No items yet. Search above to add products.
                 </p>
               ) : (
                 lines.map((l) => {
-                  const { available } = stockFor(l.productId, l.warehouseId);
+                  const product = products.find((p) => p.id === l.productId);
+                  const { onHand, available } = stockFor(l.productId, l.warehouseId);
                   const wName =
                     warehouses.find((w) => w.id === l.warehouseId)?.name ?? "No warehouse";
                   const over = l.quantity > available;
                   const lastSold = lastPrices[l.productId];
                   return (
-                    <div key={l.productId} className="space-y-2 py-3">
+                    <div
+                      key={l.productId}
+                      className="rounded-xl border border-border/70 bg-card p-3 shadow-sm"
+                    >
                       <div className="flex items-start gap-3">
+                        {product?.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={l.name}
+                            loading="lazy"
+                            className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{l.name}</p>
-                          <button
-                            type="button"
-                            className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                            onClick={() => setWarehousePickerFor(l.productId)}
-                          >
-                            <WarehouseIcon className="h-3.5 w-3.5" />
-                            <span className="truncate">{wName}</span>
-                            <span className="numeric">· {available} available</span>
-                          </button>
+                          <p className="truncate text-sm font-semibold">{l.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {product?.sku ?? "No SKU"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Stock on Hand: <span className="numeric">{onHand}</span>{" "}
+                            {product?.unit ?? "pcs"} ·{" "}
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:text-primary hover:underline"
+                              onClick={() => setWarehousePickerFor(l.productId)}
+                            >
+                              <WarehouseIcon className="h-3.5 w-3.5" />
+                              {wName}
+                            </button>
+                          </p>
                           {lastSold && selectedCustomer && (
                             <p className="mt-1 text-xs text-primary">
                               Last sold to {selectedCustomer.name}: {formatMoney(lastSold.price)} on{" "}
@@ -645,18 +667,32 @@ function NewBillPage() {
                           <Trash2 className="text-muted-foreground" />
                         </Button>
                       </div>
-                      <div className="grid grid-cols-[minmax(0,1fr)_88px_auto] items-center gap-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          aria-label={`Unit price for ${l.name}`}
-                          className="numeric h-10"
-                          value={String(l.unitPrice)}
-                          onChange={(e) =>
-                            patchLine(l.productId, { unitPrice: Number(e.target.value) || 0 })
-                          }
-                        />
+
+                      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_88px_auto] items-start gap-2">
+                        <div className="space-y-1">
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            aria-label={`Unit price for ${l.name}`}
+                            className="numeric h-10"
+                            value={String(l.unitPrice)}
+                            onChange={(e) =>
+                              patchLine(l.productId, { unitPrice: Number(e.target.value) || 0 })
+                            }
+                          />
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className="text-xs text-muted-foreground/70">
+                              Cost Price: {formatMoney(product?.cost_price ?? 0)}
+                            </span>
+                            {isTaxed && (
+                              <span className="text-xs text-muted-foreground/70">
+                                Tax: {taxRate}%
+                              </span>
+                            )}
+                            <RecentSalesPopover productId={l.productId} />
+                          </div>
+                        </div>
                         <Input
                           type="number"
                           min={1}
@@ -673,12 +709,12 @@ function NewBillPage() {
                             })
                           }
                         />
-                        <p className="numeric w-24 text-right text-sm font-semibold">
+                        <p className="numeric w-24 pt-2 text-right text-sm font-semibold">
                           {formatMoney(l.unitPrice * l.quantity)}
                         </p>
                       </div>
                       {over && (
-                        <p className="flex items-center gap-1.5 text-xs text-destructive">
+                        <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
                           <AlertTriangle className="h-3.5 w-3.5" />
                           Only {available} available in {wName}
                         </p>
@@ -688,6 +724,7 @@ function NewBillPage() {
                 })
               )}
             </div>
+
           </div>
         </div>
 
