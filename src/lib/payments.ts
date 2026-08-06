@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Bill } from "@/lib/data";
+import { recalcBillBalance } from "@/lib/payment-math";
 
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
@@ -9,11 +10,8 @@ export type PaymentAllocation = Tables<"payment_allocations">;
 export const PAYMENT_METHODS = ["Cash", "Bank Transfer", "Card", "Cheque"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-export function derivePaymentStatus(amountPaid: number, total: number) {
-  if (amountPaid <= 0) return "Unpaid";
-  if (amountPaid + 0.001 >= total) return "Paid";
-  return "Partial";
-}
+export { derivePaymentStatus } from "@/lib/payment-math";
+
 
 /** Resolve a system account id by its name (e.g. "Sales Revenue"). */
 export async function accountIdByName(name: string) {
