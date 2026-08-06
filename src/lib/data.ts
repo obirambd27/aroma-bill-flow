@@ -326,6 +326,8 @@ export type BillHistoryRow = Bill & {
   returns: { id: string; return_number: string | null; total_amount: number; status: string }[];
   returnedAmount: number;
   creditNotes: { id: string; credit_note_number: string | null; amount_applied: number }[];
+  salesOrder: { id: string; order_number: string | null } | null;
+  deliveryNotes: { id: string; delivery_number: string | null; status: string }[];
   balanceDue: number;
 };
 
@@ -333,10 +335,10 @@ export function useBillHistory() {
   return useQuery({
     queryKey: ["bill-history"],
     queryFn: async () => {
-      const [billsRes, whRes, returnsRes, creditRes] = await Promise.all([
+      const [billsRes, whRes, returnsRes, creditRes, dnRes] = await Promise.all([
         supabase
           .from("bills")
-          .select("*, customers(id, name), bill_items(warehouse_id)")
+          .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
           .order("bill_date", { ascending: false })
           .order("created_at", { ascending: false }),
         supabase.from("warehouses").select("id, name"),
@@ -346,11 +348,15 @@ export function useBillHistory() {
         supabase
           .from("credit_note_applications")
           .select("bill_id, amount_applied, credit_notes(id, credit_note_number)"),
+        supabase
+          .from("delivery_notes")
+          .select("id, delivery_number, status, sales_order_id"),
       ]);
       if (billsRes.error) throw billsRes.error;
       if (whRes.error) throw whRes.error;
       if (returnsRes.error) throw returnsRes.error;
       if (creditRes.error) throw creditRes.error;
+      if (dnRes.error) throw dnRes.error;
 
       const whName: Record<string, string> = {};
       for (const w of whRes.data ?? []) whName[w.id] = w.name;
