@@ -916,6 +916,7 @@ function BillsPage() {
           if (!open) setPaymentFor(null);
         }}
         {...(paymentFor?.customer_id ? { defaultCustomerId: paymentFor.customer_id } : {})}
+        {...(paymentFor ? { defaultBillId: paymentFor.id } : {})}
       />
     </div>
   );
