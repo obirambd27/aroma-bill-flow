@@ -408,34 +408,170 @@ export type Database = {
           },
         ]
       }
+      customer_activities: {
+        Row: {
+          activity_type: string
+          content: string
+          created_at: string
+          customer_id: string
+          id: string
+        }
+        Insert: {
+          activity_type?: string
+          content: string
+          created_at?: string
+          customer_id: string
+          id?: string
+        }
+        Update: {
+          activity_type?: string
+          content?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_activities_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_reminders: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          due_date: string
+          id: string
+          is_completed: boolean
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          due_date: string
+          id?: string
+          is_completed?: boolean
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          due_date?: string
+          id?: string
+          is_completed?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_reminders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tag_assignments: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tag_assignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
+          anniversary_date: string | null
           created_at: string
+          date_of_birth: string | null
           email: string | null
           id: string
           last_purchase_at: string | null
           name: string
+          notes: string | null
           phone: string | null
           total_spend: number
         }
         Insert: {
           address?: string | null
+          anniversary_date?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           id?: string
           last_purchase_at?: string | null
           name: string
+          notes?: string | null
           phone?: string | null
           total_spend?: number
         }
         Update: {
           address?: string | null
+          anniversary_date?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           id?: string
           last_purchase_at?: string | null
           name?: string
+          notes?: string | null
           phone?: string | null
           total_spend?: number
         }
