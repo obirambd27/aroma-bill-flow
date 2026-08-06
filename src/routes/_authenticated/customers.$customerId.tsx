@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCustomer, useCustomerBills, useCustomerPayments } from "@/lib/data";
+import { useCustomer, useCustomerBills } from "@/lib/data";
+import { useCustomerPaymentsReceived } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ function CustomerDetailPage() {
   const navigate = useNavigate();
   const { data: customer, isLoading } = useCustomer(customerId);
   const { data: bills = [] } = useCustomerBills(customerId);
-  const { data: payments = [] } = useCustomerPayments(customerId);
+  const { data: payments = [] } = useCustomerPaymentsReceived(customerId);
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
 
@@ -74,7 +75,7 @@ function CustomerDetailPage() {
         id: `pay-${p.id}`,
         date: p.payment_date,
         label: `Payment${p.payment_method ? ` · ${p.payment_method}` : ""}`,
-        billId: p.bill_id,
+        billId: p.payment_allocations[0]?.bill_id ?? null,
         debit: 0,
         credit: Number(p.amount),
       })),
@@ -242,44 +243,48 @@ function CustomerDetailPage() {
                 <thead>
                   <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Bill</th>
+                    <th className="px-4 py-3">Bills</th>
                     <th className="px-4 py-3">Method</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Reference</th>
                     <th className="px-4 py-3 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.map((p) => (
-                    <tr
-                      key={p.id}
-                      className={cn(
-                        "border-b border-border/60 transition-colors last:border-0",
-                        p.bill_id && "cursor-pointer hover:bg-muted/50",
-                      )}
-                      onClick={() =>
-                        p.bill_id &&
-                        navigate({ to: "/bills/$billId", params: { billId: p.bill_id } })
-                      }
-                    >
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {formatDate(p.payment_date)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {p.bills?.bill_number ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {p.payment_method ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge tone={p.status === "Completed" ? "success" : "warning"}>
-                          {p.status}
-                        </StatusBadge>
-                      </td>
-                      <td className="numeric px-4 py-3 text-right text-sm font-semibold">
-                        {formatMoney(p.amount)}
-                      </td>
-                    </tr>
-                  ))}
+                  {payments.map((p) => {
+                    const firstBillId = p.payment_allocations[0]?.bill_id ?? null;
+                    const billNumbers =
+                      p.payment_allocations
+                        .map((a) => a.bills?.bill_number)
+                        .filter(Boolean)
+                        .join(", ") || "—";
+                    return (
+                      <tr
+                        key={p.id}
+                        className={cn(
+                          "border-b border-border/60 transition-colors last:border-0",
+                          firstBillId && "cursor-pointer hover:bg-muted/50",
+                        )}
+                        onClick={() =>
+                          firstBillId &&
+                          navigate({ to: "/bills/$billId", params: { billId: firstBillId } })
+                        }
+                      >
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {formatDate(p.payment_date)}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">{billNumbers}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {p.payment_method ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {p.reference_number ?? "—"}
+                        </td>
+                        <td className="numeric px-4 py-3 text-right text-sm font-semibold">
+                          {formatMoney(p.amount)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

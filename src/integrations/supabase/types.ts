@@ -59,6 +59,7 @@ export type Database = {
       bill_items: {
         Row: {
           bill_id: string
+          cost_price_snapshot: number | null
           id: string
           line_total: number
           product_id: string | null
@@ -69,6 +70,7 @@ export type Database = {
         }
         Insert: {
           bill_id: string
+          cost_price_snapshot?: number | null
           id?: string
           line_total?: number
           product_id?: string | null
@@ -79,6 +81,7 @@ export type Database = {
         }
         Update: {
           bill_id?: string
+          cost_price_snapshot?: number | null
           id?: string
           line_total?: number
           product_id?: string | null
@@ -113,6 +116,7 @@ export type Database = {
       }
       bills: {
         Row: {
+          amount_paid: number
           bill_date: string
           bill_number: string | null
           created_at: string
@@ -122,6 +126,7 @@ export type Database = {
           discount_value: number
           id: string
           is_taxed: boolean
+          is_walk_in: boolean
           payment_method: string | null
           payment_status: string
           status: string
@@ -132,6 +137,7 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          amount_paid?: number
           bill_date?: string
           bill_number?: string | null
           created_at?: string
@@ -141,6 +147,7 @@ export type Database = {
           discount_value?: number
           id?: string
           is_taxed?: boolean
+          is_walk_in?: boolean
           payment_method?: string | null
           payment_status?: string
           status?: string
@@ -151,6 +158,7 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          amount_paid?: number
           bill_date?: string
           bill_number?: string | null
           created_at?: string
@@ -160,6 +168,7 @@ export type Database = {
           discount_value?: number
           id?: string
           is_taxed?: boolean
+          is_walk_in?: boolean
           payment_method?: string | null
           payment_status?: string
           status?: string
@@ -391,6 +400,45 @@ export type Database = {
           },
         ]
       }
+      payment_allocations: {
+        Row: {
+          amount_allocated: number
+          bill_id: string
+          created_at: string
+          id: string
+          payment_id: string
+        }
+        Insert: {
+          amount_allocated?: number
+          bill_id: string
+          created_at?: string
+          id?: string
+          payment_id: string
+        }
+        Update: {
+          amount_allocated?: number
+          bill_id?: string
+          created_at?: string
+          id?: string
+          payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments_received"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -432,6 +480,57 @@ export type Database = {
           },
           {
             foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments_received: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_received_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_received_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"

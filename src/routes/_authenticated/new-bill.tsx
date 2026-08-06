@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,8 +26,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCustomers, useProducts, useProductStock, useSettings, useWarehouses } from "@/lib/data";
-import { formatMoney } from "@/lib/format";
+import { useAccounts } from "@/lib/accounting";
+import {
+  PAYMENT_METHODS,
+  accountIdByName,
+  derivePaymentStatus,
+  useCustomerLastPrices,
+  type PaymentMethod,
+} from "@/lib/payments";
+import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
@@ -80,12 +89,35 @@ function NewBillPage() {
   const [taxRateInput, setTaxRateInput] = useState<string | null>(null);
   const [discountType, setDiscountType] = useState<"amount" | "percent">("amount");
   const [discountValue, setDiscountValue] = useState("0");
-  const [paymentStatus, setPaymentStatus] = useState("Paid");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [amountPaidInput, setAmountPaidInput] = useState("0");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
+  const [accountId, setAccountId] = useState<string>("");
+  const [chequeNumber, setChequeNumber] = useState("");
+  const [chequeDate, setChequeDate] = useState(todayISO());
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customerDialog, setCustomerDialog] = useState(false);
   const [productDialog, setProductDialog] = useState(false);
   const [warehousePickerFor, setWarehousePickerFor] = useState<string | null>(null);
+
+  const { data: accounts = [] } = useAccounts(true);
+  const cashBankAccounts = accounts.filter(
+    (a) => a.account_type === "Cash" || a.account_type === "Bank",
+  );
+  const { data: lastPrices = {} } = useCustomerLastPrices(
+    customerId === "walk-in" ? null : customerId,
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(customerQuery), 250);
+    return () => clearTimeout(t);
+  }, [customerQuery]);
+
+  useEffect(() => {
+    if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
+  }, [accountId, cashBankAccounts]);
 
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
@@ -123,6 +155,23 @@ function NewBillPage() {
   const taxable = subtotal - discountAmount;
   const taxAmount = isTaxed ? (taxable * taxRate) / 100 : 0;
   const total = taxable + taxAmount;
+  const amountPaidNow = Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
+  const balanceDue = Math.max(total - amountPaidNow, 0);
+  const derivedStatus = derivePaymentStatus(amountPaidNow, total);
+
+  const selectedCustomer = customers.find((c) => c.id === customerId) ?? null;
+  const selectedCustomerLabel = selectedCustomer
+    ? `${selectedCustomer.name}${selectedCustomer.phone ? ` · ${selectedCustomer.phone}` : ""}`
+    : "Walk-in customer";
+  const customerResults = useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+    const list = q
+      ? customers.filter(
+          (c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q),
+        )
+      : customers;
+    return list.slice(0, 20);
+  }, [customers, debouncedQuery]);
 
   const overselling = lines.filter(
     (l) => l.quantity > stockFor(l.productId, l.warehouseId).available,
@@ -170,12 +219,19 @@ function NewBillPage() {
       toast.error(`Not enough stock for ${overselling[0]!.name}`);
       return;
     }
+    if (status === "Finalized" && amountPaidNow > 0 && paymentMethod !== "Cheque" && !accountId) {
+      toast.error("Select the account this payment lands in");
+      return;
+    }
 
     setSaving(true);
+    const isWalkIn = customerId === "walk-in";
+    const paidNow = status === "Finalized" ? amountPaidNow : 0;
     const { data: bill, error } = await supabase
       .from("bills")
       .insert({
-        customer_id: customerId === "walk-in" ? null : customerId,
+        customer_id: isWalkIn ? null : customerId,
+        is_walk_in: isWalkIn,
         bill_date: billDate,
         warehouse_id: activeWarehouseId || null,
         is_taxed: isTaxed,
@@ -186,8 +242,9 @@ function NewBillPage() {
         discount_type: discountType,
         discount_value: Number(discountValue) || 0,
         total_amount: total,
-        payment_status: paymentStatus,
-        payment_method: paymentStatus === "Unpaid" ? null : paymentMethod,
+        amount_paid: paidNow,
+        payment_status: derivePaymentStatus(paidNow, total),
+        payment_method: paidNow > 0 ? paymentMethod : null,
         status,
       })
       .select()
@@ -206,6 +263,7 @@ function NewBillPage() {
         product_name_snapshot: l.name,
         quantity: l.quantity,
         unit_price: l.unitPrice,
+        cost_price_snapshot: products.find((p) => p.id === l.productId)?.cost_price ?? null,
         line_total: l.unitPrice * l.quantity,
         warehouse_id: l.warehouseId || null,
       })),
@@ -247,18 +305,64 @@ function NewBillPage() {
       }
     }
 
-    if (paymentStatus !== "Unpaid") {
-      await supabase.from("payments").insert({
-        bill_id: bill.id,
-        customer_id: customerId === "walk-in" ? null : customerId,
-        payment_date: billDate,
-        amount: paymentStatus === "Paid" ? total : 0,
-        payment_method: paymentMethod,
-        status: paymentStatus === "Paid" ? "Completed" : "Partial",
+    const customerName = isWalkIn
+      ? "Walk-in customer"
+      : (customers.find((x) => x.id === customerId)?.name ?? "Customer");
+
+    // Payment taken at the counter.
+    if (paidNow > 0 && paymentMethod === "Cheque") {
+      await supabase.from("cheques").insert({
+        cheque_number: chequeNumber || `${bill.bill_number ?? "BILL"}-CHQ`,
+        type: "Received",
+        party_name: customerName,
+        amount: paidNow,
+        cheque_date: chequeDate || billDate,
+        account_id: accountId || cashBankAccounts[0]?.id || "",
+        status: "Pending",
+        related_bill_id: bill.id,
+        notes: `Cheque against ${bill.bill_number ?? "bill"}`,
+      });
+    } else if (paidNow > 0 && accountId) {
+      await supabase.from("ledger_entries").insert({
+        account_id: accountId,
+        entry_date: billDate,
+        entry_type: "Sale Payment",
+        amount: paidNow,
+        related_bill_id: bill.id,
+        description: `Payment for ${bill.bill_number ?? "bill"} · ${customerName}`,
       });
     }
 
-    if (customerId !== "walk-in") {
+    // Revenue is booked in full regardless of payment status.
+    const revenueId = await accountIdByName("Sales Revenue");
+    if (revenueId) {
+      await supabase.from("ledger_entries").insert({
+        account_id: revenueId,
+        entry_date: billDate,
+        entry_type: "Sale",
+        amount: total,
+        related_bill_id: bill.id,
+        description: `${bill.bill_number ?? "Bill"} · ${customerName}`,
+      });
+    }
+
+    // Anything still owed sits in Accounts Receivable.
+    const outstanding = total - paidNow;
+    if (outstanding > 0.001) {
+      const arId = await accountIdByName("Accounts Receivable");
+      if (arId) {
+        await supabase.from("ledger_entries").insert({
+          account_id: arId,
+          entry_date: billDate,
+          entry_type: "Sale",
+          amount: outstanding,
+          related_bill_id: bill.id,
+          description: `Outstanding on ${bill.bill_number ?? "bill"} · ${customerName}`,
+        });
+      }
+    }
+
+    if (!isWalkIn) {
       const c = customers.find((x) => x.id === customerId);
       if (c) {
         await supabase
@@ -297,20 +401,78 @@ function NewBillPage() {
                   + New Customer
                 </button>
               </div>
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger id="customer" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                      {c.phone ? ` · ${c.phone}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="customer"
+                    type="button"
+                    variant="outline"
+                    className="h-11 w-full justify-between font-normal"
+                  >
+                    <span className="truncate">{selectedCustomerLabel}</span>
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
+                  <div className="border-b border-border p-2">
+                    <Input
+                      autoFocus
+                      className="h-10"
+                      placeholder="Search name or phone"
+                      value={customerQuery}
+                      onChange={(e) => setCustomerQuery(e.target.value)}
+                    />
+                  </div>
+                  <ul className="max-h-64 overflow-y-auto py-1">
+                    <li>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
+                        onClick={() => {
+                          setCustomerId("walk-in");
+                          setCustomerOpen(false);
+                        }}
+                      >
+                        Walk-in customer
+                      </button>
+                    </li>
+                    {customerResults.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted"
+                          onClick={() => {
+                            setCustomerId(c.id);
+                            setCustomerOpen(false);
+                          }}
+                        >
+                          {c.name}
+                          {c.phone ? (
+                            <span className="ml-2 text-xs text-muted-foreground">{c.phone}</span>
+                          ) : null}
+                        </button>
+                      </li>
+                    ))}
+                    {customerResults.length === 0 && debouncedQuery.trim() !== "" && (
+                      <li className="px-3 py-3 text-sm text-muted-foreground">
+                        No customers match “{debouncedQuery}”.
+                      </li>
+                    )}
+                  </ul>
+                  <div className="border-t border-border p-2">
+                    <button
+                      type="button"
+                      className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-primary hover:bg-muted"
+                      onClick={() => {
+                        setCustomerOpen(false);
+                        setCustomerDialog(true);
+                      }}
+                    >
+                      + New Customer
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -397,6 +559,7 @@ function NewBillPage() {
                   const wName =
                     warehouses.find((w) => w.id === l.warehouseId)?.name ?? "No warehouse";
                   const over = l.quantity > available;
+                  const lastSold = lastPrices[l.productId];
                   return (
                     <div key={l.productId} className="space-y-2 py-3">
                       <div className="flex items-start gap-3">
@@ -411,6 +574,12 @@ function NewBillPage() {
                             <span className="truncate">{wName}</span>
                             <span className="numeric">· {available} available</span>
                           </button>
+                          {lastSold && selectedCustomer && (
+                            <p className="mt-1 text-xs text-primary">
+                              Last sold to {selectedCustomer.name}: {formatMoney(lastSold.price)} on{" "}
+                              {formatDate(lastSold.date)}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
@@ -527,34 +696,97 @@ function NewBillPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment-status">Payment status</Label>
-              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                <SelectTrigger id="payment-status" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Paid">Paid</SelectItem>
-                  <SelectItem value="Partial">Partial</SelectItem>
-                  <SelectItem value="Unpaid">Unpaid</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="amount-paid">Amount paid now</Label>
+                <span className="text-xs font-medium text-muted-foreground">{derivedStatus}</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  id="amount-paid"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="numeric h-11"
+                  value={amountPaidInput}
+                  onChange={(e) => setAmountPaidInput(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0"
+                  onClick={() => setAmountPaidInput(String(total.toFixed(2)))}
+                >
+                  Full
+                </Button>
+              </div>
             </div>
 
-            {paymentStatus !== "Unpaid" && (
-              <div className="space-y-2">
-                <Label htmlFor="payment-method">Payment method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger id="payment-method" className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {amountPaidNow > 0 && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-method">Payment method</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                  >
+                    <SelectTrigger id="payment-method" className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-account">
+                    {paymentMethod === "Cheque" ? "Cheque deposit account" : "Deposit into"}
+                  </Label>
+                  <Select value={accountId} onValueChange={setAccountId}>
+                    <SelectTrigger id="deposit-account" className="h-11">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cashBankAccounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {paymentMethod === "Cheque" && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cheque-number">Cheque number</Label>
+                      <Input
+                        id="cheque-number"
+                        className="h-11"
+                        value={chequeNumber}
+                        onChange={(e) => setChequeNumber(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cheque-date">Cheque date</Label>
+                      <Input
+                        id="cheque-date"
+                        type="date"
+                        className="h-11"
+                        value={chequeDate}
+                        onChange={(e) => setChequeDate(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground sm:col-span-2">
+                      Cheques are recorded as Pending and only affect account balances once cleared.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -583,6 +815,16 @@ function NewBillPage() {
               </p>
               <p className="numeric mt-1 text-3xl font-bold">{formatMoney(total)}</p>
             </div>
+            <dl className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Amount paid now</dt>
+                <dd className="numeric font-medium">{formatMoney(amountPaidNow)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Balance due</dt>
+                <dd className="numeric font-semibold">{formatMoney(balanceDue)}</dd>
+              </div>
+            </dl>
             <div className="mt-5 hidden space-y-2 lg:block">
               <Button className="h-11 w-full" disabled={saving} onClick={() => save("Finalized")}>
                 {saving ? "Finalizing…" : "Finalize Bill"}

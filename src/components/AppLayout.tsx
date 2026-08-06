@@ -14,6 +14,7 @@ import {
   Landmark,
   ScrollText,
   BookOpen,
+  Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/warehouses", label: "Warehouses", icon: Warehouse },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/bills", label: "Bill History", icon: ReceiptText },
+  { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/cash-bank", label: "Cash & Bank", icon: Landmark },
   { to: "/cheques", label: "Cheques", icon: ScrollText },
   { to: "/accounts", label: "Accounts", icon: BookOpen },
