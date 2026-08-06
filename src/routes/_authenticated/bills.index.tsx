@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ReceiptText,
@@ -647,9 +647,8 @@ function BillsPage() {
               </thead>
               <tbody>
                 {pageRows.map((b) => (
-                  <>
+                  <Fragment key={b.id}>
                     <tr
-                      key={b.id}
                       className="cursor-pointer border-b border-border/60 transition-colors hover:bg-muted/50"
                       onClick={() => openBill(b.id)}
                     >
@@ -757,13 +756,13 @@ function BillsPage() {
                       </td>
                     </tr>
                     {expanded === b.id && (
-                      <tr key={`${b.id}-related`} className="border-b border-border/60">
+                      <tr className="border-b border-border/60">
                         <td colSpan={10} className="p-0">
                           <RelatedDetail row={b} />
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
