@@ -409,19 +409,19 @@ function DashboardPage() {
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
         <div className="flex w-max items-center gap-2 sm:w-auto sm:flex-wrap">
           <Button asChild size="sm">
-            <Link to="/new-bill" search={{ customerId: undefined }}>
+            <Link to="/new-bill" search={{}}>
               <Plus />
               New Bill
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link to="/sales-orders/new" search={{ edit: undefined }}>
+            <Link to="/sales-orders/new" search={{}}>
               <ShoppingCart />
               New Sales Order
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link to="/purchase-bills/new" search={{ poId: undefined, vendorId: undefined }}>
+            <Link to="/purchase-bills/new" search={{}}>
               <Truck />
               New Purchase Bill
             </Link>

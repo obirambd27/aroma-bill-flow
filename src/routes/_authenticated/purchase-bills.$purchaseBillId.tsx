@@ -116,7 +116,7 @@ function PurchaseBillDetail() {
             <Button
               className="h-11"
               onClick={() =>
-                navigate({ to: "/purchase-bills/new", search: { vendorId: bill.vendor_id } })
+                navigate({ to: "/purchase-bills/new", search: bill.vendor_id ? { vendorId: bill.vendor_id } : {} })
               }
             >
               <Wallet />
