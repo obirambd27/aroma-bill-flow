@@ -387,20 +387,78 @@ function NewBillPage() {
                   + New Customer
                 </button>
               </div>
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger id="customer" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                      {c.phone ? ` · ${c.phone}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="customer"
+                    type="button"
+                    variant="outline"
+                    className="h-11 w-full justify-between font-normal"
+                  >
+                    <span className="truncate">{selectedCustomerLabel}</span>
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
+                  <div className="border-b border-border p-2">
+                    <Input
+                      autoFocus
+                      className="h-10"
+                      placeholder="Search name or phone"
+                      value={customerQuery}
+                      onChange={(e) => setCustomerQuery(e.target.value)}
+                    />
+                  </div>
+                  <ul className="max-h-64 overflow-y-auto py-1">
+                    <li>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
+                        onClick={() => {
+                          setCustomerId("walk-in");
+                          setCustomerOpen(false);
+                        }}
+                      >
+                        Walk-in customer
+                      </button>
+                    </li>
+                    {customerResults.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted"
+                          onClick={() => {
+                            setCustomerId(c.id);
+                            setCustomerOpen(false);
+                          }}
+                        >
+                          {c.name}
+                          {c.phone ? (
+                            <span className="ml-2 text-xs text-muted-foreground">{c.phone}</span>
+                          ) : null}
+                        </button>
+                      </li>
+                    ))}
+                    {customerResults.length === 0 && debouncedQuery.trim() !== "" && (
+                      <li className="px-3 py-3 text-sm text-muted-foreground">
+                        No customers match “{debouncedQuery}”.
+                      </li>
+                    )}
+                  </ul>
+                  <div className="border-t border-border p-2">
+                    <button
+                      type="button"
+                      className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-primary hover:bg-muted"
+                      onClick={() => {
+                        setCustomerOpen(false);
+                        setCustomerDialog(true);
+                      }}
+                    >
+                      + New Customer
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
