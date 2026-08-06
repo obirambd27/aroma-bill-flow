@@ -40,6 +40,8 @@ function DashboardPage() {
   const { data: products = [] } = useProducts();
   const { data: settings } = useSettings();
   const { data: stockTotals = {} } = useStockTotals();
+  const { data: dueReminders = [] } = useDueReminders();
+
 
   const threshold = Number(settings?.low_stock_threshold ?? 5);
   const today = new Date().toISOString().slice(0, 10);
