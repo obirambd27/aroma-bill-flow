@@ -40,10 +40,12 @@ export function RecordPaymentDialog({
   open,
   onOpenChange,
   defaultCustomerId,
+  defaultBillId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultCustomerId?: string;
+  defaultBillId?: string;
 }) {
   const queryClient = useQueryClient();
   const { data: customers = [] } = useCustomers();
@@ -78,6 +80,8 @@ export function RecordPaymentDialog({
     if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
   }, [accountId, cashBankAccounts]);
 
+  const [prefilled, setPrefilled] = useState(false);
+
   useEffect(() => {
     if (open) {
       setCustomerId(defaultCustomerId ?? "");
@@ -87,6 +91,7 @@ export function RecordPaymentDialog({
       setNotes("");
       setMethod("Cash");
       setPaymentDate(todayISO());
+      setPrefilled(false);
     }
   }, [open, defaultCustomerId]);
 
@@ -98,15 +103,30 @@ export function RecordPaymentDialog({
 
   const totalOpen = openBills.reduce((s, b) => s + balanceOf(b), 0);
 
-  // Auto-suggest oldest-bill-first allocation whenever amount or customer changes.
+  // Opened from a specific bill: default the amount to that bill's balance.
+  useEffect(() => {
+    if (!open || prefilled || !defaultBillId) return;
+    const target = openBills.find((b) => b.id === defaultBillId);
+    if (!target) return;
+    setAmountInput(String(Number(balanceOf(target).toFixed(2))));
+    setPrefilled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefilled, defaultBillId, openBills.length]);
+
+  // Auto-suggest allocation: the originating bill first, then oldest-first.
   useEffect(() => {
     if (openBills.length === 0 || amount <= 0) {
       setAlloc({});
       return;
     }
+    const ordered = defaultBillId
+      ? [...openBills].sort(
+          (a, b) => Number(b.id === defaultBillId) - Number(a.id === defaultBillId),
+        )
+      : openBills;
     let left = amount;
     const next: Record<string, string> = {};
-    for (const b of openBills) {
+    for (const b of ordered) {
       const take = Math.min(left, balanceOf(b));
       if (take > 0) next[b.id] = String(Number(take.toFixed(2)));
       left -= take;
@@ -114,7 +134,7 @@ export function RecordPaymentDialog({
     }
     setAlloc(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [amount, customerId, openBills.length]);
+  }, [amount, customerId, openBills.length, defaultBillId]);
 
   const allocatedTotal = useMemo(
     () => Object.values(alloc).reduce((s, v) => s + (Number(v) || 0), 0),

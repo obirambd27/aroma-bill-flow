@@ -464,6 +464,7 @@ function BillDetailPage() {
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
           defaultCustomerId={bill.customer_id}
+          defaultBillId={bill.id}
         />
       )}
 

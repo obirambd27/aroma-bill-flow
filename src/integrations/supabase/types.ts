@@ -129,6 +129,7 @@ export type Database = {
           is_walk_in: boolean
           payment_method: string | null
           payment_status: string
+          sales_order_id: string | null
           status: string
           subtotal: number
           tax_amount: number
@@ -150,6 +151,7 @@ export type Database = {
           is_walk_in?: boolean
           payment_method?: string | null
           payment_status?: string
+          sales_order_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -171,6 +173,7 @@ export type Database = {
           is_walk_in?: boolean
           payment_method?: string | null
           payment_status?: string
+          sales_order_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -184,6 +187,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
             referencedColumns: ["id"]
           },
           {

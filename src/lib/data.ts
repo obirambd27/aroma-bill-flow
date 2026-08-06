@@ -326,6 +326,8 @@ export type BillHistoryRow = Bill & {
   returns: { id: string; return_number: string | null; total_amount: number; status: string }[];
   returnedAmount: number;
   creditNotes: { id: string; credit_note_number: string | null; amount_applied: number }[];
+  salesOrder: { id: string; order_number: string | null } | null;
+  deliveryNotes: { id: string; delivery_number: string | null; status: string }[];
   balanceDue: number;
 };
 
@@ -333,10 +335,10 @@ export function useBillHistory() {
   return useQuery({
     queryKey: ["bill-history"],
     queryFn: async () => {
-      const [billsRes, whRes, returnsRes, creditRes] = await Promise.all([
+      const [billsRes, whRes, returnsRes, creditRes, dnRes] = await Promise.all([
         supabase
           .from("bills")
-          .select("*, customers(id, name), bill_items(warehouse_id)")
+          .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
           .order("bill_date", { ascending: false })
           .order("created_at", { ascending: false }),
         supabase.from("warehouses").select("id, name"),
@@ -346,11 +348,15 @@ export function useBillHistory() {
         supabase
           .from("credit_note_applications")
           .select("bill_id, amount_applied, credit_notes(id, credit_note_number)"),
+        supabase
+          .from("delivery_notes")
+          .select("id, delivery_number, status, sales_order_id"),
       ]);
       if (billsRes.error) throw billsRes.error;
       if (whRes.error) throw whRes.error;
       if (returnsRes.error) throw returnsRes.error;
       if (creditRes.error) throw creditRes.error;
+      if (dnRes.error) throw dnRes.error;
 
       const whName: Record<string, string> = {};
       for (const w of whRes.data ?? []) whName[w.id] = w.name;
@@ -358,6 +364,8 @@ export function useBillHistory() {
       const rows = (billsRes.data ?? []) as unknown as (Bill & {
         customers: { id: string; name: string } | null;
         bill_items: { warehouse_id: string | null }[];
+        sales_orders: { id: string; order_number: string | null } | null;
+        sales_order_id: string | null;
       })[];
 
       return rows.map((b) => {
@@ -386,12 +394,19 @@ export function useBillHistory() {
             credit_note_number: c.credit_notes!.credit_note_number,
             amount_applied: Number(c.amount_applied),
           }));
+        const deliveryNotes = b.sales_order_id
+          ? (dnRes.data ?? [])
+              .filter((d) => d.sales_order_id === b.sales_order_id)
+              .map((d) => ({ id: d.id, delivery_number: d.delivery_number, status: d.status }))
+          : [];
         return {
           ...b,
           warehouseNames: [...ids].map((id) => whName[id] ?? "Unknown").sort(),
           returns,
           returnedAmount: returns.reduce((s, r) => s + r.total_amount, 0),
           creditNotes,
+          salesOrder: b.sales_orders ?? null,
+          deliveryNotes,
           balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
         } as BillHistoryRow;
       });

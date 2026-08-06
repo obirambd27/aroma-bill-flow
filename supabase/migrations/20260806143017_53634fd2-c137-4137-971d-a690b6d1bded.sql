@@ -1,0 +1,2 @@
+ALTER TABLE public.bills ADD COLUMN IF NOT EXISTS sales_order_id uuid REFERENCES public.sales_orders(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS bills_sales_order_id_idx ON public.bills(sales_order_id);
