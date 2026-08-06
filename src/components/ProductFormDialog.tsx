@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { createZohoItem } from "@/lib/zoho.functions";
 import type { Product, Warehouse } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +90,6 @@ export function ProductFormDialog({
         sku: parsed.data.sku || null,
         brand: parsed.data.brand || null,
         price: parsed.data.price,
-        stock_on_hand: parsed.data.stock,
       })
       .select()
       .single();
@@ -109,18 +107,13 @@ export function ProductFormDialog({
       committed_stock: 0,
     });
 
-    // Placeholder for the Zoho Books item creation (create-zoho-item).
-    try {
-      const result = await createZohoItem({ data: { productId: data.id } });
-      if (result.ok && result.zoho_item_id) {
-        await supabase
-          .from("products")
-          .update({ zoho_item_id: result.zoho_item_id })
-          .eq("id", data.id);
-      }
-    } catch {
-      // Never block local product creation on Zoho.
-    }
+    await supabase.from("stock_movements").insert({
+      product_id: data.id,
+      warehouse_id: parsed.data.warehouseId,
+      movement_type: "Initial Stock",
+      quantity_change: parsed.data.stock,
+      reason: "Product created",
+    });
 
     setSaving(false);
     queryClient.invalidateQueries();
@@ -135,7 +128,7 @@ export function ProductFormDialog({
         <DialogHeader>
           <DialogTitle>New product</DialogTitle>
           <DialogDescription>
-            Saved here and pushed to Zoho Books items once your API keys are added.
+            Add a product and its opening stock for one warehouse.
           </DialogDescription>
         </DialogHeader>
 

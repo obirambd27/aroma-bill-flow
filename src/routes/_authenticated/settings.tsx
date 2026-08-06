@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { RefreshCw, Link2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { StatusBadge, connectionTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings, type Settings } from "@/lib/data";
-import { formatDateTime } from "@/lib/format";
-import { testZohoConnection, syncFromZoho } from "@/lib/zoho.functions";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -21,12 +16,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Settings — Fragrance Billing" },
       {
         name: "description",
-        content: "Business profile, invoice defaults and Zoho Books connection.",
+        content: "Business profile, invoice defaults and stock preferences.",
       },
       { property: "og:title", content: "Settings — Fragrance Billing" },
       {
         property: "og:description",
-        content: "Business profile, invoice defaults and Zoho Books connection.",
+        content: "Business profile, invoice defaults and stock preferences.",
       },
     ],
   }),
@@ -53,23 +48,13 @@ function Section({
   );
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  connected: "Connected",
-  error: "Error",
-  not_connected: "Not Connected",
-};
-
 function SettingsPage() {
   const queryClient = useQueryClient();
   const { data: settings, isLoading } = useSettings();
   const [form, setForm] = useState<Partial<Settings>>({});
   const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const testConn = useServerFn(testZohoConnection);
-  const sync = useServerFn(syncFromZoho);
 
   useEffect(() => {
     if (settings) setForm(settings);
@@ -130,54 +115,6 @@ function SettingsPage() {
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
 
-  const saveAndTest = async () => {
-    if (!settings) return;
-    setTesting(true);
-    const { error } = await supabase
-      .from("settings")
-      .update({
-        zoho_client_id: form.zoho_client_id || null,
-        zoho_client_secret: form.zoho_client_secret || null,
-        zoho_refresh_token: form.zoho_refresh_token || null,
-        zoho_org_id: form.zoho_org_id || null,
-      })
-      .eq("id", settings.id);
-
-    if (error) {
-      setTesting(false);
-      toast.error(error.message);
-      return;
-    }
-
-    try {
-      const res = await testConn({ data: undefined });
-      if (res.status === "connected") toast.success(res.message);
-      else toast.warning(res.message);
-    } catch {
-      toast.error("Connection test failed.");
-    } finally {
-      setTesting(false);
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
-    }
-  };
-
-  const runSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await sync({ data: undefined });
-      if (res.ok) toast.success(res.message);
-      else toast.warning(res.message);
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-    } catch {
-      toast.error("Sync failed.");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const status = settings?.zoho_connection_status ?? "not_connected";
-  const connected = status === "connected";
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading settings…</p>;
@@ -185,7 +122,7 @@ function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Business profile and integrations." />
+      <PageHeader title="Settings" description="Business profile and invoice defaults." />
 
       <Section title="Business Profile" description="Appears on every bill you issue.">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -324,78 +261,6 @@ function SettingsPage() {
         </div>
       </Section>
 
-      <Section
-        title="Zoho Books Connection"
-        description="Connect your Zoho Books account to sync products, customers, and stock levels."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted-foreground">Status</span>
-          <StatusBadge tone={connectionTone(status)}>{STATUS_LABEL[status]}</StatusBadge>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="zoho_client_id">Client ID</Label>
-            <Input
-              id="zoho_client_id"
-              type="password"
-              className="h-11"
-              placeholder="1000.XXXXXXXXXXXX"
-              value={form.zoho_client_id ?? ""}
-              onChange={(e) => set("zoho_client_id", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="zoho_client_secret">Client Secret</Label>
-            <Input
-              id="zoho_client_secret"
-              type="password"
-              className="h-11"
-              value={form.zoho_client_secret ?? ""}
-              onChange={(e) => set("zoho_client_secret", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="zoho_refresh_token">Refresh Token</Label>
-            <Input
-              id="zoho_refresh_token"
-              type="password"
-              className="h-11"
-              value={form.zoho_refresh_token ?? ""}
-              onChange={(e) => set("zoho_refresh_token", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="zoho_org_id">Organization ID (optional)</Label>
-            <Input
-              id="zoho_org_id"
-              className="h-11"
-              value={form.zoho_org_id ?? ""}
-              onChange={(e) => set("zoho_org_id", e.target.value)}
-            />
-          </div>
-        </div>
-
-        <p className="rounded-lg bg-muted px-4 py-3 text-xs text-muted-foreground">
-          These credentials come from the Zoho API Console (Self Client). The connection test and
-          sync are placeholders for now — the screens are fully built, and they start returning real
-          Zoho data as soon as you add your keys.
-        </p>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={saveAndTest} disabled={testing}>
-            <Link2 />
-            {testing ? "Testing…" : "Save & Test Connection"}
-          </Button>
-          <Button variant="outline" onClick={runSync} disabled={!connected || syncing}>
-            <RefreshCw className={syncing ? "animate-spin" : ""} />
-            Sync Now
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Last synced: {formatDateTime(settings?.last_synced_at)}
-          </span>
-        </div>
-      </Section>
     </div>
   );
 }
