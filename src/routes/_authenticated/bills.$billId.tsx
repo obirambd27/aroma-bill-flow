@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import { JournalSection } from "@/components/JournalSection";
+import { EditHistorySection } from "@/components/EditHistorySection";
+import { useBillEditHistory } from "@/lib/bill-edit";
 import { ThermalReceipt } from "@/components/ThermalReceipt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
@@ -57,6 +59,7 @@ function BillDetailPage() {
   const { data: settings } = useSettings();
   const { data: warehouses = [] } = useAllWarehouses();
   const { data: products = [] } = useAllProducts();
+  const { data: editHistory = [] } = useBillEditHistory(billId);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
@@ -194,6 +197,7 @@ function BillDetailPage() {
             >
               {bill.payment_status}
             </StatusBadge>
+            {editHistory.length > 0 && <StatusBadge tone="warning">Edited</StatusBadge>}
             {balanceDue > 0 && bill.status !== "Voided" && (
               <span className="numeric text-sm text-muted-foreground">
                 Balance due {formatMoney(balanceDue)}
@@ -228,11 +232,13 @@ function BillDetailPage() {
               <Printer className="h-4 w-4" />
               Print
             </Button>
-            {bill.status === "Draft" && (
+            {bill.status !== "Voided" && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate({ to: "/new-bill" })}
+                onClick={() =>
+                  navigate({ to: "/new-bill", search: { editBill: bill.id } })
+                }
               >
                 <Pencil className="h-4 w-4" />
                 Edit
@@ -451,6 +457,8 @@ function BillDetailPage() {
         </footer>
       </article>
       )}
+
+      <EditHistorySection billId={bill.id} />
 
       <JournalSection
         linkColumn="related_bill_id"

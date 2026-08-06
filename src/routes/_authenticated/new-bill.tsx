@@ -38,7 +38,15 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCustomers, useProducts, useProductStock, useSettings, useWarehouses } from "@/lib/data";
+import {
+  useBill,
+  useCustomers,
+  useProducts,
+  useProductStock,
+  useSettings,
+  useWarehouses,
+} from "@/lib/data";
+import { applyBillEdit, type BillSnapshot } from "@/lib/bill-edit";
 import { useAccounts } from "@/lib/accounting";
 import {
   PAYMENT_METHODS,
@@ -54,12 +62,15 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { customerId?: string; fromOrder?: string } => ({
+  ): { customerId?: string; fromOrder?: string; editBill?: string } => ({
     ...(typeof search["customerId"] === "string"
       ? { customerId: search["customerId"] as string }
       : {}),
     ...(typeof search["fromOrder"] === "string"
       ? { fromOrder: search["fromOrder"] as string }
+      : {}),
+    ...(typeof search["editBill"] === "string"
+      ? { editBill: search["editBill"] as string }
       : {}),
   }),
   head: () => ({
@@ -165,12 +176,48 @@ function NewBillPage() {
   }, [sourceOrder, orderHydrated]);
 
 
+  // Editing an existing bill: hydrate the builder with its current contents.
+  const { data: editingBill } = useBill(search.editBill ?? "");
+  const isEditing = Boolean(search.editBill && editingBill);
+  const [editHydrated, setEditHydrated] = useState(false);
+  useEffect(() => {
+    if (!editingBill || editHydrated) return;
+    setCustomerId(editingBill.customer_id ?? "walk-in");
+    setBillDate(editingBill.bill_date);
+    if (editingBill.warehouse_id) setWarehouseId(editingBill.warehouse_id);
+    setIsTaxed(editingBill.is_taxed);
+    setTaxRateInput(String(editingBill.tax_rate));
+    setDiscountType(editingBill.discount_type === "percent" ? "percent" : "amount");
+    setDiscountValue(String(editingBill.discount_value ?? 0));
+    setAmountPaidInput(String(editingBill.amount_paid ?? 0));
+    setLines(
+      editingBill.bill_items
+        .map((i) => ({
+          productId: i.product_id ?? "",
+          name: i.product_name_snapshot,
+          unitPrice: Number(i.unit_price),
+          quantity: Number(i.quantity),
+          warehouseId: i.warehouse_id ?? editingBill.warehouse_id ?? "",
+        }))
+        .filter((l) => l.productId),
+    );
+    setEditHydrated(true);
+  }, [editingBill, editHydrated]);
+
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
   const stockFor = (productId: string, wId: string) => {
     const row = stock.find((s) => s.product_id === productId && s.warehouse_id === wId);
-    const onHand = Number(row?.stock_on_hand ?? 0);
+    // While editing a finalized bill the original quantities are reversed first,
+    // so they count as available again.
+    const credited =
+      editingBill && editingBill.status === "Finalized"
+        ? editingBill.bill_items
+            .filter((i) => i.product_id === productId && i.warehouse_id === wId)
+            .reduce((sum, i) => sum + Number(i.quantity), 0)
+        : 0;
+    const onHand = Number(row?.stock_on_hand ?? 0) + credited;
     const committed = Number(row?.committed_stock ?? 0);
     return { onHand, committed, available: Math.max(onHand - committed, 0) };
   };
@@ -302,6 +349,106 @@ function NewBillPage() {
     }
 
     setSaving(true);
+
+    if (isEditing && editingBill) {
+      try {
+        const customerName =
+          customerId === "walk-in"
+            ? "Walk-in customer"
+            : (customers.find((x) => x.id === customerId)?.name ?? "Customer");
+        const snapshot = (
+          l: { name: string; quantity: number; unitPrice: number; warehouseId: string | null }[],
+          fields: Omit<BillSnapshot, "lines">,
+        ): BillSnapshot => ({ ...fields, lines: l });
+
+        const before = snapshot(
+          editingBill.bill_items.map((i) => ({
+            name: i.product_name_snapshot,
+            quantity: Number(i.quantity),
+            unitPrice: Number(i.unit_price),
+            warehouseId: i.warehouse_id,
+          })),
+          {
+            customerName: editingBill.customers?.name ?? "Walk-in customer",
+            warehouseId: editingBill.warehouse_id,
+            isTaxed: editingBill.is_taxed,
+            taxRate: Number(editingBill.tax_rate),
+            subtotal: Number(editingBill.subtotal),
+            discountAmount: Number(editingBill.discount_amount),
+            taxAmount: Number(editingBill.tax_amount),
+            total: Number(editingBill.total_amount),
+          },
+        );
+        const after = snapshot(
+          lines.map((l) => ({
+            name: l.name,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            warehouseId: l.warehouseId || null,
+          })),
+          {
+            customerName,
+            warehouseId: activeWarehouseId || null,
+            isTaxed,
+            taxRate: isTaxed ? taxRate : 0,
+            subtotal,
+            discountAmount,
+            taxAmount,
+            total,
+          },
+        );
+
+        const keptPaid = Math.min(Number(editingBill.amount_paid ?? 0), total);
+
+        await applyBillEdit({
+          billId: editingBill.id,
+          billNumber: editingBill.bill_number,
+          originalStatus: editingBill.status,
+          originalItems: editingBill.bill_items.map((i) => ({
+            product_id: i.product_id,
+            warehouse_id: i.warehouse_id,
+            quantity: Number(i.quantity),
+            product_name_snapshot: i.product_name_snapshot,
+          })),
+          lines: lines.map((l) => ({
+            ...l,
+            costPrice: products.find((p) => p.id === l.productId)?.cost_price ?? null,
+          })),
+          billFields: {
+            customer_id: customerId === "walk-in" ? null : customerId,
+            is_walk_in: customerId === "walk-in",
+            bill_date: billDate,
+            warehouse_id: activeWarehouseId || null,
+            is_taxed: isTaxed,
+            tax_rate: isTaxed ? taxRate : 0,
+            subtotal,
+            tax_amount: taxAmount,
+            discount_amount: discountAmount,
+            discount_type: discountType,
+            discount_value: Number(discountValue) || 0,
+            total_amount: total,
+            amount_paid: keptPaid,
+            status,
+          },
+          billDate,
+          customerName,
+          amountPaid: keptPaid,
+          paymentAccountId: accountId || null,
+          before,
+          after,
+        });
+
+        setSaving(false);
+        queryClient.invalidateQueries();
+        toast.success("Bill updated");
+        navigate({ to: "/bills/$billId", params: { billId: editingBill.id } });
+      } catch (err) {
+        setSaving(false);
+        toast.error(err instanceof Error ? err.message : "Could not update the bill");
+      }
+      return;
+    }
+
     const isWalkIn = customerId === "walk-in";
     const paidNow = status === "Finalized" ? amountPaidNow : 0;
     const { data: bill, error } = await supabase
@@ -478,7 +625,14 @@ function NewBillPage() {
 
   return (
     <div className="space-y-6 pb-28 lg:pb-0">
-      <PageHeader title="New Bill" description="Add products, confirm totals, finalize." />
+      <PageHeader
+        title={isEditing ? `Edit ${editingBill?.bill_number ?? "Bill"}` : "New Bill"}
+        description={
+          isEditing
+            ? "Changes are logged and stock and ledger entries are adjusted automatically."
+            : "Add products, confirm totals, finalize."
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-4">
@@ -968,16 +1122,24 @@ function NewBillPage() {
             </dl>
             <div className="mt-5 hidden space-y-2 lg:block">
               <Button className="h-11 w-full" disabled={saving} onClick={() => save("Finalized")}>
-                {saving ? "Finalizing…" : "Finalize Bill"}
+                {saving
+                  ? isEditing
+                    ? "Saving…"
+                    : "Finalizing…"
+                  : isEditing
+                    ? "Save Changes"
+                    : "Finalize Bill"}
               </Button>
-              <Button
-                variant="outline"
-                className="h-11 w-full"
-                disabled={saving}
-                onClick={() => save("Draft")}
-              >
-                Save as Draft
-              </Button>
+              {(!isEditing || editingBill?.status === "Draft") && (
+                <Button
+                  variant="outline"
+                  className="h-11 w-full"
+                  disabled={saving}
+                  onClick={() => save("Draft")}
+                >
+                  Save as Draft
+                </Button>
+              )}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               Finalizing deducts stock from the selected warehouse and records a stock movement for
@@ -996,17 +1158,19 @@ function NewBillPage() {
           <span className="numeric text-xl font-bold">{formatMoney(total)}</span>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="h-12 flex-1"
-            disabled={saving}
-            onClick={() => save("Draft")}
-          >
-            Draft
-          </Button>
+          {(!isEditing || editingBill?.status === "Draft") && (
+            <Button
+              variant="outline"
+              className="h-12 flex-1"
+              disabled={saving}
+              onClick={() => save("Draft")}
+            >
+              Draft
+            </Button>
+          )}
           <Button className="h-12 flex-[2]" disabled={saving} onClick={() => save("Finalized")}>
             <Plus />
-            {saving ? "Finalizing…" : "Review & Finalize"}
+            {saving ? "Saving…" : isEditing ? "Save Changes" : "Review & Finalize"}
           </Button>
         </div>
       </div>

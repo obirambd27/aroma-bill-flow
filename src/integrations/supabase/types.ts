@@ -56,6 +56,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_edit_history: {
+        Row: {
+          bill_id: string
+          changes_summary: Json
+          created_at: string
+          edited_at: string
+          edited_fields: string[]
+          id: string
+        }
+        Insert: {
+          bill_id: string
+          changes_summary?: Json
+          created_at?: string
+          edited_at?: string
+          edited_fields?: string[]
+          id?: string
+        }
+        Update: {
+          bill_id?: string
+          changes_summary?: Json
+          created_at?: string
+          edited_at?: string
+          edited_fields?: string[]
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_edit_history_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bill_items: {
         Row: {
           bill_id: string
