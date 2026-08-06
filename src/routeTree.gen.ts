@@ -39,6 +39,11 @@ import { Route as AuthenticatedPurchaseBillsNewRouteImport } from './routes/_aut
 import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_authenticated/purchase-orders.index'
 import { Route as AuthenticatedPurchaseOrdersOrderIdRouteImport } from './routes/_authenticated/purchase-orders.$orderId'
 import { Route as AuthenticatedPurchaseOrdersNewRouteImport } from './routes/_authenticated/purchase-orders.new'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
+import { Route as AuthenticatedReportsDayBookRouteImport } from './routes/_authenticated/reports.day-book'
+import { Route as AuthenticatedReportsPurchasesRouteImport } from './routes/_authenticated/reports.purchases'
+import { Route as AuthenticatedReportsSalesRouteImport } from './routes/_authenticated/reports.sales'
+import { Route as AuthenticatedReportsTransactionsRouteImport } from './routes/_authenticated/reports.transactions'
 import { Route as AuthenticatedSalesOrdersIndexRouteImport } from './routes/_authenticated/sales-orders.index'
 import { Route as AuthenticatedSalesOrdersOrderIdRouteImport } from './routes/_authenticated/sales-orders.$orderId'
 import { Route as AuthenticatedSalesOrdersNewRouteImport } from './routes/_authenticated/sales-orders.new'
@@ -220,6 +225,36 @@ const AuthenticatedPurchaseOrdersNewRoute =
     path: '/purchase-orders/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsDayBookRoute =
+  AuthenticatedReportsDayBookRouteImport.update({
+    id: '/reports/day-book',
+    path: '/reports/day-book',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsPurchasesRoute =
+  AuthenticatedReportsPurchasesRouteImport.update({
+    id: '/reports/purchases',
+    path: '/reports/purchases',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsSalesRoute =
+  AuthenticatedReportsSalesRouteImport.update({
+    id: '/reports/sales',
+    path: '/reports/sales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsTransactionsRoute =
+  AuthenticatedReportsTransactionsRouteImport.update({
+    id: '/reports/transactions',
+    path: '/reports/transactions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesOrdersIndexRoute =
   AuthenticatedSalesOrdersIndexRouteImport.update({
     id: '/sales-orders/',
@@ -301,6 +336,10 @@ export interface FileRoutesByFullPath {
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
+  '/reports/sales': typeof AuthenticatedReportsSalesRoute
+  '/reports/transactions': typeof AuthenticatedReportsTransactionsRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -317,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
   '/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/reports/': typeof AuthenticatedReportsIndexRoute
   '/sales-orders/': typeof AuthenticatedSalesOrdersIndexRoute
   '/sales-returns/': typeof AuthenticatedSalesReturnsIndexRoute
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -342,6 +382,10 @@ export interface FileRoutesByTo {
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
+  '/reports/sales': typeof AuthenticatedReportsSalesRoute
+  '/reports/transactions': typeof AuthenticatedReportsTransactionsRoute
   '/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -358,6 +402,7 @@ export interface FileRoutesByTo {
   '/products': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills': typeof AuthenticatedPurchaseBillsIndexRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/reports': typeof AuthenticatedReportsIndexRoute
   '/sales-orders': typeof AuthenticatedSalesOrdersIndexRoute
   '/sales-returns': typeof AuthenticatedSalesReturnsIndexRoute
   '/vendors': typeof AuthenticatedVendorsIndexRoute
@@ -385,6 +430,10 @@ export interface FileRoutesById {
   '/_authenticated/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
   '/_authenticated/purchase-orders/$orderId': typeof AuthenticatedPurchaseOrdersOrderIdRoute
   '/_authenticated/purchase-orders/new': typeof AuthenticatedPurchaseOrdersNewRoute
+  '/_authenticated/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
+  '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
+  '/_authenticated/reports/transactions': typeof AuthenticatedReportsTransactionsRoute
   '/_authenticated/sales-orders/$orderId': typeof AuthenticatedSalesOrdersOrderIdRoute
   '/_authenticated/sales-orders/new': typeof AuthenticatedSalesOrdersNewRoute
   '/_authenticated/sales-returns/$returnId': typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -401,6 +450,7 @@ export interface FileRoutesById {
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
   '/_authenticated/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/sales-orders/': typeof AuthenticatedSalesOrdersIndexRoute
   '/_authenticated/sales-returns/': typeof AuthenticatedSalesReturnsIndexRoute
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -428,6 +478,10 @@ export interface FileRouteTypes {
     | '/purchase-bills/new'
     | '/purchase-orders/$orderId'
     | '/purchase-orders/new'
+    | '/reports/day-book'
+    | '/reports/purchases'
+    | '/reports/sales'
+    | '/reports/transactions'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
     | '/sales-returns/$returnId'
@@ -444,6 +498,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/purchase-bills/'
     | '/purchase-orders/'
+    | '/reports/'
     | '/sales-orders/'
     | '/sales-returns/'
     | '/vendors/'
@@ -469,6 +524,10 @@ export interface FileRouteTypes {
     | '/purchase-bills/new'
     | '/purchase-orders/$orderId'
     | '/purchase-orders/new'
+    | '/reports/day-book'
+    | '/reports/purchases'
+    | '/reports/sales'
+    | '/reports/transactions'
     | '/sales-orders/$orderId'
     | '/sales-orders/new'
     | '/sales-returns/$returnId'
@@ -485,6 +544,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/purchase-bills'
     | '/purchase-orders'
+    | '/reports'
     | '/sales-orders'
     | '/sales-returns'
     | '/vendors'
@@ -511,6 +571,10 @@ export interface FileRouteTypes {
     | '/_authenticated/purchase-bills/new'
     | '/_authenticated/purchase-orders/$orderId'
     | '/_authenticated/purchase-orders/new'
+    | '/_authenticated/reports/day-book'
+    | '/_authenticated/reports/purchases'
+    | '/_authenticated/reports/sales'
+    | '/_authenticated/reports/transactions'
     | '/_authenticated/sales-orders/$orderId'
     | '/_authenticated/sales-orders/new'
     | '/_authenticated/sales-returns/$returnId'
@@ -527,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/products/'
     | '/_authenticated/purchase-bills/'
     | '/_authenticated/purchase-orders/'
+    | '/_authenticated/reports/'
     | '/_authenticated/sales-orders/'
     | '/_authenticated/sales-returns/'
     | '/_authenticated/vendors/'
@@ -752,6 +817,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchaseOrdersNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/day-book': {
+      id: '/_authenticated/reports/day-book'
+      path: '/reports/day-book'
+      fullPath: '/reports/day-book'
+      preLoaderRoute: typeof AuthenticatedReportsDayBookRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/purchases': {
+      id: '/_authenticated/reports/purchases'
+      path: '/reports/purchases'
+      fullPath: '/reports/purchases'
+      preLoaderRoute: typeof AuthenticatedReportsPurchasesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/sales': {
+      id: '/_authenticated/reports/sales'
+      path: '/reports/sales'
+      fullPath: '/reports/sales'
+      preLoaderRoute: typeof AuthenticatedReportsSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/transactions': {
+      id: '/_authenticated/reports/transactions'
+      path: '/reports/transactions'
+      fullPath: '/reports/transactions'
+      preLoaderRoute: typeof AuthenticatedReportsTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales-orders/': {
       id: '/_authenticated/sales-orders/'
       path: '/sales-orders'
@@ -842,6 +942,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchaseBillsNewRoute: typeof AuthenticatedPurchaseBillsNewRoute
   AuthenticatedPurchaseOrdersOrderIdRoute: typeof AuthenticatedPurchaseOrdersOrderIdRoute
   AuthenticatedPurchaseOrdersNewRoute: typeof AuthenticatedPurchaseOrdersNewRoute
+  AuthenticatedReportsDayBookRoute: typeof AuthenticatedReportsDayBookRoute
+  AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRoute
+  AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
+  AuthenticatedReportsTransactionsRoute: typeof AuthenticatedReportsTransactionsRoute
   AuthenticatedSalesOrdersOrderIdRoute: typeof AuthenticatedSalesOrdersOrderIdRoute
   AuthenticatedSalesOrdersNewRoute: typeof AuthenticatedSalesOrdersNewRoute
   AuthenticatedSalesReturnsReturnIdRoute: typeof AuthenticatedSalesReturnsReturnIdRoute
@@ -858,6 +962,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseBillsIndexRoute: typeof AuthenticatedPurchaseBillsIndexRoute
   AuthenticatedPurchaseOrdersIndexRoute: typeof AuthenticatedPurchaseOrdersIndexRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedSalesOrdersIndexRoute: typeof AuthenticatedSalesOrdersIndexRoute
   AuthenticatedSalesReturnsIndexRoute: typeof AuthenticatedSalesReturnsIndexRoute
   AuthenticatedVendorsIndexRoute: typeof AuthenticatedVendorsIndexRoute
@@ -885,6 +990,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchaseOrdersOrderIdRoute:
     AuthenticatedPurchaseOrdersOrderIdRoute,
   AuthenticatedPurchaseOrdersNewRoute: AuthenticatedPurchaseOrdersNewRoute,
+  AuthenticatedReportsDayBookRoute: AuthenticatedReportsDayBookRoute,
+  AuthenticatedReportsPurchasesRoute: AuthenticatedReportsPurchasesRoute,
+  AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRoute,
+  AuthenticatedReportsTransactionsRoute: AuthenticatedReportsTransactionsRoute,
   AuthenticatedSalesOrdersOrderIdRoute: AuthenticatedSalesOrdersOrderIdRoute,
   AuthenticatedSalesOrdersNewRoute: AuthenticatedSalesOrdersNewRoute,
   AuthenticatedSalesReturnsReturnIdRoute:
@@ -903,6 +1012,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseBillsIndexRoute: AuthenticatedPurchaseBillsIndexRoute,
   AuthenticatedPurchaseOrdersIndexRoute: AuthenticatedPurchaseOrdersIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedSalesOrdersIndexRoute: AuthenticatedSalesOrdersIndexRoute,
   AuthenticatedSalesReturnsIndexRoute: AuthenticatedSalesReturnsIndexRoute,
   AuthenticatedVendorsIndexRoute: AuthenticatedVendorsIndexRoute,
@@ -921,13 +1031,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
