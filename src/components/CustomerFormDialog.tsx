@@ -75,7 +75,11 @@ export function CustomerFormDialog({
       phone: parsed.data.phone || null,
       email: parsed.data.email || null,
       address: parsed.data.address || null,
+      date_of_birth: parsed.data.date_of_birth || null,
+      anniversary_date: parsed.data.anniversary_date || null,
+      notes: parsed.data.notes || null,
     };
+
 
     setSaving(true);
     if (customer) {
