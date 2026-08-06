@@ -26,8 +26,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCustomers, useProducts, useProductStock, useSettings, useWarehouses } from "@/lib/data";
-import { formatMoney } from "@/lib/format";
+import { useAccounts } from "@/lib/accounting";
+import {
+  PAYMENT_METHODS,
+  accountIdByName,
+  derivePaymentStatus,
+  useCustomerLastPrices,
+  type PaymentMethod,
+} from "@/lib/payments";
+import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
