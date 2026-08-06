@@ -736,6 +736,16 @@ function NewBillPage() {
               </p>
               <p className="numeric mt-1 text-3xl font-bold">{formatMoney(total)}</p>
             </div>
+            <dl className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Amount paid now</dt>
+                <dd className="numeric font-medium">{formatMoney(amountPaidNow)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Balance due</dt>
+                <dd className="numeric font-semibold">{formatMoney(balanceDue)}</dd>
+              </div>
+            </dl>
             <div className="mt-5 hidden space-y-2 lg:block">
               <Button className="h-11 w-full" disabled={saving} onClick={() => save("Finalized")}>
                 {saving ? "Finalizing…" : "Finalize Bill"}
