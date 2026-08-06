@@ -57,9 +57,11 @@ function paymentTone(status: string) {
 
 const TABS = [
   { value: "overview", label: "Overview" },
+  { value: "activity", label: "Activity & Notes" },
   { value: "transactions", label: "Transactions" },
   { value: "statement", label: "Statement" },
 ] as const;
+
 
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
