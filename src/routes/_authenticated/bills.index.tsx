@@ -738,13 +738,8 @@ function BillsPage() {
                             size="icon"
                             variant="ghost"
                             aria-label="Download PDF"
-                            onClick={() =>
-                              navigate({
-                                to: "/bills/$billId",
-                                params: { billId: b.id },
-                                search: { print: true },
-                              })
-                            }
+                            title="Open invoice to download PDF"
+                            onClick={() => openBill(b.id)}
                           >
                             <Download className="h-4 w-4" />
                           </Button>
