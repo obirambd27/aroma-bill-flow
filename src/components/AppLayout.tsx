@@ -15,23 +15,27 @@ import {
   ScrollText,
   BookOpen,
   Wallet,
+  ClipboardList,
+  Truck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/new-bill", label: "New Bill", icon: Plus },
-  { to: "/products", label: "Products", icon: Package },
-  { to: "/warehouses", label: "Warehouses", icon: Warehouse },
-  { to: "/customers", label: "Customers", icon: Users },
-  { to: "/bills", label: "Bill History", icon: ReceiptText },
-  { to: "/payments", label: "Payments", icon: Wallet },
-  { to: "/cash-bank", label: "Cash & Bank", icon: Landmark },
-  { to: "/cheques", label: "Cheques", icon: ScrollText },
-  { to: "/accounts", label: "Accounts", icon: BookOpen },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, group: "" },
+  { to: "/new-bill", label: "New Bill", icon: Plus, group: "Sales" },
+  { to: "/bills", label: "Bill History", icon: ReceiptText, group: "Sales" },
+  { to: "/sales-orders", label: "Sales Orders", icon: ClipboardList, group: "Sales" },
+  { to: "/delivery-notes", label: "Delivery Notes", icon: Truck, group: "Sales" },
+  { to: "/products", label: "Products", icon: Package, group: "Inventory" },
+  { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
+  { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
+  { to: "/payments", label: "Payments", icon: Wallet, group: "Finance" },
+  { to: "/cash-bank", label: "Cash & Bank", icon: Landmark, group: "Finance" },
+  { to: "/cheques", label: "Cheques", icon: ScrollText, group: "Finance" },
+  { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -67,26 +71,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         </div>
 
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          {NAV.map((item) => {
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+          {NAV.map((item, index) => {
             const active = pathname.startsWith(item.to);
+            const showGroup = item.group !== "" && item.group !== NAV[index - 1]?.group;
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              <div key={item.to}>
+                {showGroup && !collapsed && (
+                  <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {item.group}
+                  </p>
                 )}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
+                {showGroup && collapsed && <div className="my-2 border-t border-sidebar-border" />}
+                <Link
+                  to={item.to}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              </div>
             );
           })}
         </nav>
+
 
         <div className="space-y-1 border-t border-sidebar-border p-2">
           <button

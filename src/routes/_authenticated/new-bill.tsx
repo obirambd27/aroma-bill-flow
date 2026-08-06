@@ -48,12 +48,15 @@ import {
   type PaymentMethod,
 } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
+import { adjustCommitted, useSalesOrder } from "@/lib/sales";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (search: Record<string, unknown>) => ({
     customerId:
       typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
+    fromOrder:
+      typeof search["fromOrder"] === "string" ? (search["fromOrder"] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -131,6 +134,32 @@ function NewBillPage() {
   useEffect(() => {
     if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
   }, [accountId, cashBankAccounts]);
+
+  // Pre-fill from a sales order ("Convert to Bill") with the undelivered/unbilled quantities.
+  const { data: sourceOrder } = useSalesOrder(search.fromOrder ?? "");
+  const [orderHydrated, setOrderHydrated] = useState(false);
+  useEffect(() => {
+    if (!sourceOrder || orderHydrated) return;
+    setCustomerId(sourceOrder.customer_id ?? "walk-in");
+    if (sourceOrder.warehouse_id) setWarehouseId(sourceOrder.warehouse_id);
+    setIsTaxed(sourceOrder.is_taxed);
+    setTaxRateInput(String(sourceOrder.tax_rate));
+    setDiscountType(sourceOrder.discount_type === "percent" ? "percent" : "amount");
+    setDiscountValue(String(sourceOrder.discount_value ?? 0));
+    setLines(
+      sourceOrder.sales_order_items
+        .map((i) => ({
+          productId: i.product_id ?? "",
+          name: i.product_name_snapshot,
+          unitPrice: Number(i.unit_price),
+          quantity: Number(i.quantity),
+          warehouseId: i.warehouse_id ?? sourceOrder.warehouse_id ?? "",
+        }))
+        .filter((l) => l.productId && l.quantity > 0),
+    );
+    setOrderHydrated(true);
+  }, [sourceOrder, orderHydrated]);
+
 
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
@@ -326,6 +355,21 @@ function NewBillPage() {
       navigate({ to: "/bills/$billId", params: { billId: bill.id } });
       return;
     }
+
+    // Converting a sales order: release its reservation and close it out.
+    if (sourceOrder) {
+      for (const item of sourceOrder.sales_order_items) {
+        const wId = item.warehouse_id ?? sourceOrder.warehouse_id;
+        if (item.product_id && wId) {
+          await adjustCommitted(item.product_id, wId, -Number(item.quantity));
+        }
+      }
+      await supabase
+        .from("sales_orders")
+        .update({ status: "Converted to Bill" })
+        .eq("id", sourceOrder.id);
+    }
+
 
     // Deduct stock per warehouse and log a stock movement for each line.
     for (const l of lines) {
