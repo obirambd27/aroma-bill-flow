@@ -645,12 +645,14 @@ export type Database = {
           business_name: string
           business_phone: string
           created_at: string
+          default_payment_terms: string
           default_tax_rate: number
           id: string
           invoice_footer_note: string | null
           invoice_prefix: string
           low_stock_threshold: number
           tax_id: string | null
+          terms_and_conditions: string | null
         }
         Insert: {
           business_address?: string
@@ -659,12 +661,14 @@ export type Database = {
           business_name?: string
           business_phone?: string
           created_at?: string
+          default_payment_terms?: string
           default_tax_rate?: number
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
           low_stock_threshold?: number
           tax_id?: string | null
+          terms_and_conditions?: string | null
         }
         Update: {
           business_address?: string
@@ -673,12 +677,14 @@ export type Database = {
           business_name?: string
           business_phone?: string
           created_at?: string
+          default_payment_terms?: string
           default_tax_rate?: number
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
           low_stock_threshold?: number
           tax_id?: string | null
+          terms_and_conditions?: string | null
         }
         Relationships: []
       }
