@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/reports/day-book")({
       },
     ],
   }),
-  component: DayBook;
+  component: DayBook,
 });
 
 function timeOf(at: string) {
