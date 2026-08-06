@@ -40,10 +40,12 @@ export function RecordPaymentDialog({
   open,
   onOpenChange,
   defaultCustomerId,
+  defaultBillId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultCustomerId?: string;
+  defaultBillId?: string;
 }) {
   const queryClient = useQueryClient();
   const { data: customers = [] } = useCustomers();
