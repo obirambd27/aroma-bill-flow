@@ -263,11 +263,16 @@ export function useTransactions(range: { from: string; to: string }) {
         supabase
           .from("ledger_entries")
           .select(
-            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id",
+            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id, related_payment_id",
           )
           .gte("entry_date", from)
           .lte("entry_date", to)
-          .in("entry_type", ["Purchase Payment", "Expense", "Purchase Return"]),
+          .in("entry_type", [
+            "Sale Payment",
+            "Purchase Payment",
+            "Expense",
+            "Purchase Return",
+          ]),
       ]);
 
       // Expenses live in their own table from Part 28 onwards; ignore if absent.
