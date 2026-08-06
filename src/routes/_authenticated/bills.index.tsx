@@ -59,7 +59,7 @@ function BillsPage() {
         description="All bills, drafts and voided records."
         actions={
           <Button asChild>
-            <Link to="/new-bill">
+            <Link to="/new-bill" search={{ customerId: undefined }}>
               <Plus />
               New Bill
             </Link>
