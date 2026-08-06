@@ -203,7 +203,12 @@ function CustomerDetailPage() {
             </div>
           )}
 
-
+          <div className="surface-card p-5">
+            <h2 className="text-sm font-semibold">Tags</h2>
+            <div className="mt-3">
+              <CustomerTagEditor customerId={customer.id} />
+            </div>
+          </div>
 
           <div className="surface-card p-5">
             <h2 className="text-sm font-semibold">Contact information</h2>
@@ -211,8 +216,16 @@ function CustomerDetailPage() {
               <Field label="Phone" value={customer.phone} />
               <Field label="Email" value={customer.email} />
               <Field label="Address" value={customer.address} />
+              <Field label="Date of birth" value={formatOptionalDate(customer.date_of_birth)} />
+              <Field label="Anniversary" value={formatOptionalDate(customer.anniversary_date)} />
+              <Field label="Notes" value={customer.notes} />
             </dl>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+              Edit details
+            </Button>
           </div>
+
         </TabsContent>
 
         <TabsContent value="transactions" className="mt-4 space-y-4">
