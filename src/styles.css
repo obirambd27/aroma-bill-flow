@@ -156,3 +156,49 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
+
+/* ---------- Print / PDF (A4 invoice) ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  header.app-header {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .invoice-sheet {
+    max-width: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    page-break-inside: avoid;
+  }
+
+  .invoice-sheet table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .invoice-sheet tr,
+  .invoice-sheet section,
+  .invoice-sheet footer {
+    page-break-inside: avoid;
+  }
+}

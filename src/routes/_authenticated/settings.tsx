@@ -77,6 +77,8 @@ function SettingsPage() {
         default_tax_rate: Number(form.default_tax_rate ?? 0),
         invoice_prefix: (form.invoice_prefix || "INV-").slice(0, 12),
         invoice_footer_note: form.invoice_footer_note ?? null,
+        terms_and_conditions: form.terms_and_conditions ?? null,
+        default_payment_terms: (form.default_payment_terms || "Due on Receipt").slice(0, 60),
         low_stock_threshold: Number(form.low_stock_threshold ?? 5),
       })
       .eq("id", settings.id);
@@ -248,6 +250,28 @@ function SettingsPage() {
               placeholder="Thank you for shopping with us"
               value={form.invoice_footer_note ?? ""}
               onChange={(e) => set("invoice_footer_note", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="default_payment_terms">Default payment terms</Label>
+            <Input
+              id="default_payment_terms"
+              className="h-11"
+              placeholder="Due on Receipt"
+              value={form.default_payment_terms ?? ""}
+              onChange={(e) => set("default_payment_terms", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="terms_and_conditions">Terms &amp; conditions (shown on invoices)</Label>
+            <Textarea
+              id="terms_and_conditions"
+              rows={3}
+              placeholder="Goods once sold cannot be returned…"
+              value={form.terms_and_conditions ?? ""}
+              onChange={(e) => set("terms_and_conditions", e.target.value)}
             />
           </div>
         </div>
