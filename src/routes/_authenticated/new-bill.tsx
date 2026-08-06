@@ -202,12 +202,19 @@ function NewBillPage() {
       toast.error(`Not enough stock for ${overselling[0]!.name}`);
       return;
     }
+    if (status === "Finalized" && amountPaidNow > 0 && paymentMethod !== "Cheque" && !accountId) {
+      toast.error("Select the account this payment lands in");
+      return;
+    }
 
     setSaving(true);
+    const isWalkIn = customerId === "walk-in";
+    const paidNow = status === "Finalized" ? amountPaidNow : 0;
     const { data: bill, error } = await supabase
       .from("bills")
       .insert({
-        customer_id: customerId === "walk-in" ? null : customerId,
+        customer_id: isWalkIn ? null : customerId,
+        is_walk_in: isWalkIn,
         bill_date: billDate,
         warehouse_id: activeWarehouseId || null,
         is_taxed: isTaxed,
@@ -218,8 +225,9 @@ function NewBillPage() {
         discount_type: discountType,
         discount_value: Number(discountValue) || 0,
         total_amount: total,
-        payment_status: paymentStatus,
-        payment_method: paymentStatus === "Unpaid" ? null : paymentMethod,
+        amount_paid: paidNow,
+        payment_status: derivePaymentStatus(paidNow, total),
+        payment_method: paidNow > 0 ? paymentMethod : null,
         status,
       })
       .select()
@@ -238,6 +246,7 @@ function NewBillPage() {
         product_name_snapshot: l.name,
         quantity: l.quantity,
         unit_price: l.unitPrice,
+        cost_price_snapshot: products.find((p) => p.id === l.productId)?.cost_price ?? null,
         line_total: l.unitPrice * l.quantity,
         warehouse_id: l.warehouseId || null,
       })),
@@ -279,18 +288,64 @@ function NewBillPage() {
       }
     }
 
-    if (paymentStatus !== "Unpaid") {
-      await supabase.from("payments").insert({
-        bill_id: bill.id,
-        customer_id: customerId === "walk-in" ? null : customerId,
-        payment_date: billDate,
-        amount: paymentStatus === "Paid" ? total : 0,
-        payment_method: paymentMethod,
-        status: paymentStatus === "Paid" ? "Completed" : "Partial",
+    const customerName = isWalkIn
+      ? "Walk-in customer"
+      : (customers.find((x) => x.id === customerId)?.name ?? "Customer");
+
+    // Payment taken at the counter.
+    if (paidNow > 0 && paymentMethod === "Cheque") {
+      await supabase.from("cheques").insert({
+        cheque_number: chequeNumber || `${bill.bill_number ?? "BILL"}-CHQ`,
+        type: "Received",
+        party_name: customerName,
+        amount: paidNow,
+        cheque_date: chequeDate || billDate,
+        account_id: accountId || cashBankAccounts[0]?.id || "",
+        status: "Pending",
+        related_bill_id: bill.id,
+        notes: `Cheque against ${bill.bill_number ?? "bill"}`,
+      });
+    } else if (paidNow > 0 && accountId) {
+      await supabase.from("ledger_entries").insert({
+        account_id: accountId,
+        entry_date: billDate,
+        entry_type: "Sale Payment",
+        amount: paidNow,
+        related_bill_id: bill.id,
+        description: `Payment for ${bill.bill_number ?? "bill"} · ${customerName}`,
       });
     }
 
-    if (customerId !== "walk-in") {
+    // Revenue is booked in full regardless of payment status.
+    const revenueId = await accountIdByName("Sales Revenue");
+    if (revenueId) {
+      await supabase.from("ledger_entries").insert({
+        account_id: revenueId,
+        entry_date: billDate,
+        entry_type: "Sale",
+        amount: total,
+        related_bill_id: bill.id,
+        description: `${bill.bill_number ?? "Bill"} · ${customerName}`,
+      });
+    }
+
+    // Anything still owed sits in Accounts Receivable.
+    const outstanding = total - paidNow;
+    if (outstanding > 0.001) {
+      const arId = await accountIdByName("Accounts Receivable");
+      if (arId) {
+        await supabase.from("ledger_entries").insert({
+          account_id: arId,
+          entry_date: billDate,
+          entry_type: "Sale",
+          amount: outstanding,
+          related_bill_id: bill.id,
+          description: `Outstanding on ${bill.bill_number ?? "bill"} · ${customerName}`,
+        });
+      }
+    }
+
+    if (!isWalkIn) {
       const c = customers.find((x) => x.id === customerId);
       if (c) {
         await supabase
