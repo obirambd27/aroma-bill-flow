@@ -22,6 +22,7 @@ import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 import { Route as AuthenticatedWarehousesIndexRouteImport } from './routes/_authenticated/warehouses.index'
+import { Route as AuthenticatedWarehousesWarehouseIdRouteImport } from './routes/_authenticated/warehouses.$warehouseId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -91,6 +92,12 @@ const AuthenticatedWarehousesIndexRoute =
     path: '/warehouses/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWarehousesWarehouseIdRoute =
+  AuthenticatedWarehousesWarehouseIdRouteImport.update({
+    id: '/warehouses/$warehouseId',
+    path: '/warehouses/$warehouseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/warehouses/': typeof AuthenticatedWarehousesIndexRoute
@@ -116,6 +124,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/warehouses': typeof AuthenticatedWarehousesIndexRoute
@@ -132,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/_authenticated/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/warehouses/': typeof AuthenticatedWarehousesIndexRoute
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/warehouses/$warehouseId'
     | '/bills/'
     | '/customers/'
     | '/warehouses/'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/warehouses/$warehouseId'
     | '/bills'
     | '/customers'
     | '/warehouses'
@@ -177,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/bills/$billId'
     | '/_authenticated/customers/$customerId'
+    | '/_authenticated/warehouses/$warehouseId'
     | '/_authenticated/bills/'
     | '/_authenticated/customers/'
     | '/_authenticated/warehouses/'
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWarehousesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/warehouses/$warehouseId': {
+      id: '/_authenticated/warehouses/$warehouseId'
+      path: '/warehouses/$warehouseId'
+      fullPath: '/warehouses/$warehouseId'
+      preLoaderRoute: typeof AuthenticatedWarehousesWarehouseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -292,6 +312,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedBillsBillIdRoute: typeof AuthenticatedBillsBillIdRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
+  AuthenticatedWarehousesWarehouseIdRoute: typeof AuthenticatedWarehousesWarehouseIdRoute
   AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedWarehousesIndexRoute: typeof AuthenticatedWarehousesIndexRoute
@@ -304,6 +325,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedBillsBillIdRoute: AuthenticatedBillsBillIdRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
+  AuthenticatedWarehousesWarehouseIdRoute:
+    AuthenticatedWarehousesWarehouseIdRoute,
   AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedWarehousesIndexRoute: AuthenticatedWarehousesIndexRoute,
