@@ -22,6 +22,7 @@ import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
+import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedWarehousesIndexRouteImport } from './routes/_authenticated/warehouses.index'
 import { Route as AuthenticatedWarehousesWarehouseIdRouteImport } from './routes/_authenticated/warehouses.$warehouseId'
 
@@ -93,6 +94,12 @@ const AuthenticatedProductsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedProductsRoute,
   } as any)
+const AuthenticatedProductsProductIdRoute =
+  AuthenticatedProductsProductIdRouteImport.update({
+    id: '/$productId',
+    path: '/$productId',
+    getParentRoute: () => AuthenticatedProductsRoute,
+  } as any)
 const AuthenticatedWarehousesIndexRoute =
   AuthenticatedWarehousesIndexRouteImport.update({
     id: '/warehouses/',
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
@@ -149,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/_authenticated/warehouses/$warehouseId': typeof AuthenticatedWarehousesWarehouseIdRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/products/$productId'
     | '/warehouses/$warehouseId'
     | '/bills/'
     | '/customers/'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/bills/$billId'
     | '/customers/$customerId'
+    | '/products/$productId'
     | '/warehouses/$warehouseId'
     | '/bills'
     | '/customers'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/bills/$billId'
     | '/_authenticated/customers/$customerId'
+    | '/_authenticated/products/$productId'
     | '/_authenticated/warehouses/$warehouseId'
     | '/_authenticated/bills/'
     | '/_authenticated/customers/'
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
       parentRoute: typeof AuthenticatedProductsRoute
     }
+    '/_authenticated/products/$productId': {
+      id: '/_authenticated/products/$productId'
+      path: '/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof AuthenticatedProductsProductIdRouteImport
+      parentRoute: typeof AuthenticatedProductsRoute
+    }
     '/_authenticated/warehouses/': {
       id: '/_authenticated/warehouses/'
       path: '/warehouses'
@@ -324,10 +344,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedProductsRouteChildren {
+  AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
 }
 
 const AuthenticatedProductsRouteChildren: AuthenticatedProductsRouteChildren = {
+  AuthenticatedProductsProductIdRoute: AuthenticatedProductsProductIdRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
 }
 
