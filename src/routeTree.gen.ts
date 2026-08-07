@@ -30,6 +30,7 @@ import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_
 import { Route as AuthenticatedDeliveryNotesIndexRouteImport } from './routes/_authenticated/delivery-notes.index'
 import { Route as AuthenticatedDeliveryNotesDeliveryIdRouteImport } from './routes/_authenticated/delivery-notes.$deliveryId'
 import { Route as AuthenticatedDeliveryNotesNewRouteImport } from './routes/_authenticated/delivery-notes.new'
+import { Route as AuthenticatedPaymentsOutIndexRouteImport } from './routes/_authenticated/payments-out.index'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments.index'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
@@ -169,6 +170,12 @@ const AuthenticatedDeliveryNotesNewRoute =
   AuthenticatedDeliveryNotesNewRouteImport.update({
     id: '/delivery-notes/new',
     path: '/delivery-notes/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPaymentsOutIndexRoute =
+  AuthenticatedPaymentsOutIndexRouteImport.update({
+    id: '/payments-out/',
+    path: '/payments-out/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPaymentsIndexRoute =
@@ -352,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/credit-notes/': typeof AuthenticatedCreditNotesIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/delivery-notes/': typeof AuthenticatedDeliveryNotesIndexRoute
+  '/payments-out/': typeof AuthenticatedPaymentsOutIndexRoute
   '/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
@@ -398,6 +406,7 @@ export interface FileRoutesByTo {
   '/credit-notes': typeof AuthenticatedCreditNotesIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/delivery-notes': typeof AuthenticatedDeliveryNotesIndexRoute
+  '/payments-out': typeof AuthenticatedPaymentsOutIndexRoute
   '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills': typeof AuthenticatedPurchaseBillsIndexRoute
@@ -446,6 +455,7 @@ export interface FileRoutesById {
   '/_authenticated/credit-notes/': typeof AuthenticatedCreditNotesIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/delivery-notes/': typeof AuthenticatedDeliveryNotesIndexRoute
+  '/_authenticated/payments-out/': typeof AuthenticatedPaymentsOutIndexRoute
   '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/credit-notes/'
     | '/customers/'
     | '/delivery-notes/'
+    | '/payments-out/'
     | '/payments/'
     | '/products/'
     | '/purchase-bills/'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/credit-notes'
     | '/customers'
     | '/delivery-notes'
+    | '/payments-out'
     | '/payments'
     | '/products'
     | '/purchase-bills'
@@ -587,6 +599,7 @@ export interface FileRouteTypes {
     | '/_authenticated/credit-notes/'
     | '/_authenticated/customers/'
     | '/_authenticated/delivery-notes/'
+    | '/_authenticated/payments-out/'
     | '/_authenticated/payments/'
     | '/_authenticated/products/'
     | '/_authenticated/purchase-bills/'
@@ -752,6 +765,13 @@ declare module '@tanstack/react-router' {
       path: '/delivery-notes/new'
       fullPath: '/delivery-notes/new'
       preLoaderRoute: typeof AuthenticatedDeliveryNotesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payments-out/': {
+      id: '/_authenticated/payments-out/'
+      path: '/payments-out'
+      fullPath: '/payments-out/'
+      preLoaderRoute: typeof AuthenticatedPaymentsOutIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/payments/': {
@@ -958,6 +978,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreditNotesIndexRoute: typeof AuthenticatedCreditNotesIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedDeliveryNotesIndexRoute: typeof AuthenticatedDeliveryNotesIndexRoute
+  AuthenticatedPaymentsOutIndexRoute: typeof AuthenticatedPaymentsOutIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseBillsIndexRoute: typeof AuthenticatedPurchaseBillsIndexRoute
@@ -1008,6 +1029,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreditNotesIndexRoute: AuthenticatedCreditNotesIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedDeliveryNotesIndexRoute: AuthenticatedDeliveryNotesIndexRoute,
+  AuthenticatedPaymentsOutIndexRoute: AuthenticatedPaymentsOutIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseBillsIndexRoute: AuthenticatedPurchaseBillsIndexRoute,
@@ -1031,13 +1053,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
