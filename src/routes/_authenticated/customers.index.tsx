@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Search, Plus, Bell, Tag, Check } from "lucide-react";
+import { Users, Search, Plus, Bell, Tag, Check, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
