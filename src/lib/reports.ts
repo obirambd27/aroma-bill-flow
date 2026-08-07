@@ -263,7 +263,7 @@ export function useTransactions(range: { from: string; to: string }) {
         supabase
           .from("ledger_entries")
           .select(
-            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id, related_payment_id",
+            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id, related_payment_id, related_expense_id",
           )
           .gte("entry_date", from)
           .lte("entry_date", to)
