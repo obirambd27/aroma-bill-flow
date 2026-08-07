@@ -240,7 +240,7 @@ function BillDetailPage() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {view === "a4" ? "A4" : "Thermal (80mm)"}
+                  {view === "a4" ? "A4" : "Thermal (72mm)"}
                 </button>
               ))}
             </div>
