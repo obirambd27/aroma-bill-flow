@@ -114,15 +114,19 @@ export function RecordPaymentOutDialog({
       return;
     }
     const problems = validatePayment({
+      customerId: vendorId,
       amount: amountNumber,
       method,
-      accountId: method === "Cheque" ? "cheque" : accountId,
+      accountId: method === "Cheque" ? null : accountId || null,
+      paymentDate,
+      chequeNumber: method === "Cheque" ? chequeNumber : null,
+      bills: billLike,
       allocations: billLike.map((b) => ({
         billId: b.id,
         amount: Number(alloc[b.id]) || 0,
-        balance: billBalance(b),
       })),
     });
+
     if (problems.length > 0) {
       toast.error(problems[0]);
       return;
