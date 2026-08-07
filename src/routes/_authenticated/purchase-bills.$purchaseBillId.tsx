@@ -2,9 +2,10 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Printer, RotateCcw, Wallet } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { RecordPaymentOutDialog } from "@/components/RecordPaymentOutDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,6 +69,8 @@ function PurchaseBillDetail() {
 
   const balanceDue = Number(bill.total_amount) - Number(bill.amount_paid);
 
+  const [payOpen, setPayOpen] = useState(false);
+
   const doVoid = async () => {
     setWorking(true);
     try {
@@ -113,14 +116,21 @@ function PurchaseBillDetail() {
             Print
           </Button>
           {bill.status === "Finalized" && balanceDue > 0.001 && (
-            <Button
-              className="h-11"
-              onClick={() =>
-                navigate({ to: "/purchase-bills/new", search: bill.vendor_id ? { vendorId: bill.vendor_id } : {} })
-              }
-            >
+            <Button className="h-11" onClick={() => setPayOpen(true)}>
               <Wallet />
               Record Payment
+            </Button>
+          )}
+          {bill.status === "Finalized" && (
+            <Button
+              variant="outline"
+              className="h-11"
+              onClick={() =>
+                navigate({ to: "/purchase-returns/new", search: { purchaseBillId: bill.id } })
+              }
+            >
+              <RotateCcw />
+              Return Goods
             </Button>
           )}
           {bill.status === "Finalized" && (
@@ -129,6 +139,7 @@ function PurchaseBillDetail() {
               Void
             </Button>
           )}
+
         </div>
       </div>
 
@@ -260,6 +271,13 @@ function PurchaseBillDetail() {
           </div>
         )}
       </article>
+
+      <RecordPaymentOutDialog
+        open={payOpen}
+        onOpenChange={setPayOpen}
+        defaultVendorId={bill.vendor_id}
+        defaultBillId={bill.id}
+      />
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>

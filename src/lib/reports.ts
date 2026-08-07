@@ -263,7 +263,7 @@ export function useTransactions(range: { from: string; to: string }) {
         supabase
           .from("ledger_entries")
           .select(
-            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id, related_payment_id",
+            "id, entry_date, created_at, entry_type, amount, description, account_id, related_purchase_id, related_payment_id, related_expense_id",
           )
           .gte("entry_date", from)
           .lte("entry_date", to)
@@ -416,6 +416,9 @@ export function useTransactions(range: { from: string; to: string }) {
         if (!accountId || !isCashAccount[accountId]) continue;
         // Payments recorded through the Payments module are already listed above.
         if (entryType === "Sale Payment" && l["related_payment_id"]) continue;
+        // Expenses are listed from the expenses table below.
+        if (entryType === "Expense" && l["related_expense_id"]) continue;
+
         const type: TxnType =
           entryType === "Sale Payment"
             ? "Payment Received"
@@ -453,16 +456,18 @@ export function useTransactions(range: { from: string; to: string }) {
           type: "Expense",
           date,
           at: ts(date, e["created_at"]),
-          reference: (e["reference_number"] as string) ?? "—",
-          party: (e["payee"] as string) ?? (e["category"] as string) ?? "—",
-          description: (e["notes"] as string) || (e["category"] as string) || "Expense",
+          reference: (e["expense_number"] as string) ?? "—",
+          party: (e["vendor_name"] as string) ?? "—",
+          description: (e["description"] as string) || "Expense",
           accountId,
           account: accountId ? (accName[accountId] ?? "—") : "—",
           amount: Number(e["amount"] ?? 0),
           direction: "out",
           status: "Posted",
+          link: { to: "/expenses/$expenseId", params: { expenseId: String(e["id"]) } },
         });
       }
+
 
       return out.sort((a, b) => b.at.localeCompare(a.at));
     },

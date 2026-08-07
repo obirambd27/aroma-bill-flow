@@ -9,7 +9,9 @@ type LinkColumn =
   | "related_bill_id"
   | "related_purchase_id"
   | "related_expense_id"
+  | "related_return_id"
   | "related_payment_id";
+
 
 type JournalRow = {
   id: string;

@@ -729,6 +729,93 @@ export type Database = {
           },
         ]
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          attachment_url: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          expense_date: string
+          expense_number: string | null
+          id: string
+          is_recurring: boolean
+          next_recurrence_date: string | null
+          payment_method: string
+          recurrence_frequency: string | null
+          updated_at: string
+          vendor_name: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          expense_number?: string | null
+          id?: string
+          is_recurring?: boolean
+          next_recurrence_date?: string | null
+          payment_method?: string
+          recurrence_frequency?: string | null
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          expense_number?: string | null
+          id?: string
+          is_recurring?: boolean
+          next_recurrence_date?: string | null
+          payment_method?: string
+          recurrence_frequency?: string | null
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fund_transfers: {
         Row: {
           amount: number
@@ -787,6 +874,7 @@ export type Database = {
           related_expense_id: string | null
           related_payment_id: string | null
           related_purchase_id: string | null
+          related_return_id: string | null
         }
         Insert: {
           account_id: string
@@ -800,6 +888,7 @@ export type Database = {
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
+          related_return_id?: string | null
         }
         Update: {
           account_id?: string
@@ -813,6 +902,7 @@ export type Database = {
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
+          related_return_id?: string | null
         }
         Relationships: [
           {
@@ -884,6 +974,45 @@ export type Database = {
           },
         ]
       }
+      payment_made_allocations: {
+        Row: {
+          amount_allocated: number
+          created_at: string
+          id: string
+          payment_id: string
+          purchase_bill_id: string
+        }
+        Insert: {
+          amount_allocated?: number
+          created_at?: string
+          id?: string
+          payment_id: string
+          purchase_bill_id: string
+        }
+        Update: {
+          amount_allocated?: number
+          created_at?: string
+          id?: string
+          payment_id?: string
+          purchase_bill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_made_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments_made"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_made_allocations_purchase_bill_id_fkey"
+            columns: ["purchase_bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -928,6 +1057,57 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments_made: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_made_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_made_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -1314,6 +1494,134 @@ export type Database = {
           },
           {
             foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_return_items: {
+        Row: {
+          id: string
+          line_total: number
+          product_id: string | null
+          product_name_snapshot: string
+          purchase_bill_item_id: string | null
+          purchase_return_id: string
+          quantity: number
+          unit_cost: number
+        }
+        Insert: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot: string
+          purchase_bill_item_id?: string | null
+          purchase_return_id: string
+          quantity?: number
+          unit_cost?: number
+        }
+        Update: {
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name_snapshot?: string
+          purchase_bill_item_id?: string | null
+          purchase_return_id?: string
+          quantity?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_return_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_return_items_purchase_bill_item_id_fkey"
+            columns: ["purchase_bill_item_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bill_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_return_items_purchase_return_id_fkey"
+            columns: ["purchase_return_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_returns: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          purchase_bill_id: string | null
+          reason: string | null
+          return_date: string
+          return_number: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          vendor_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_bill_id?: string | null
+          reason?: string | null
+          return_date?: string
+          return_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_bill_id?: string | null
+          reason?: string | null
+          return_date?: string
+          return_number?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_returns_purchase_bill_id_fkey"
+            columns: ["purchase_bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_returns_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_returns_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"

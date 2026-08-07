@@ -20,6 +20,7 @@ import {
   Bell,
   Package,
   Plus,
+  Receipt,
   ReceiptText,
   ShoppingCart,
   Truck,
@@ -46,6 +47,7 @@ import {
   buildTrend,
   useDashboardBillItems,
   useDashboardBills,
+  useDashboardExpenses,
   useDashboardPurchaseBills,
   useDashboardStock,
   usePendingCheques,
@@ -225,6 +227,7 @@ function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: dueReminders = [] } = useDueReminders();
   const { data: cheques } = usePendingCheques();
+  const { data: expenses = [] } = useDashboardExpenses();
 
   const [trendMode, setTrendMode] = useState<TrendMode>("daily");
   const [showPurchases, setShowPurchases] = useState(true);
@@ -273,6 +276,19 @@ function DashboardPage() {
       cashBank,
     };
   }, [bills, purchaseBills, accounts, today, monthPrefix]);
+
+  const expenseSummary = useMemo(() => {
+    let total = 0;
+    let month = 0;
+    const byCategory = new Map<string, number>();
+    for (const e of expenses) {
+      total += e.amount;
+      if (e.expense_date.startsWith(monthPrefix)) month += e.amount;
+      byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amount);
+    }
+    const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    return { total, month, top };
+  }, [expenses, monthPrefix]);
 
   const trend = useMemo(
     () => buildTrend(trendMode, bills, purchaseBills),
@@ -792,6 +808,34 @@ function DashboardPage() {
             ))}
           </div>
         </Panel>
+
+        <Panel
+          title="Expenses this month"
+          icon={Receipt}
+          action={
+            <Link to="/expenses" className="text-xs font-medium text-primary hover:underline">
+              Expenses
+            </Link>
+          }
+        >
+          <div className="px-5 py-4">
+            <p className="numeric text-2xl font-bold">{formatMoney(expenseSummary.month)}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatMoney(expenseSummary.total)} recorded all time
+            </p>
+          </div>
+          {expenseSummary.top.length > 0 && (
+            <ul className="divide-y divide-border/60 border-t border-border/60">
+              {expenseSummary.top.map(([name, value]) => (
+                <li key={name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                  <span className="truncate text-muted-foreground">{name}</span>
+                  <span className="numeric font-medium">{formatMoney(value)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
 
         <Panel
           title="Reminders due today / overdue"

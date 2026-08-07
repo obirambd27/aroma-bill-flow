@@ -23,6 +23,9 @@ import {
   ShoppingCart,
   FileText,
   BarChart3,
+  Banknote,
+  Receipt,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -39,13 +42,17 @@ const NAV = [
   { to: "/vendors", label: "Vendors", icon: Factory, group: "Purchases" },
   { to: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart, group: "Purchases" },
   { to: "/purchase-bills", label: "Purchase Bills", icon: FileText, group: "Purchases" },
+  { to: "/purchase-returns", label: "Purchase Returns", icon: RotateCcw, group: "Purchases" },
+  { to: "/payments-out", label: "Payments Out", icon: Banknote, group: "Purchases" },
   { to: "/products", label: "Products", icon: Package, group: "Inventory" },
   { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
   { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
   { to: "/payments", label: "Payments", icon: Wallet, group: "Finance" },
+  { to: "/expenses", label: "Expenses", icon: Receipt, group: "Finance" },
   { to: "/cash-bank", label: "Cash & Bank", icon: Landmark, group: "Finance" },
   { to: "/cheques", label: "Cheques", icon: ScrollText, group: "Finance" },
   { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
+
   { to: "/reports", label: "Reports", icon: BarChart3, group: "Reports" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;

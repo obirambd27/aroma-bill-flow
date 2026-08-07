@@ -144,6 +144,38 @@ export function usePendingCheques() {
   });
 }
 
+export type DashExpense = {
+  expense_date: string;
+  amount: number;
+  category: string;
+};
+
+/** Expenses with their category name, for the dashboard spend widget. */
+export function useDashboardExpenses() {
+  return useQuery({
+    queryKey: ["dashboard", "expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("expense_date, amount, expense_categories(name)");
+      if (error) throw error;
+      return (data ?? []).map((r) => {
+        const row = r as unknown as {
+          expense_date: string;
+          amount: number;
+          expense_categories: { name: string } | null;
+        };
+        return {
+          expense_date: row.expense_date,
+          amount: Number(row.amount),
+          category: row.expense_categories?.name ?? "Uncategorised",
+        } satisfies DashExpense;
+      });
+    },
+  });
+}
+
+
 export type TrendBucket = { label: string; sales: number; purchases: number };
 
 function startOfWeek(d: Date) {
