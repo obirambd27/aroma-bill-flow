@@ -794,6 +794,34 @@ function DashboardPage() {
         </Panel>
 
         <Panel
+          title="Expenses this month"
+          icon={Receipt}
+          action={
+            <Link to="/expenses" className="text-xs font-medium text-primary hover:underline">
+              Expenses
+            </Link>
+          }
+        >
+          <div className="px-5 py-4">
+            <p className="numeric text-2xl font-bold">{formatMoney(expenseSummary.month)}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatMoney(expenseSummary.total)} recorded all time
+            </p>
+          </div>
+          {expenseSummary.top.length > 0 && (
+            <ul className="divide-y divide-border/60 border-t border-border/60">
+              {expenseSummary.top.map(([name, value]) => (
+                <li key={name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                  <span className="truncate text-muted-foreground">{name}</span>
+                  <span className="numeric font-medium">{formatMoney(value)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+
+        <Panel
           title="Reminders due today / overdue"
           icon={Bell}
           action={
