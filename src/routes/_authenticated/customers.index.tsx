@@ -68,10 +68,17 @@ function CustomersPage() {
         title="Customers"
         description="Everyone who has shopped with you."
         actions={
-          <Button className="h-11" onClick={() => setDialogOpen(true)}>
-            <Plus />
-            New Customer
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/import-export">
+                <FileSpreadsheet /> Import / Export
+              </Link>
+            </Button>
+            <Button className="h-11" onClick={() => setDialogOpen(true)}>
+              <Plus />
+              New Customer
+            </Button>
+          </div>
         }
       />
 

@@ -6,6 +6,7 @@ import {
   Package,
   Users,
   ReceiptText,
+  FileSpreadsheet,
   Settings as SettingsIcon,
   PanelLeftClose,
   PanelLeft,
@@ -54,6 +55,7 @@ const NAV = [
   { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
 
   { to: "/reports", label: "Reports", icon: BarChart3, group: "Reports" },
+  { to: "/import-export", label: "Import / Export", icon: FileSpreadsheet, group: "" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
 

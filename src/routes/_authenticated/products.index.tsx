@@ -142,9 +142,16 @@ function ProductsPage() {
         title="Products"
         description="Catalogue, pricing and stock levels."
         actions={
-          <Button className="h-11" onClick={openNew}>
-            <Plus /> New Product
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/import-export">
+                <FileSpreadsheet /> Import / Export
+              </Link>
+            </Button>
+            <Button className="h-11" onClick={openNew}>
+              <Plus /> New Product
+            </Button>
+          </div>
         }
       />
 
