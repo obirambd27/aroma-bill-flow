@@ -453,16 +453,18 @@ export function useTransactions(range: { from: string; to: string }) {
           type: "Expense",
           date,
           at: ts(date, e["created_at"]),
-          reference: (e["reference_number"] as string) ?? "—",
-          party: (e["payee"] as string) ?? (e["category"] as string) ?? "—",
-          description: (e["notes"] as string) || (e["category"] as string) || "Expense",
+          reference: (e["expense_number"] as string) ?? "—",
+          party: (e["vendor_name"] as string) ?? "—",
+          description: (e["description"] as string) || "Expense",
           accountId,
           account: accountId ? (accName[accountId] ?? "—") : "—",
           amount: Number(e["amount"] ?? 0),
           direction: "out",
           status: "Posted",
+          link: { to: "/expenses/$expenseId", params: { expenseId: String(e["id"]) } },
         });
       }
+
 
       return out.sort((a, b) => b.at.localeCompare(a.at));
     },
