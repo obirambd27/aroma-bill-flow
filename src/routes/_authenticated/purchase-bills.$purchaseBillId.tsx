@@ -2,9 +2,10 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Printer, RotateCcw, Wallet } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { RecordPaymentOutDialog } from "@/components/RecordPaymentOutDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +68,8 @@ function PurchaseBillDetail() {
   }
 
   const balanceDue = Number(bill.total_amount) - Number(bill.amount_paid);
+
+  const [payOpen, setPayOpen] = useState(false);
 
   const doVoid = async () => {
     setWorking(true);
@@ -268,6 +271,13 @@ function PurchaseBillDetail() {
           </div>
         )}
       </article>
+
+      <RecordPaymentOutDialog
+        open={payOpen}
+        onOpenChange={setPayOpen}
+        defaultVendorId={bill.vendor_id}
+        defaultBillId={bill.id}
+      />
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>
