@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { InstallAppButton } from "@/components/PwaBanners";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -281,6 +283,27 @@ function SettingsPage() {
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>
+      </Section>
+
+      <Section
+        title="Data Import & Export"
+        description="This app works fully offline from any external service. Use this only as a manual backup or bulk-load tool — not required for normal use."
+      >
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/import-export">
+              <FileSpreadsheet />
+              Open Import / Export
+            </Link>
+          </Button>
+        </div>
+      </Section>
+
+      <Section
+        title="Install App"
+        description="Install Fragrance Billing on this device so it opens full screen, like a native app."
+      >
+        <InstallAppButton />
       </Section>
     </div>
   );

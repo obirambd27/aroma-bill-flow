@@ -72,7 +72,7 @@ function PurchaseReturnsPage() {
         description="Send goods back to a vendor and reverse the stock and payable."
         actions={
           <Button asChild>
-            <Link to="/purchase-returns/new">
+            <Link to="/purchase-returns/new" search={{ purchaseBillId: undefined }}>
               <Plus />
               New Purchase Return
             </Link>
@@ -148,7 +148,7 @@ function PurchaseReturnsPage() {
               ? {
                   actionLabel: "New Purchase Return",
                   onAction: () => {
-                    void navigate({ to: "/purchase-returns/new" });
+                    void navigate({ to: "/purchase-returns/new", search: { purchaseBillId: undefined } });
                   },
                 }
               : {})}

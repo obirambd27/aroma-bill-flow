@@ -595,6 +595,7 @@ export type Database = {
           date_of_birth: string | null
           email: string | null
           id: string
+          is_active: boolean
           last_purchase_at: string | null
           name: string
           notes: string | null
@@ -608,6 +609,7 @@ export type Database = {
           date_of_birth?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean
           last_purchase_at?: string | null
           name: string
           notes?: string | null
@@ -621,6 +623,7 @@ export type Database = {
           date_of_birth?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean
           last_purchase_at?: string | null
           name?: string
           notes?: string | null
@@ -857,6 +860,50 @@ export type Database = {
             columns: ["to_account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_logs: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          import_type: string
+          notes: string | null
+          records_created: number
+          records_skipped: number
+          records_updated: number
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          import_type: string
+          notes?: string | null
+          records_created?: number
+          records_skipped?: number
+          records_updated?: number
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          import_type?: string
+          notes?: string | null
+          records_created?: number
+          records_skipped?: number
+          records_updated?: number
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]

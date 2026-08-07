@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Search, Plus, Bell, Tag, Check } from "lucide-react";
+import { Users, Search, Plus, Bell, Tag, Check, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
@@ -68,10 +68,17 @@ function CustomersPage() {
         title="Customers"
         description="Everyone who has shopped with you."
         actions={
-          <Button className="h-11" onClick={() => setDialogOpen(true)}>
-            <Plus />
-            New Customer
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/import-export">
+                <FileSpreadsheet /> Import / Export
+              </Link>
+            </Button>
+            <Button className="h-11" onClick={() => setDialogOpen(true)}>
+              <Plus />
+              New Customer
+            </Button>
+          </div>
         }
       />
 

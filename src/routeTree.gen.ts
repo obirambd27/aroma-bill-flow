@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedChequesRouteImport } from './routes/_authenticated/cheques'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedImportExportRouteImport } from './routes/_authenticated/import-export'
 import { Route as AuthenticatedNewBillRouteImport } from './routes/_authenticated/new-bill'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
@@ -91,6 +92,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportExportRoute =
+  AuthenticatedImportExportRouteImport.update({
+    id: '/import-export',
+    path: '/import-export',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNewBillRoute = AuthenticatedNewBillRouteImport.update({
   id: '/new-bill',
   path: '/new-bill',
@@ -371,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/cheques': typeof AuthenticatedChequesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
@@ -424,6 +432,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/cheques': typeof AuthenticatedChequesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
@@ -479,6 +488,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/cheques': typeof AuthenticatedChequesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/import-export': typeof AuthenticatedImportExportRoute
   '/_authenticated/new-bill': typeof AuthenticatedNewBillRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/cheques'
     | '/dashboard'
+    | '/import-export'
     | '/new-bill'
     | '/settings'
     | '/accounts/$accountId'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/cheques'
     | '/dashboard'
+    | '/import-export'
     | '/new-bill'
     | '/settings'
     | '/accounts/$accountId'
@@ -641,6 +653,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/cheques'
     | '/_authenticated/dashboard'
+    | '/_authenticated/import-export'
     | '/_authenticated/new-bill'
     | '/_authenticated/settings'
     | '/_authenticated/accounts/$accountId'
@@ -738,6 +751,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/import-export': {
+      id: '/_authenticated/import-export'
+      path: '/import-export'
+      fullPath: '/import-export'
+      preLoaderRoute: typeof AuthenticatedImportExportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/new-bill': {
@@ -1068,6 +1088,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChequesRoute: typeof AuthenticatedChequesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedImportExportRoute: typeof AuthenticatedImportExportRoute
   AuthenticatedNewBillRoute: typeof AuthenticatedNewBillRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAccountsAccountIdRoute: typeof AuthenticatedAccountsAccountIdRoute
@@ -1119,6 +1140,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChequesRoute: AuthenticatedChequesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedImportExportRoute: AuthenticatedImportExportRoute,
   AuthenticatedNewBillRoute: AuthenticatedNewBillRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAccountsAccountIdRoute: AuthenticatedAccountsAccountIdRoute,
@@ -1187,3 +1209,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

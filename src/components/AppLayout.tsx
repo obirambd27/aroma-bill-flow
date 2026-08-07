@@ -6,6 +6,7 @@ import {
   Package,
   Users,
   ReceiptText,
+  FileSpreadsheet,
   Settings as SettingsIcon,
   PanelLeftClose,
   PanelLeft,
@@ -54,8 +55,11 @@ const NAV = [
   { to: "/accounts", label: "Accounts", icon: BookOpen, group: "Finance" },
 
   { to: "/reports", label: "Reports", icon: BarChart3, group: "Reports" },
+  { to: "/import-export", label: "Import / Export", icon: FileSpreadsheet, group: "" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
+
+import { PwaBanners } from "@/components/PwaBanners";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -161,7 +165,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           collapsed ? "md:pl-22" : "md:pl-66",
         )}
       >
-        <div className="mx-auto w-full max-w-6xl space-y-6">{children}</div>
+        <div className="mx-auto w-full max-w-6xl space-y-6">
+          <PwaBanners />
+          {children}
+        </div>
       </main>
 
       {/* Mobile bottom tabs */}

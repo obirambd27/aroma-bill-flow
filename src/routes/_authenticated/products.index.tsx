@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Search, ArrowUpDown, LayoutGrid, List, Plus, Pencil, Trash2 } from "lucide-react";
+import { Package, Search, ArrowUpDown, LayoutGrid, List, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge, stockTone } from "@/components/StatusBadge";
@@ -142,9 +142,16 @@ function ProductsPage() {
         title="Products"
         description="Catalogue, pricing and stock levels."
         actions={
-          <Button className="h-11" onClick={openNew}>
-            <Plus /> New Product
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/import-export">
+                <FileSpreadsheet /> Import / Export
+              </Link>
+            </Button>
+            <Button className="h-11" onClick={openNew}>
+              <Plus /> New Product
+            </Button>
+          </div>
         }
       />
 
