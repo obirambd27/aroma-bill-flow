@@ -113,14 +113,21 @@ function PurchaseBillDetail() {
             Print
           </Button>
           {bill.status === "Finalized" && balanceDue > 0.001 && (
-            <Button
-              className="h-11"
-              onClick={() =>
-                navigate({ to: "/purchase-bills/new", search: bill.vendor_id ? { vendorId: bill.vendor_id } : {} })
-              }
-            >
+            <Button className="h-11" onClick={() => setPayOpen(true)}>
               <Wallet />
               Record Payment
+            </Button>
+          )}
+          {bill.status === "Finalized" && (
+            <Button
+              variant="outline"
+              className="h-11"
+              onClick={() =>
+                navigate({ to: "/purchase-returns/new", search: { purchaseBillId: bill.id } })
+              }
+            >
+              <RotateCcw />
+              Return Goods
             </Button>
           )}
           {bill.status === "Finalized" && (
@@ -129,6 +136,7 @@ function PurchaseBillDetail() {
               Void
             </Button>
           )}
+
         </div>
       </div>
 
