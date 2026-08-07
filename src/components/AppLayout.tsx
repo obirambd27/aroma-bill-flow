@@ -59,6 +59,8 @@ const NAV = [
   { to: "/settings", label: "Settings", icon: SettingsIcon, group: "" },
 ] as const;
 
+import { PwaBanners } from "@/components/PwaBanners";
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
@@ -163,7 +165,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           collapsed ? "md:pl-22" : "md:pl-66",
         )}
       >
-        <div className="mx-auto w-full max-w-6xl space-y-6">{children}</div>
+        <div className="mx-auto w-full max-w-6xl space-y-6">
+          <PwaBanners />
+          {children}
+        </div>
       </main>
 
       {/* Mobile bottom tabs */}
