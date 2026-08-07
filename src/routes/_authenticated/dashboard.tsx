@@ -20,6 +20,7 @@ import {
   Bell,
   Package,
   Plus,
+  Receipt,
   ReceiptText,
   ShoppingCart,
   Truck,
@@ -46,6 +47,7 @@ import {
   buildTrend,
   useDashboardBillItems,
   useDashboardBills,
+  useDashboardExpenses,
   useDashboardPurchaseBills,
   useDashboardStock,
   usePendingCheques,
@@ -225,6 +227,7 @@ function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: dueReminders = [] } = useDueReminders();
   const { data: cheques } = usePendingCheques();
+  const { data: expenses = [] } = useDashboardExpenses();
 
   const [trendMode, setTrendMode] = useState<TrendMode>("daily");
   const [showPurchases, setShowPurchases] = useState(true);
@@ -273,6 +276,19 @@ function DashboardPage() {
       cashBank,
     };
   }, [bills, purchaseBills, accounts, today, monthPrefix]);
+
+  const expenseSummary = useMemo(() => {
+    let total = 0;
+    let month = 0;
+    const byCategory = new Map<string, number>();
+    for (const e of expenses) {
+      total += e.amount;
+      if (e.expense_date.startsWith(monthPrefix)) month += e.amount;
+      byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amount);
+    }
+    const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    return { total, month, top };
+  }, [expenses, monthPrefix]);
 
   const trend = useMemo(
     () => buildTrend(trendMode, bills, purchaseBills),
