@@ -416,6 +416,9 @@ export function useTransactions(range: { from: string; to: string }) {
         if (!accountId || !isCashAccount[accountId]) continue;
         // Payments recorded through the Payments module are already listed above.
         if (entryType === "Sale Payment" && l["related_payment_id"]) continue;
+        // Expenses are listed from the expenses table below.
+        if (entryType === "Expense" && l["related_expense_id"]) continue;
+
         const type: TxnType =
           entryType === "Sale Payment"
             ? "Payment Received"
