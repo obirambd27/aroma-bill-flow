@@ -78,10 +78,13 @@ function BillDetailPage() {
         return;
       }
       const sheet = document.querySelector<HTMLElement>(".thermal-sheet");
+      // On-screen sheet is 302px wide (~80mm) at ~11px text; print is 72mm at 8.5pt,
+      // so the printed height is close. Add a small buffer, never a full extra page.
       const heightMm = sheet
-        ? Math.max(Math.ceil((sheet.scrollHeight / 96) * 25.4) + 8, 60)
-        : 200;
-      style.textContent = `@media print { @page { size: 80mm ${heightMm}mm; margin: 3mm; } }`;
+        ? Math.max(Math.ceil((sheet.scrollHeight / 96) * 25.4 * 1.05) + 4, 40)
+        : 150;
+      style.textContent = `@media print { @page { size: 72mm ${heightMm}mm; margin: 0; } }`;
+
     };
 
     applyPageRule();
@@ -237,7 +240,7 @@ function BillDetailPage() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {view === "a4" ? "A4" : "Thermal (80mm)"}
+                  {view === "a4" ? "A4" : "Thermal (72mm)"}
                 </button>
               ))}
             </div>
