@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Package, Search, ArrowUpDown, LayoutGrid, List, Plus, Pencil, Trash2 } from "lucide-react";
+import { Package, Search, ArrowUpDown, LayoutGrid, List, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge, stockTone } from "@/components/StatusBadge";
