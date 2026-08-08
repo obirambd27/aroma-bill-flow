@@ -522,6 +522,16 @@ function BillDetailPage() {
         />
       )}
 
+      <ShareInvoiceDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        bill={bill}
+        settings={settings}
+        balanceDue={balanceDue}
+      />
+
+
+
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
