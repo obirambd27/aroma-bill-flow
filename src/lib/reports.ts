@@ -423,6 +423,8 @@ export function useTransactions(range: { from: string; to: string }) {
 
       for (const p of (received.data ?? []) as unknown as Row[]) {
         const accountId = (p["account_id"] as string | null) ?? null;
+        const method = normalizeMethod(p["payment_method"] as string | null);
+        const amount = Number(p["amount"] ?? 0);
         out.push({
           key: `received-${p["id"]}`,
           id: String(p["id"]),
@@ -431,11 +433,12 @@ export function useTransactions(range: { from: string; to: string }) {
           at: ts(String(p["payment_date"]), p["created_at"]),
           reference: (p["reference_number"] as string) ?? "—",
           party: (p["customers"] as { name: string } | null)?.name ?? "Walk-in",
-          description: `Payment received (${p["payment_method"] ?? "—"})`,
-          paymentMethod: (p["payment_method"] as string | null) ?? null,
+          description: `Payment received (${method ?? "—"})`,
+          paymentMethod: method,
+          paidByMethod: method ? { [method]: amount } : {},
           accountId,
           account: accountId ? (accName[accountId] ?? "—") : "—",
-          amount: Number(p["amount"] ?? 0),
+          amount,
           direction: "in",
           status: "Completed",
         });
