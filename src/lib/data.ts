@@ -330,13 +330,16 @@ export type BillHistoryRow = Bill & {
   salesOrder: { id: string; order_number: string | null } | null;
   deliveryNotes: { id: string; delivery_number: string | null; status: string }[];
   balanceDue: number;
+  /** Money actually received on this bill, split by payment method. */
+  paidByMethod: Record<string, number>;
+  methods: string[];
 };
 
 export function useBillHistory() {
   return useQuery({
     queryKey: ["bill-history"],
     queryFn: async () => {
-      const [billsRes, whRes, returnsRes, creditRes, dnRes] = await Promise.all([
+      const [billsRes, whRes, returnsRes, creditRes, dnRes, allocRes] = await Promise.all([
         supabase
           .from("bills")
           .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
@@ -352,6 +355,11 @@ export function useBillHistory() {
         supabase
           .from("delivery_notes")
           .select("id, delivery_number, status, sales_order_id"),
+        supabase
+          .from("payment_allocations")
+          .select(
+            "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+          ),
       ]);
       if (billsRes.error) throw billsRes.error;
       if (whRes.error) throw whRes.error;
