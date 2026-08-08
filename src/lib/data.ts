@@ -366,9 +366,30 @@ export function useBillHistory() {
       if (returnsRes.error) throw returnsRes.error;
       if (creditRes.error) throw creditRes.error;
       if (dnRes.error) throw dnRes.error;
+      if (allocRes.error) throw allocRes.error;
 
       const whName: Record<string, string> = {};
       for (const w of whRes.data ?? []) whName[w.id] = w.name;
+
+      const allocByBill: Record<string, AllocationInput[]> = {};
+      for (const a of (allocRes.data ?? []) as unknown as {
+        bill_id: string;
+        amount_allocated: number;
+        payments_received: {
+          payment_date: string;
+          payment_method: string | null;
+          reference_number: string | null;
+        } | null;
+      }[]) {
+        (allocByBill[a.bill_id] ??= []).push({
+          amount: Number(a.amount_allocated),
+          method: a.payments_received?.payment_method ?? null,
+          date: a.payments_received?.payment_date ?? null,
+          reference: a.payments_received?.reference_number ?? null,
+        });
+      }
+
+
 
       const rows = (billsRes.data ?? []) as unknown as (Bill & {
         customers: { id: string; name: string } | null;
