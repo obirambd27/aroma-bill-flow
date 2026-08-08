@@ -474,6 +474,19 @@ function BillsPage() {
         </div>
       </div>
 
+      <PaymentMethodTiles
+        label="Collected"
+        totals={summary.methodTotals}
+        totalSales={summary.collected}
+        active={methodFilter}
+        onSelect={(m) => {
+          setMethodFilter(m);
+          setPage(1);
+        }}
+      />
+
+
+
       <div className="surface-card overflow-hidden">
         {/* Search + filter toggle */}
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
