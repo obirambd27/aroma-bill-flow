@@ -111,11 +111,18 @@ export function buildPaymentBreakdown(
   });
 
   const byMethod: Record<string, number> = {};
-  for (const l of lines) byMethod[l.method] = round2((byMethod[l.method] ?? 0) + l.amount);
+  const upfrontByMethod: Record<string, number> = {};
+  for (const l of lines) {
+    byMethod[l.method] = round2((byMethod[l.method] ?? 0) + l.amount);
+    if (l.source === "billing") {
+      upfrontByMethod[l.method] = round2((upfrontByMethod[l.method] ?? 0) + l.amount);
+    }
+  }
 
   return {
     lines,
     byMethod,
+    upfrontByMethod,
     methods: Object.keys(byMethod),
     totalPaid,
     balanceDue: round2(Math.max(total - totalPaid, 0)),
