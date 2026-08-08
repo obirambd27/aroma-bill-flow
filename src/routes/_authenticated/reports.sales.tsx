@@ -29,7 +29,6 @@ import { PAYMENT_METHODS } from "@/lib/payments";
 import {
   PaymentMethodTag,
   PaymentMethodTiles,
-  sumByMethod,
 } from "@/components/PaymentMethodBreakdown";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -147,7 +146,7 @@ function SalesReport() {
             ? r.bill_date
             : groupBy === "month"
               ? r.bill_date.slice(0, 7)
-              : (r.payment_method ?? "Unpaid / No method");
+              : (r.methods.join(" + ") || "Unpaid / No method");
     return groupRows(rows, keyFn).map(([key, list]) => ({
       key,
       list,
@@ -179,7 +178,7 @@ function SalesReport() {
     r.discount_amount,
     r.tax_amount,
     r.total_amount,
-    r.payment_method ?? "—",
+    r.methods.map((m) => `${m}: ${r.paidByMethod[m] ?? 0}`).join(" | ") || "—",
     r.payment_status,
   ]);
 
@@ -376,7 +375,7 @@ function SalesReport() {
       />
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <PaymentMethodTiles totals={methodTotals} totalSales={totals.sales} />
+        <PaymentMethodTiles label="Collected" totals={methodTotals} totalSales={collected} />
         <Card className="p-4">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Sales by payment method
