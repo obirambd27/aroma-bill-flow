@@ -181,19 +181,53 @@
     display: none !important;
   }
 
+  /* A4: print only the invoice sheet — every other element is removed from
+     the layout so the printer never feeds app chrome or extra sheets. */
+  body:not(.print-thermal)
+    *:not(:has(.invoice-sheet)):not(.invoice-sheet):not(.invoice-sheet *) {
+    display: none !important;
+  }
+
+  body:not(.print-thermal),
+  body:not(.print-thermal) *:has(.invoice-sheet) {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    gap: 0 !important;
+  }
+
   main {
     padding: 0 !important;
     margin: 0 !important;
   }
 
   .invoice-sheet {
+    display: block !important;
     max-width: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
     background: #fff !important;
     color: #000 !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .invoice-sheet * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .invoice-sheet table {
@@ -206,6 +240,7 @@
   .invoice-sheet footer {
     page-break-inside: avoid;
   }
+
 
   /* ---- 72mm thermal roll ----
      Everything except the receipt is fully removed from the layout (display:none,
