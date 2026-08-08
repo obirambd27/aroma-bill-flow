@@ -380,6 +380,7 @@ function BillsPage() {
       if (billStatuses.length && !billStatuses.includes(b.status)) return false;
       if (tax === "taxed" && !b.is_taxed) return false;
       if (tax === "untaxed" && b.is_taxed) return false;
+      if (methodFilter && !b.methods.includes(methodFilter)) return false;
       return true;
     });
   }, [
@@ -393,20 +394,28 @@ function BillsPage() {
     payStatuses,
     billStatuses,
     tax,
+    methodFilter,
   ]);
 
   const summary = useMemo(() => {
     let revenue = 0;
     let outstanding = 0;
+    let collected = 0;
+    const methodTotals: MethodTotals = {};
     const counts = { Paid: 0, Partial: 0, Unpaid: 0 } as Record<string, number>;
     for (const b of visible) {
       if (b.status === "Voided") continue;
       revenue += Number(b.total_amount);
       if (b.payment_status !== "Paid") outstanding += b.balanceDue;
       counts[b.payment_status] = (counts[b.payment_status] ?? 0) + 1;
+      for (const [method, amount] of Object.entries(b.paidByMethod)) {
+        methodTotals[method] = (methodTotals[method] ?? 0) + amount;
+        collected += amount;
+      }
     }
-    return { revenue, outstanding, counts };
+    return { revenue, outstanding, counts, methodTotals, collected };
   }, [visible]);
+
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
