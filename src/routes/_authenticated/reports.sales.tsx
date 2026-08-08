@@ -156,6 +156,7 @@ function SalesReport() {
     "Discount",
     "Tax",
     "Total",
+    "Payment Method",
     "Payment Status",
   ];
   const exportRows = rows.map((r) => [
@@ -167,6 +168,7 @@ function SalesReport() {
     r.discount_amount,
     r.tax_amount,
     r.total_amount,
+    r.payment_method ?? "—",
     r.payment_status,
   ]);
 
@@ -467,6 +469,9 @@ function SalesReport() {
                     Tax
                   </th>
                   <th className="px-3 py-2">{sortBtn("total_amount", "Total", "right")}</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Method
+                  </th>
                   <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Status
                   </th>
@@ -493,6 +498,9 @@ function SalesReport() {
                     <td className="px-3 py-2 text-right font-semibold">
                       {formatMoney(r.total_amount)}
                     </td>
+                    <td className="px-3 py-2">
+                      <PaymentMethodTag method={r.payment_method} />
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <StatusBadge tone={paymentTone(r.payment_status)}>
                         {r.payment_status}
@@ -512,6 +520,7 @@ function SalesReport() {
                   <td className="px-3 py-2 text-right">{formatMoney(totals.discount)}</td>
                   <td className="px-3 py-2 text-right">{formatMoney(totals.tax)}</td>
                   <td className="px-3 py-2 text-right">{formatMoney(totals.sales)}</td>
+                  <td />
                   <td />
                 </tr>
               </tfoot>
