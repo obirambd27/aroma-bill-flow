@@ -237,6 +237,15 @@ function DashboardPage() {
   const [payBillId, setPayBillId] = useState<string | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
+  const todayByMethod = useMemo(
+    () =>
+      sumByMethod(
+        bills
+          .filter((b) => b.bill_date === today)
+          .map((b) => ({ payment_method: b.payment_method, amount: b.total_amount })),
+      ),
+    [bills, today],
+  );
   const monthPrefix = today.slice(0, 7);
 
   const summary = useMemo(() => {
@@ -489,6 +498,26 @@ function DashboardPage() {
           tone="success"
         />
       </div>
+
+      {/* Today's sales by payment method */}
+      <Panel title="Today's sales by payment method">
+        <ul className="divide-y divide-border">
+          {PAYMENT_METHODS.map((m) => (
+            <li key={m}>
+              <Link
+                to="/reports/day-book"
+                search={{ method: m }}
+                className="flex items-center justify-between gap-3 py-2.5 transition-colors hover:bg-muted/40"
+              >
+                <PaymentMethodTag method={m} />
+                <span className="numeric text-sm font-semibold">
+                  {formatMoney(todayByMethod[m] ?? 0)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Panel>
 
       {/* Sales trend */}
       <Panel
