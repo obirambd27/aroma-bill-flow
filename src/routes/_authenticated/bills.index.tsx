@@ -710,6 +710,7 @@ function BillsPage() {
                   <th className="px-4 py-3">Warehouse</th>
                   <th className="px-4 py-3">Tax</th>
                   <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3">Method</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Total</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -777,6 +778,9 @@ function BillsPage() {
                         <StatusBadge tone={paymentTone(b.payment_status)}>
                           {b.payment_status}
                         </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <MethodCell row={b} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
@@ -875,6 +879,7 @@ function BillsPage() {
                       </StatusBadge>
                       <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
                       <ReturnBadge row={b} />
+                      <MethodCell row={b} />
                       <button
                         className="ml-auto text-xs font-medium text-primary"
                         onClick={(e) => {
