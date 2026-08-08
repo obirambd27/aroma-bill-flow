@@ -1964,6 +1964,7 @@ export type Database = {
           invoice_footer_note: string | null
           invoice_prefix: string
           low_stock_threshold: number
+          share_message_footer: string | null
           tax_id: string | null
           terms_and_conditions: string | null
         }
@@ -1980,6 +1981,7 @@ export type Database = {
           invoice_footer_note?: string | null
           invoice_prefix?: string
           low_stock_threshold?: number
+          share_message_footer?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
         }
@@ -1996,6 +1998,7 @@ export type Database = {
           invoice_footer_note?: string | null
           invoice_prefix?: string
           low_stock_threshold?: number
+          share_message_footer?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
         }
