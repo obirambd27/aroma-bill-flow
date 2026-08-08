@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { PAYMENT_METHODS } from "@/lib/payments";
+import { PaymentMethodTag, sumByMethod } from "@/components/PaymentMethodBreakdown";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Bar,
