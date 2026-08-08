@@ -1,4 +1,5 @@
 import type { Tables } from "@/integrations/supabase/types";
+import type { PaymentLine } from "@/lib/bill-payments";
 import { formatDate, formatMoney } from "@/lib/format";
 
 type Bill = Tables<"bills"> & {
@@ -9,14 +10,24 @@ type Bill = Tables<"bills"> & {
 export function ThermalReceipt({
   bill,
   settings,
+  payments = [],
+  paid: paidProp,
+  balanceDue: balanceProp,
 }: {
   bill: Bill;
   settings: Tables<"settings"> | null | undefined;
+  payments?: PaymentLine[];
+  paid?: number;
+  balanceDue?: number;
 }) {
   const taxed = bill.is_taxed;
   const total = Number(bill.total_amount);
-  const paid = Number(bill.amount_paid ?? 0);
-  const balanceDue = Math.max(total - paid, 0);
+  const paid = paidProp ?? Number(bill.amount_paid ?? 0);
+  const balanceDue = balanceProp ?? Math.max(total - paid, 0);
+  const byMethod = payments.reduce<Record<string, number>>((acc, p) => {
+    acc[p.method] = (acc[p.method] ?? 0) + p.amount;
+    return acc;
+  }, {});
   const dash = "--------------------------------";
 
   return (
