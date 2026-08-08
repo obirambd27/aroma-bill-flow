@@ -37,7 +37,7 @@ export function PaymentMethodTiles({
 }: {
   totals: MethodTotals;
   totalSales: number;
-  active?: string | null;
+  active?: string | null | undefined;
   onSelect?: (method: string | null) => void;
   label?: string;
 }) {
