@@ -25,6 +25,7 @@ import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/da
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { buildPaymentBreakdown, useBillAllocations } from "@/lib/bill-payments";
 
 type PrintView = "a4" | "thermal";
 /** Session-level memory of the last chosen print view. */
@@ -116,8 +117,9 @@ function BillDetailPage() {
 
   const taxed = bill.is_taxed;
   const total = Number(bill.total_amount);
-  const paid = Number(bill.amount_paid ?? 0);
-  const balanceDue = Math.max(total - paid, 0);
+  const breakdown = buildPaymentBreakdown(bill, allocations);
+  const paid = breakdown.totalPaid;
+  const balanceDue = breakdown.balanceDue;
   const warehouseName = (id: string | null) =>
     warehouses.find((w) => w.id === id)?.name ?? bill.warehouses?.name ?? "—";
 
@@ -283,7 +285,13 @@ function BillDetailPage() {
 
       {/* Invoice document */}
       {printView === "thermal" ? (
-        <ThermalReceipt bill={bill} settings={settings} />
+        <ThermalReceipt
+          bill={bill}
+          settings={settings}
+          payments={breakdown.lines}
+          paid={paid}
+          balanceDue={balanceDue}
+        />
       ) : (
       <article className="invoice-sheet mx-auto w-full max-w-3xl rounded-2xl bg-card p-6 shadow-lg sm:p-10">
 
