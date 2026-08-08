@@ -44,11 +44,13 @@ function DayBook() {
   const [methodFilter, setMethodFilter] = useState<string | null>(search.method ?? null);
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
-  const range = useMemo(() => ({ from: from <= to ? from : to, to: to >= from ? to : from }), [from, to]);
+  const range = useMemo(
+    () => ({ from: from <= to ? from : to, to: to >= from ? to : from }),
+    [from, to],
+  );
   const { data: all = [], isLoading } = useTransactions(range);
 
   const chronological = useMemo(() => [...all].sort((a, b) => a.at.localeCompare(b.at)), [all]);
-
 
   // Tiles show money actually received today — upfront bill payments plus
   // payments recorded against older bills — not the full value of each sale.
@@ -153,7 +155,12 @@ function DayBook() {
                 <ArrowLeft className="h-4 w-4" /> Reports
               </Link>
             </Button>
-            <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => stepDay(-1)}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous day"
+              onClick={() => stepDay(-1)}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="icon" aria-label="Next day" onClick={() => stepDay(1)}>

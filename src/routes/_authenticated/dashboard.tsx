@@ -37,12 +37,7 @@ import { Button } from "@/components/ui/button";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
-import {
-  useAllProducts,
-  useAllWarehouses,
-  useCustomers,
-  useSettings,
-} from "@/lib/data";
+import { useAllProducts, useAllWarehouses, useCustomers, useSettings } from "@/lib/data";
 import { useAccounts } from "@/lib/accounting";
 import { useDueReminders } from "@/lib/crm";
 import {
@@ -176,13 +171,7 @@ function Segmented<T extends string>({
   );
 }
 
-function DonutCard({
-  title,
-  data,
-}: {
-  title: string;
-  data: { name: string; value: number }[];
-}) {
+function DonutCard({ title, data }: { title: string; data: { name: string; value: number }[] }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
     <div className="min-w-0">
@@ -307,7 +296,10 @@ function DashboardPage() {
   );
 
   const topProducts = useMemo(() => {
-    const map = new Map<string, { id: string | null; name: string; revenue: number; qty: number }>();
+    const map = new Map<
+      string,
+      { id: string | null; name: string; revenue: number; qty: number }
+    >();
     for (const item of billItems) {
       const key = item.product_id ?? item.product_name_snapshot;
       const row = map.get(key) ?? {
@@ -606,12 +598,18 @@ function DashboardPage() {
           }
         >
           {topProducts.length === 0 ? (
-            <EmptyState icon={Package} title="No sales yet" description="Finalize a bill to see your best sellers." />
+            <EmptyState
+              icon={Package}
+              title="No sales yet"
+              description="Finalize a bill to see your best sellers."
+            />
           ) : (
             <ul className="divide-y divide-border/60">
               {topProducts.map((p, i) => (
                 <li key={p.id ?? p.name} className="flex items-center gap-3 px-5 py-3">
-                  <span className="numeric w-5 shrink-0 text-xs text-muted-foreground">{i + 1}</span>
+                  <span className="numeric w-5 shrink-0 text-xs text-muted-foreground">
+                    {i + 1}
+                  </span>
                   {p.id ? (
                     <Link
                       to="/products/$productId"
@@ -634,12 +632,18 @@ function DashboardPage() {
 
         <Panel title="Top 5 customers" icon={Users}>
           {topCustomers.length === 0 ? (
-            <EmptyState icon={Users} title="No customer sales" description="Bills linked to a customer appear here." />
+            <EmptyState
+              icon={Users}
+              title="No customer sales"
+              description="Bills linked to a customer appear here."
+            />
           ) : (
             <ul className="divide-y divide-border/60">
               {topCustomers.map((c, i) => (
                 <li key={c.id} className="flex items-center gap-3 px-5 py-3">
-                  <span className="numeric w-5 shrink-0 text-xs text-muted-foreground">{i + 1}</span>
+                  <span className="numeric w-5 shrink-0 text-xs text-muted-foreground">
+                    {i + 1}
+                  </span>
                   <Link
                     to="/customers/$customerId"
                     params={{ customerId: c.id }}
@@ -647,7 +651,9 @@ function DashboardPage() {
                   >
                     {c.name}
                   </Link>
-                  <span className="numeric shrink-0 text-sm font-bold">{formatMoney(c.amount)}</span>
+                  <span className="numeric shrink-0 text-sm font-bold">
+                    {formatMoney(c.amount)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -677,7 +683,11 @@ function DashboardPage() {
           }
         >
           {lowStock.length === 0 ? (
-            <EmptyState icon={Package} title="Stock looks healthy" description="Nothing is at or below its threshold." />
+            <EmptyState
+              icon={Package}
+              title="Stock looks healthy"
+              description="Nothing is at or below its threshold."
+            />
           ) : (
             <ul className="max-h-72 divide-y divide-border/60 overflow-y-auto">
               {lowStock.slice(0, 12).map((p) => (
@@ -700,7 +710,11 @@ function DashboardPage() {
 
         <Panel title="Stock value by warehouse" icon={WarehouseIcon}>
           {warehouseValues.length === 0 ? (
-            <EmptyState icon={WarehouseIcon} title="No warehouses" description="Add a warehouse to track stock value." />
+            <EmptyState
+              icon={WarehouseIcon}
+              title="No warehouses"
+              description="Add a warehouse to track stock value."
+            />
           ) : (
             <div className="h-64 w-full p-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -747,7 +761,11 @@ function DashboardPage() {
           }
         >
           {openBills.length === 0 ? (
-            <EmptyState icon={ReceiptText} title="All settled" description="No outstanding customer bills." />
+            <EmptyState
+              icon={ReceiptText}
+              title="All settled"
+              description="No outstanding customer bills."
+            />
           ) : (
             <ul className="divide-y divide-border/60">
               {openBills.map((b) => (
@@ -761,8 +779,7 @@ function DashboardPage() {
                       {b.bill_number ?? "Bill"}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">
-                      {formatDate(b.bill_date)} · Due{" "}
-                      {formatMoney(b.total_amount - b.amount_paid)}
+                      {formatDate(b.bill_date)} · Due {formatMoney(b.total_amount - b.amount_paid)}
                     </p>
                   </div>
                   <Button size="sm" variant="outline" onClick={() => setPayBillId(b.id)}>
@@ -785,7 +802,11 @@ function DashboardPage() {
           }
         >
           {openPurchaseBills.length === 0 ? (
-            <EmptyState icon={Truck} title="Nothing due" description="No outstanding vendor bills." />
+            <EmptyState
+              icon={Truck}
+              title="Nothing due"
+              description="No outstanding vendor bills."
+            />
           ) : (
             <ul className="divide-y divide-border/60">
               {openPurchaseBills.map((b) => (
@@ -798,7 +819,9 @@ function DashboardPage() {
                     >
                       {b.bill_number ?? "Purchase bill"}
                     </Link>
-                    <p className="truncate text-xs text-muted-foreground">{formatDate(b.bill_date)}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {formatDate(b.bill_date)}
+                    </p>
                   </div>
                   <span className="numeric shrink-0 text-sm font-bold">
                     {formatMoney(b.total_amount - b.amount_paid)}
@@ -829,9 +852,7 @@ function DashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {label}
                 </p>
-                <p className="numeric mt-1 text-xl font-bold">
-                  {formatMoney(bucket?.amount ?? 0)}
-                </p>
+                <p className="numeric mt-1 text-xl font-bold">{formatMoney(bucket?.amount ?? 0)}</p>
                 <p className="text-xs text-muted-foreground">
                   {bucket?.count ?? 0} pending cheque{(bucket?.count ?? 0) === 1 ? "" : "s"}
                 </p>
@@ -867,7 +888,6 @@ function DashboardPage() {
           )}
         </Panel>
 
-
         <Panel
           title="Reminders due today / overdue"
           icon={Bell}
@@ -878,7 +898,11 @@ function DashboardPage() {
           }
         >
           {dueReminders.length === 0 ? (
-            <EmptyState icon={Bell} title="Nothing due" description="Scheduled follow-ups appear here on their due date." />
+            <EmptyState
+              icon={Bell}
+              title="Nothing due"
+              description="Scheduled follow-ups appear here on their due date."
+            />
           ) : (
             <ul className="max-h-72 divide-y divide-border/60 overflow-y-auto">
               {dueReminders.map((r) => {
@@ -927,4 +951,3 @@ function DashboardPage() {
     </div>
   );
 }
-

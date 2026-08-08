@@ -142,12 +142,7 @@ function MultiSelect({
           );
         })}
         {selected.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-1 w-full"
-            onClick={() => onChange([])}
-          >
+          <Button variant="ghost" size="sm" className="mt-1 w-full" onClick={() => onChange([])}>
             Clear
           </Button>
         )}
@@ -300,9 +295,7 @@ function RelatedDetail({ row }: { row: BillHistoryRow }) {
                 >
                   {r.return_number}
                 </Link>{" "}
-                <span className="numeric text-muted-foreground">
-                  {formatMoney(r.total_amount)}
-                </span>
+                <span className="numeric text-muted-foreground">{formatMoney(r.total_amount)}</span>
               </li>
             ))}
           </ul>
@@ -435,7 +428,6 @@ function BillsPage() {
     return { revenue, outstanding, counts, methodTotals, collected };
   }, [visible]);
 
-
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -503,8 +495,6 @@ function BillsPage() {
           setPage(1);
         }}
       />
-
-
 
       <div className="surface-card overflow-hidden">
         {/* Search + filter toggle */}
@@ -884,9 +874,7 @@ function BillsPage() {
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="numeric text-base font-bold">
-                          {formatMoney(b.total_amount)}
-                        </p>
+                        <p className="numeric text-base font-bold">{formatMoney(b.total_amount)}</p>
                         <p className="numeric text-xs text-muted-foreground">
                           Due {formatMoney(b.balanceDue)}
                         </p>

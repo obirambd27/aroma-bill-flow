@@ -1,10 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  buildPaymentBreakdown,
-  normalizeMethod,
-  type AllocationInput,
-} from "@/lib/bill-payments";
+import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
 
 /** bill id → allocations (with the method the money came in on). */
 async function allocationsByBill(billIds: string[]) {
@@ -151,7 +147,6 @@ export function useSalesReport(range: { from: string; to: string }) {
         } as SalesRow;
       });
     },
-
   });
 }
 
@@ -324,27 +319,24 @@ export function useTransactions(range: { from: string; to: string }) {
           )
           .gte("entry_date", from)
           .lte("entry_date", to)
-          .in("entry_type", [
-            "Sale Payment",
-            "Purchase Payment",
-            "Expense",
-            "Purchase Return",
-          ]),
+          .in("entry_type", ["Sale Payment", "Purchase Payment", "Expense", "Purchase Return"]),
       ]);
 
       // Expenses live in their own table from Part 28 onwards; ignore if absent.
       let expenseRows: Row[] = [];
       try {
-        const res = await (supabase as unknown as {
-          from: (t: string) => {
-            select: (s: string) => {
-              gte: (
-                c: string,
-                v: string,
-              ) => { lte: (c: string, v: string) => Promise<{ data: Row[] | null }> };
+        const res = await (
+          supabase as unknown as {
+            from: (t: string) => {
+              select: (s: string) => {
+                gte: (
+                  c: string,
+                  v: string,
+                ) => { lte: (c: string, v: string) => Promise<{ data: Row[] | null }> };
+              };
             };
-          };
-        })
+          }
+        )
           .from("expenses")
           .select("*")
           .gte("expense_date", from)
@@ -399,7 +391,6 @@ export function useTransactions(range: { from: string; to: string }) {
           link: { to: "/bills/$billId", params: { billId: String(b["id"]) } },
         });
       }
-
 
       for (const p of (purchases.data ?? []) as unknown as Row[]) {
         if (p["status"] === "Draft") continue;
@@ -519,12 +510,10 @@ export function useTransactions(range: { from: string; to: string }) {
           accountId,
           account: accountName,
           amount: Math.abs(Number(l["amount"] ?? 0)),
-          direction:
-            type === "Payment Received" || type === "Purchase Return" ? "in" : "out",
+          direction: type === "Payment Received" || type === "Purchase Return" ? "in" : "out",
           status: "Posted",
         });
       }
-
 
       for (const e of expenseRows) {
         const accountId = (e["account_id"] as string | null) ?? null;
@@ -546,7 +535,6 @@ export function useTransactions(range: { from: string; to: string }) {
           link: { to: "/expenses/$expenseId", params: { expenseId: String(e["id"]) } },
         });
       }
-
 
       return out.sort((a, b) => b.at.localeCompare(a.at));
     },

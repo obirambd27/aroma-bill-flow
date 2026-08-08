@@ -17,19 +17,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { ExportMenu, Field, FilterPanel, SummaryCards } from "@/components/ReportChrome";
 import { formatDate, formatMoney } from "@/lib/format";
 import { downloadCSV, downloadXLSX, printReport } from "@/lib/export";
-import {
-  groupRows,
-  presetRange,
-  useSalesReport,
-  type Preset,
-  type SalesRow,
-} from "@/lib/reports";
+import { groupRows, presetRange, useSalesReport, type Preset, type SalesRow } from "@/lib/reports";
 import { useCustomers, useAllWarehouses } from "@/lib/data";
 import { PAYMENT_METHODS } from "@/lib/payments";
-import {
-  PaymentMethodTag,
-  PaymentMethodTiles,
-} from "@/components/PaymentMethodBreakdown";
+import { PaymentMethodTag, PaymentMethodTiles } from "@/components/PaymentMethodBreakdown";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/reports/sales")({
@@ -146,7 +137,7 @@ function SalesReport() {
             ? r.bill_date
             : groupBy === "month"
               ? r.bill_date.slice(0, 7)
-              : (r.methods.join(" + ") || "Unpaid / No method");
+              : r.methods.join(" + ") || "Unpaid / No method";
     return groupRows(rows, keyFn).map(([key, list]) => ({
       key,
       list,
@@ -196,9 +187,7 @@ function SalesReport() {
         { label: "Bills", value: String(totals.count) },
       ],
       headers,
-      rows: exportRows.map((r) =>
-        r.map((c, i) => (i >= 4 && i <= 7 ? formatMoney(Number(c)) : c)),
-      ),
+      rows: exportRows.map((r) => r.map((c, i) => (i >= 4 && i <= 7 ? formatMoney(Number(c)) : c))),
       numericFrom: 4,
     });
   };
@@ -388,7 +377,13 @@ function SalesReport() {
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={methodChart} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="80%">
+                  <Pie
+                    data={methodChart}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="55%"
+                    outerRadius="80%"
+                  >
                     {methodChart.map((d) => (
                       <Cell key={d.name} fill={d.fill} />
                     ))}
