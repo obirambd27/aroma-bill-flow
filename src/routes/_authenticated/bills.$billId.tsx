@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Pencil, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Wallet } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,7 @@ import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
 import { useBillEditHistory } from "@/lib/bill-edit";
 import { ThermalReceipt } from "@/components/ThermalReceipt";
+import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
@@ -64,6 +65,7 @@ function BillDetailPage() {
   const { data: allocations = [] } = useBillAllocations(billId);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [printView, setPrintView] = useState<PrintView>(lastPrintView);
 
@@ -255,6 +257,10 @@ function BillDetailPage() {
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
               Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 className="h-4 w-4" />
+              Share
             </Button>
             {bill.status !== "Voided" && (
               <Button
@@ -515,6 +521,16 @@ function BillDetailPage() {
           defaultBillId={bill.id}
         />
       )}
+
+      <ShareInvoiceDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        bill={bill}
+        settings={settings}
+        balanceDue={balanceDue}
+      />
+
+
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>
