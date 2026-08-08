@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
+import {
+  buildPaymentBreakdown,
+  normalizeMethod,
+  type AllocationInput,
+} from "@/lib/bill-payments";
 
 /** bill id → allocations (with the method the money came in on). */
 async function allocationsByBill(billIds: string[]) {
