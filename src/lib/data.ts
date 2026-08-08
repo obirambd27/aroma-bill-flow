@@ -441,7 +441,7 @@ export function useBillHistory() {
           creditNotes,
           salesOrder: b.sales_orders ?? null,
           deliveryNotes,
-          balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
+          balanceDue: breakdown.balanceDue,
         } as BillHistoryRow;
       });
     },
