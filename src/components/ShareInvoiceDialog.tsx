@@ -49,10 +49,8 @@ export function ShareInvoiceDialog({
 
   const persist = async (field: "phone" | "email", value: string) => {
     if (!saveToProfile || !bill.customer_id) return;
-    const { error } = await supabase
-      .from("customers")
-      .update({ [field]: value })
-      .eq("id", bill.customer_id);
+    const patch = field === "phone" ? { phone: value } : { email: value };
+    const { error } = await supabase.from("customers").update(patch).eq("id", bill.customer_id);
     if (error) toast.error(`Saved message, but profile update failed: ${error.message}`);
   };
 
