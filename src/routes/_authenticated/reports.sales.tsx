@@ -509,7 +509,20 @@ function SalesReport() {
                       {formatMoney(r.total_amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <PaymentMethodTag method={r.payment_method} />
+                      <div className="flex flex-wrap items-center gap-1">
+                        {r.methods.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          r.methods.map((m) => (
+                            <span key={m} className="inline-flex items-center gap-1">
+                              <PaymentMethodTag method={m} />
+                              <span className="numeric text-xs text-muted-foreground">
+                                {formatMoney(r.paidByMethod[m] ?? 0)}
+                              </span>
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <StatusBadge tone={paymentTone(r.payment_status)}>

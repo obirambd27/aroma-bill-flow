@@ -49,8 +49,6 @@ function DayBook() {
 
   const chronological = useMemo(() => [...all].sort((a, b) => a.at.localeCompare(b.at)), [all]);
 
-  const saleRows = useMemo(() => chronological.filter((t) => t.type === "Sale"), [chronological]);
-  const totalSales = useMemo(() => saleRows.reduce((s, t) => s + t.amount, 0), [saleRows]);
 
   // Tiles show money actually received today — upfront bill payments plus
   // payments recorded against older bills — not the full value of each sale.
