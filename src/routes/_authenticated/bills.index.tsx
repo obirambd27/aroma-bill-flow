@@ -183,6 +183,25 @@ function WarehouseCell({ names }: { names: string[] }) {
   );
 }
 
+/** Chips for every method money actually came in on for this bill. */
+function MethodCell({ row }: { row: BillHistoryRow }) {
+  if (row.methods.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {row.methods.map((m) => (
+        <span key={m} className="inline-flex items-center gap-1">
+          <PaymentMethodTag method={m} />
+          <span className="numeric text-xs text-muted-foreground">
+            {formatMoney(row.paidByMethod[m] ?? 0)}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function ReturnBadge({ row }: { row: BillHistoryRow }) {
   if (row.returns.length === 0) return null;
   return (
@@ -831,7 +850,7 @@ function BillsPage() {
                     </tr>
                     {expanded === b.id && (
                       <tr className="border-b border-border/60">
-                        <td colSpan={10} className="p-0">
+                        <td colSpan={11} className="p-0">
                           <RelatedDetail row={b} />
                         </td>
                       </tr>
