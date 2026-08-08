@@ -188,8 +188,9 @@ function DayBook() {
       </FilterPanel>
 
       <PaymentMethodTiles
+        label="Collected today"
         totals={methodTotals}
-        totalSales={totalSales}
+        totalSales={totalCollected}
         active={methodFilter}
         onSelect={setMethodFilter}
       />
