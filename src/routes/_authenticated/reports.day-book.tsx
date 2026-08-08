@@ -12,11 +12,8 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { downloadCSV, printReport } from "@/lib/export";
 import { cashDelta, shiftDay, todayISO, txnTone, useTransactions } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import {
-  PaymentMethodTag,
-  PaymentMethodTiles,
-  sumByMethod,
-} from "@/components/PaymentMethodBreakdown";
+import { PaymentMethodTag, PaymentMethodTiles } from "@/components/PaymentMethodBreakdown";
+import { PAYMENT_METHODS } from "@/lib/payments";
 
 export const Route = createFileRoute("/_authenticated/reports/day-book")({
   head: () => ({
