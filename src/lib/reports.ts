@@ -89,6 +89,9 @@ export type SalesRow = {
   amount_paid: number;
   payment_status: string;
   payment_method: string | null;
+  /** Money actually received on this bill, per method. */
+  paidByMethod: Record<string, number>;
+  methods: string[];
   is_taxed: boolean;
   status: string;
 };
@@ -106,12 +109,22 @@ export function useSalesReport(range: { from: string; to: string }) {
         .lte("bill_date", range.to)
         .order("bill_date", { ascending: false });
       if (error) throw error;
+      const allocs = await allocationsByBill((data ?? []).map((b) => String(b.id)));
       return (data ?? []).map((b) => {
         const r = b as unknown as {
           customers: { name: string } | null;
           warehouses: { name: string } | null;
           is_walk_in: boolean;
         } & Record<string, unknown>;
+        const breakdown = buildPaymentBreakdown(
+          {
+            total_amount: Number(r["total_amount"] ?? 0),
+            amount_paid: Number(r["amount_paid"] ?? 0),
+            payment_method: (r["payment_method"] as string | null) ?? null,
+            bill_date: String(r["bill_date"]),
+          },
+          allocs[String(r["id"])] ?? [],
+        );
         return {
           id: String(r["id"]),
           bill_date: String(r["bill_date"]),
@@ -124,14 +137,17 @@ export function useSalesReport(range: { from: string; to: string }) {
           discount_amount: Number(r["discount_amount"] ?? 0),
           tax_amount: Number(r["tax_amount"] ?? 0),
           total_amount: Number(r["total_amount"] ?? 0),
-          amount_paid: Number(r["amount_paid"] ?? 0),
+          amount_paid: breakdown.totalPaid,
           payment_status: String(r["payment_status"] ?? ""),
-          payment_method: (r["payment_method"] as string | null) ?? null,
+          payment_method: breakdown.methods[0] ?? null,
+          paidByMethod: breakdown.byMethod,
+          methods: breakdown.methods,
           is_taxed: Boolean(r["is_taxed"]),
           status: String(r["status"] ?? ""),
         } as SalesRow;
       });
     },
+
   });
 }
 
