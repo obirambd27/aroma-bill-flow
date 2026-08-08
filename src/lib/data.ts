@@ -430,8 +430,11 @@ export function useBillHistory() {
               .filter((d) => d.sales_order_id === b.sales_order_id)
               .map((d) => ({ id: d.id, delivery_number: d.delivery_number, status: d.status }))
           : [];
+        const breakdown = buildPaymentBreakdown(b, allocByBill[b.id] ?? []);
         return {
           ...b,
+          paidByMethod: breakdown.byMethod,
+          methods: breakdown.methods,
           warehouseNames: [...ids].map((id) => whName[id] ?? "Unknown").sort(),
           returns,
           returnedAmount: returns.reduce((s, r) => s + r.total_amount, 0),
