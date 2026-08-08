@@ -110,7 +110,7 @@ function SalesReport() {
       PAYMENT_METHODS.map((m, i) => ({
         name: m,
         value: methodTotals[m] ?? 0,
-        fill: `hsl(var(--chart-${i + 1}, ${["270 45% 45%", "160 40% 40%", "35 75% 50%"][i]}))`,
+        fill: `var(--chart-${i + 1})`,
       })).filter((d) => d.value > 0),
     [methodTotals],
   );
