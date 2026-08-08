@@ -57,6 +57,7 @@ export type SalesRow = {
   total_amount: number;
   amount_paid: number;
   payment_status: string;
+  payment_method: string | null;
   is_taxed: boolean;
   status: string;
 };
@@ -68,7 +69,7 @@ export function useSalesReport(range: { from: string; to: string }) {
       const { data, error } = await supabase
         .from("bills")
         .select(
-          "id, bill_date, bill_number, customer_id, is_walk_in, warehouse_id, subtotal, discount_amount, tax_amount, total_amount, amount_paid, payment_status, is_taxed, status, customers(name), warehouses(name)",
+          "id, bill_date, bill_number, customer_id, is_walk_in, warehouse_id, subtotal, discount_amount, tax_amount, total_amount, amount_paid, payment_status, payment_method, is_taxed, status, customers(name), warehouses(name)",
         )
         .gte("bill_date", range.from)
         .lte("bill_date", range.to)
@@ -94,6 +95,7 @@ export function useSalesReport(range: { from: string; to: string }) {
           total_amount: Number(r["total_amount"] ?? 0),
           amount_paid: Number(r["amount_paid"] ?? 0),
           payment_status: String(r["payment_status"] ?? ""),
+          payment_method: (r["payment_method"] as string | null) ?? null,
           is_taxed: Boolean(r["is_taxed"]),
           status: String(r["status"] ?? ""),
         } as SalesRow;
@@ -186,6 +188,8 @@ export type TxnRow = {
   amount: number;
   direction: "in" | "out" | "neutral";
   status: string;
+  /** Payment method for sale rows (Cash / Credit Card / Bank Transfer). */
+  paymentMethod?: string | null;
   /** Route for row click-through, when a detail page exists. */
   link?: { to: string; params?: Record<string, string> };
 };
@@ -230,7 +234,7 @@ export function useTransactions(range: { from: string; to: string }) {
         supabase
           .from("bills")
           .select(
-            "id, bill_number, bill_date, created_at, total_amount, payment_status, status, is_walk_in, customers(name)",
+            "id, bill_number, bill_date, created_at, total_amount, amount_paid, payment_method, payment_status, status, is_walk_in, customers(name)",
           )
           .gte("bill_date", from)
           .lte("bill_date", to),
@@ -322,6 +326,7 @@ export function useTransactions(range: { from: string; to: string }) {
           amount: voided ? 0 : Number(b["total_amount"] ?? 0),
           direction: "in",
           status: voided ? "Voided" : String(b["payment_status"] ?? ""),
+          paymentMethod: voided ? null : ((b["payment_method"] as string | null) ?? null),
           link: { to: "/bills/$billId", params: { billId: String(b["id"]) } },
         });
       }
@@ -361,6 +366,7 @@ export function useTransactions(range: { from: string; to: string }) {
           reference: (p["reference_number"] as string) ?? "—",
           party: (p["customers"] as { name: string } | null)?.name ?? "Walk-in",
           description: `Payment received (${p["payment_method"] ?? "—"})`,
+          paymentMethod: (p["payment_method"] as string | null) ?? null,
           accountId,
           account: accountId ? (accName[accountId] ?? "—") : "—",
           amount: Number(p["amount"] ?? 0),
