@@ -38,6 +38,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBillHistory, useCustomers, useAllWarehouses, type BillHistoryRow } from "@/lib/data";
+import {
+  PaymentMethodTag,
+  PaymentMethodTiles,
+  type MethodTotals,
+} from "@/components/PaymentMethodBreakdown";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
