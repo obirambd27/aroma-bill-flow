@@ -49,6 +49,8 @@ export type PaymentLine = {
 export type BillPaymentBreakdown = {
   lines: PaymentLine[];
   byMethod: Record<string, number>;
+  /** Only the money taken at billing time, per method. */
+  upfrontByMethod: Record<string, number>;
   methods: string[];
   totalPaid: number;
   balanceDue: number;
