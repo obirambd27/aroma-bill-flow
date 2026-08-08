@@ -447,6 +447,16 @@ function BillDetailPage() {
               </dt>
               <dd className="numeric text-2xl font-bold">{formatMoney(total)}</dd>
             </div>
+            {breakdown.lines.map((line) => (
+              <div key={line.key} className="flex justify-between">
+                <dt className="text-muted-foreground">
+                  Paid · {line.method}
+                  {line.date ? ` · ${formatDate(line.date)}` : ""}
+                  {line.reference ? ` · ${line.reference}` : ""}
+                </dt>
+                <dd className="numeric font-medium">{formatMoney(line.amount)}</dd>
+              </div>
+            ))}
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Amount Paid</dt>
               <dd className="numeric font-medium">{formatMoney(paid)}</dd>
