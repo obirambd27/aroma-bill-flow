@@ -25,6 +25,13 @@ import {
   type SalesRow,
 } from "@/lib/reports";
 import { useCustomers, useAllWarehouses } from "@/lib/data";
+import { PAYMENT_METHODS } from "@/lib/payments";
+import {
+  PaymentMethodTag,
+  PaymentMethodTiles,
+  sumByMethod,
+} from "@/components/PaymentMethodBreakdown";
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/reports/sales")({
   head: () => ({
@@ -41,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/reports/sales")({
   component: SalesReport,
 });
 
-type GroupBy = "none" | "customer" | "warehouse" | "day" | "month";
+type GroupBy = "none" | "customer" | "warehouse" | "day" | "month" | "method";
 type SortKey = "bill_date" | "bill_number" | "customer" | "warehouse" | "total_amount";
 
 function paymentTone(status: string) {
@@ -58,6 +65,7 @@ function SalesReport() {
   const [warehouseId, setWarehouseId] = useState("all");
   const [payment, setPayment] = useState("all");
   const [taxStatus, setTaxStatus] = useState("all");
+  const [methods, setMethods] = useState<string[]>([]);
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
     key: "bill_date",
@@ -81,6 +89,7 @@ function SalesReport() {
       if (payment !== "all" && r.payment_status !== payment) return false;
       if (taxStatus === "taxed" && !r.is_taxed) return false;
       if (taxStatus === "untaxed" && r.is_taxed) return false;
+      if (methods.length > 0 && !methods.includes(r.payment_method ?? "")) return false;
       return true;
     });
     const dir = sort.dir === "asc" ? 1 : -1;
@@ -90,7 +99,21 @@ function SalesReport() {
       if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
       return String(av).localeCompare(String(bv)) * dir;
     });
-  }, [rowsRaw, customerId, warehouseId, payment, taxStatus, sort]);
+  }, [rowsRaw, customerId, warehouseId, payment, taxStatus, methods, sort]);
+
+  const methodTotals = useMemo(
+    () => sumByMethod(rows.map((r) => ({ payment_method: r.payment_method, amount: r.total_amount }))),
+    [rows],
+  );
+  const methodChart = useMemo(
+    () =>
+      PAYMENT_METHODS.map((m, i) => ({
+        name: m,
+        value: methodTotals[m] ?? 0,
+        fill: `hsl(var(--chart-${i + 1}, ${["270 45% 45%", "160 40% 40%", "35 75% 50%"][i]}))`,
+      })).filter((d) => d.value > 0),
+    [methodTotals],
+  );
 
   const totals = useMemo(
     () => ({
@@ -111,7 +134,9 @@ function SalesReport() {
           ? r.warehouse
           : groupBy === "day"
             ? r.bill_date
-            : r.bill_date.slice(0, 7);
+            : groupBy === "month"
+              ? r.bill_date.slice(0, 7)
+              : (r.payment_method ?? "Unpaid / No method");
     return groupRows(rows, keyFn).map(([key, list]) => ({
       key,
       list,
@@ -286,6 +311,31 @@ function SalesReport() {
             </SelectContent>
           </Select>
         </Field>
+        <Field label="Payment method">
+          <div className="flex flex-wrap gap-1.5">
+            {PAYMENT_METHODS.map((m) => {
+              const on = methods.includes(m);
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() =>
+                    setMethods((prev) =>
+                      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m],
+                    )
+                  }
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    on
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
         <Field label="Group by">
           <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
             <SelectTrigger>
@@ -297,6 +347,7 @@ function SalesReport() {
               <SelectItem value="warehouse">By Warehouse</SelectItem>
               <SelectItem value="day">By Day</SelectItem>
               <SelectItem value="month">By Month</SelectItem>
+              <SelectItem value="method">By Payment Method</SelectItem>
             </SelectContent>
           </Select>
         </Field>
@@ -310,6 +361,34 @@ function SalesReport() {
           { label: "Bills", value: String(totals.count) },
         ]}
       />
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <PaymentMethodTiles totals={methodTotals} totalSales={totals.sales} />
+        <Card className="p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Sales by payment method
+          </p>
+          {methodChart.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No payments recorded in this range.
+            </p>
+          ) : (
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={methodChart} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="80%">
+                    {methodChart.map((d) => (
+                      <Cell key={d.name} fill={d.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatMoney(v)} />
+                  <Legend verticalAlign="bottom" height={24} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      </div>
 
       {isLoading ? (
         <Card className="p-6 text-sm text-muted-foreground">Loading sales…</Card>
@@ -327,7 +406,9 @@ function SalesReport() {
             <Card key={g.key} className="overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-3">
                 <p className="text-sm font-semibold">
-                  {groupBy === "day" || groupBy === "month" ? formatDate(`${g.key}-01`.slice(0, 10)) : g.key}
+                  {groupBy === "day" || groupBy === "month"
+                    ? formatDate(`${g.key}-01`.slice(0, 10))
+                    : g.key}
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
                     {g.list.length} bill{g.list.length === 1 ? "" : "s"}
                   </span>
