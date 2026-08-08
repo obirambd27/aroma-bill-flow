@@ -9,6 +9,7 @@ export type DashBill = {
   total_amount: number;
   amount_paid: number;
   payment_status: string;
+  payment_method: string | null;
   is_taxed: boolean;
 };
 
@@ -30,7 +31,7 @@ export function useDashboardBills() {
       const { data, error } = await supabase
         .from("bills")
         .select(
-          "id, bill_number, bill_date, customer_id, total_amount, amount_paid, payment_status, is_taxed",
+          "id, bill_number, bill_date, customer_id, total_amount, amount_paid, payment_status, payment_method, is_taxed",
         )
         .eq("status", "Finalized")
         .order("bill_date", { ascending: false });

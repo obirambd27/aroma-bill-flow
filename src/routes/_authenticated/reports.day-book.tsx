@@ -12,6 +12,11 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { downloadCSV, printReport } from "@/lib/export";
 import { cashDelta, shiftDay, todayISO, txnTone, useTransactions } from "@/lib/reports";
 import { cn } from "@/lib/utils";
+import {
+  PaymentMethodTag,
+  PaymentMethodTiles,
+  sumByMethod,
+} from "@/components/PaymentMethodBreakdown";
 
 export const Route = createFileRoute("/_authenticated/reports/day-book")({
   head: () => ({
@@ -25,6 +30,9 @@ export const Route = createFileRoute("/_authenticated/reports/day-book")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    method: typeof search["method"] === "string" ? (search["method"] as string) : undefined,
+  }),
   component: DayBook,
 });
 
@@ -35,12 +43,26 @@ function timeOf(at: string) {
 }
 
 function DayBook() {
+  const search = Route.useSearch();
+  const [methodFilter, setMethodFilter] = useState<string | null>(search.method ?? null);
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
   const range = useMemo(() => ({ from: from <= to ? from : to, to: to >= from ? to : from }), [from, to]);
   const { data: all = [], isLoading } = useTransactions(range);
 
-  const rows = useMemo(() => [...all].sort((a, b) => a.at.localeCompare(b.at)), [all]);
+  const chronological = useMemo(() => [...all].sort((a, b) => a.at.localeCompare(b.at)), [all]);
+
+  const saleRows = useMemo(() => chronological.filter((t) => t.type === "Sale"), [chronological]);
+  const methodTotals = useMemo(() => sumByMethod(saleRows), [saleRows]);
+  const totalSales = useMemo(() => saleRows.reduce((s, t) => s + t.amount, 0), [saleRows]);
+
+  const rows = useMemo(
+    () =>
+      methodFilter
+        ? chronological.filter((t) => t.type === "Sale" && t.paymentMethod === methodFilter)
+        : chronological,
+    [chronological, methodFilter],
+  );
 
   const totals = useMemo(() => {
     let inAmt = 0;
@@ -59,13 +81,23 @@ function DayBook() {
     setTo(next);
   };
 
-  const headers = ["Time", "Type", "Reference", "Party", "Description", "In", "Out"];
+  const headers = [
+    "Time",
+    "Type",
+    "Reference",
+    "Party",
+    "Description",
+    "Payment Method",
+    "In",
+    "Out",
+  ];
   const exportRows = rows.map((t) => [
     `${t.date} ${timeOf(t.at)}`,
     t.type,
     t.reference,
     t.party,
     t.description,
+    t.paymentMethod ?? "",
     t.direction === "in" ? t.amount : "",
     t.direction === "out" ? t.amount : "",
   ]);
@@ -87,9 +119,9 @@ function DayBook() {
       ],
       headers,
       rows: exportRows.map((r) =>
-        r.map((c, i) => (i >= 5 ? (c === "" ? "" : formatMoney(Number(c))) : c)),
+        r.map((c, i) => (i >= 6 ? (c === "" ? "" : formatMoney(Number(c))) : c)),
       ),
-      numericFrom: 5,
+      numericFrom: 6,
     });
   };
 
@@ -141,6 +173,13 @@ function DayBook() {
         </Field>
       </FilterPanel>
 
+      <PaymentMethodTiles
+        totals={methodTotals}
+        totalSales={totalSales}
+        active={methodFilter}
+        onSelect={setMethodFilter}
+      />
+
       <SummaryCards
         items={[
           { label: "Transactions", value: String(rows.length) },
@@ -171,6 +210,7 @@ function DayBook() {
                   <th className="px-3 py-2 text-left">Reference</th>
                   <th className="px-3 py-2 text-left">Party</th>
                   <th className="px-3 py-2 text-left">Description</th>
+                  <th className="px-3 py-2 text-left">Payment Method</th>
                   <th className="px-3 py-2 text-right">Amount</th>
                 </tr>
               </thead>
@@ -198,6 +238,9 @@ function DayBook() {
                     </td>
                     <td className="px-3 py-2">{t.party}</td>
                     <td className="px-3 py-2 text-muted-foreground">{t.description}</td>
+                    <td className="px-3 py-2">
+                      <PaymentMethodTag method={t.paymentMethod} />
+                    </td>
                     <td
                       className={cn(
                         "whitespace-nowrap px-3 py-2 text-right font-semibold",
@@ -213,7 +256,7 @@ function DayBook() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-border bg-muted/40 font-semibold">
-                  <td className="px-3 py-2" colSpan={5}>
+                  <td className="px-3 py-2" colSpan={6}>
                     Net cash movement for the day
                   </td>
                   <td
@@ -240,6 +283,11 @@ function DayBook() {
                       {timeOf(t.at)} · {t.reference}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">{t.description}</p>
+                    {t.paymentMethod && (
+                      <div className="mt-1.5">
+                        <PaymentMethodTag method={t.paymentMethod} />
+                      </div>
+                    )}
                   </div>
                   <p
                     className={cn(

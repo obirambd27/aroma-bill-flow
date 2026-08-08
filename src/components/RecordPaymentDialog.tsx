@@ -26,6 +26,7 @@ import { useCustomers } from "@/lib/data";
 import { useAccounts } from "@/lib/accounting";
 import {
   PAYMENT_METHODS,
+  accountsForMethod,
   recordPayment,
   useCustomerOpenBills,
   type PaymentMethod,
@@ -56,9 +57,6 @@ export function RecordPaymentDialog({
   const queryClient = useQueryClient();
   const { data: customers = [] } = useCustomers();
   const { data: accounts = [] } = useAccounts(true);
-  const cashBankAccounts = accounts.filter(
-    (a) => a.account_type === "Cash" || a.account_type === "Bank",
-  );
 
   const [customerId, setCustomerId] = useState<string>(defaultCustomerId ?? "");
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -70,21 +68,22 @@ export function RecordPaymentDialog({
   const [accountId, setAccountId] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [chequeNumber, setChequeNumber] = useState("");
-  const [chequeDate, setChequeDate] = useState(todayISO());
   const [alloc, setAlloc] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const { data: openBills = [] } = useCustomerOpenBills(customerId || null);
+  const methodAccounts = useMemo(() => accountsForMethod(method, accounts), [method, accounts]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query), 250);
     return () => clearTimeout(t);
   }, [query]);
 
+  // Keep the account valid for the chosen method (cash -> Cash in Hand, card/bank -> bank).
   useEffect(() => {
-    if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
-  }, [accountId, cashBankAccounts]);
+    if (methodAccounts.length === 0) return;
+    if (!methodAccounts.some((a) => a.id === accountId)) setAccountId(methodAccounts[0]!.id);
+  }, [accountId, methodAccounts]);
 
   const [prefilled, setPrefilled] = useState(false);
 
@@ -162,9 +161,9 @@ export function RecordPaymentDialog({
     customerId,
     amount,
     method,
-    accountId: method === "Cheque" ? "cheque" : accountId || null,
+    accountId: accountId || null,
     paymentDate,
-    chequeNumber: method === "Cheque" ? chequeNumber : "n/a",
+    chequeNumber: "n/a",
     allocations: allocationsPayload.map((a) => ({ billId: a.billId, amount: a.amount })),
     bills: openBills as never,
   });
@@ -186,8 +185,6 @@ export function RecordPaymentDialog({
         accountId: accountId || null,
         referenceNumber: reference.trim() || null,
         notes: notes.trim() || null,
-        chequeNumber: chequeNumber.trim() || null,
-        chequeDate,
         allocations: allocationsPayload,
       });
       queryClient.invalidateQueries();
@@ -453,15 +450,13 @@ export function RecordPaymentDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pay-account">
-                {method === "Cheque" ? "Cheque deposit account" : "Account"}
-              </Label>
+              <Label htmlFor="pay-account">Account</Label>
               <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger id="pay-account" className="h-11">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cashBankAccounts.map((a) => (
+                  {methodAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.name}
                     </SelectItem>
@@ -470,29 +465,6 @@ export function RecordPaymentDialog({
               </Select>
             </div>
 
-            {method === "Cheque" && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="pay-cheque-number">Cheque number</Label>
-                  <Input
-                    id="pay-cheque-number"
-                    className="h-11"
-                    value={chequeNumber}
-                    onChange={(e) => setChequeNumber(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pay-cheque-date">Cheque date</Label>
-                  <Input
-                    id="pay-cheque-date"
-                    type="date"
-                    className="h-11"
-                    value={chequeDate}
-                    onChange={(e) => setChequeDate(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="pay-ref">Reference number</Label>
@@ -514,11 +486,6 @@ export function RecordPaymentDialog({
             </div>
           </div>
 
-          {method === "Cheque" && (
-            <p className="text-xs text-muted-foreground">
-              Cheque payments are logged as Pending and only move money once cleared.
-            </p>
-          )}
         </div>
 
         <DialogFooter>

@@ -51,6 +51,7 @@ import { useAccounts } from "@/lib/accounting";
 import {
   PAYMENT_METHODS,
   accountIdByName,
+  accountsForMethod,
   derivePaymentStatus,
   useCustomerLastPrices,
   type PaymentMethod,
@@ -121,8 +122,6 @@ function NewBillPage() {
   const [amountPaidInput, setAmountPaidInput] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [accountId, setAccountId] = useState<string>("");
-  const [chequeNumber, setChequeNumber] = useState("");
-  const [chequeDate, setChequeDate] = useState(todayISO());
   const [customerQuery, setCustomerQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -134,8 +133,9 @@ function NewBillPage() {
   const [warehousePickerFor, setWarehousePickerFor] = useState<string | null>(null);
 
   const { data: accounts = [] } = useAccounts(true);
-  const cashBankAccounts = accounts.filter(
-    (a) => a.account_type === "Cash" || a.account_type === "Bank",
+  const methodAccounts = useMemo(
+    () => accountsForMethod(paymentMethod, accounts),
+    [paymentMethod, accounts],
   );
   const { data: lastPrices = {} } = useCustomerLastPrices(
     customerId === "walk-in" ? null : customerId,
@@ -146,9 +146,11 @@ function NewBillPage() {
     return () => clearTimeout(t);
   }, [customerQuery]);
 
+  // Cash sales lock to "Cash in Hand"; card/bank sales pick the receiving bank account.
   useEffect(() => {
-    if (!accountId && cashBankAccounts.length > 0) setAccountId(cashBankAccounts[0]!.id);
-  }, [accountId, cashBankAccounts]);
+    if (methodAccounts.length === 0) return;
+    if (!methodAccounts.some((a) => a.id === accountId)) setAccountId(methodAccounts[0]!.id);
+  }, [accountId, methodAccounts]);
 
   // Pre-fill from a sales order ("Convert to Bill") with the undelivered/unbilled quantities.
   const { data: sourceOrder } = useSalesOrder(search.fromOrder ?? "");
@@ -190,6 +192,12 @@ function NewBillPage() {
     setDiscountType(editingBill.discount_type === "percent" ? "percent" : "amount");
     setDiscountValue(String(editingBill.discount_value ?? 0));
     setAmountPaidInput(String(editingBill.amount_paid ?? 0));
+    if (
+      editingBill.payment_method &&
+      (PAYMENT_METHODS as readonly string[]).includes(editingBill.payment_method)
+    ) {
+      setPaymentMethod(editingBill.payment_method as PaymentMethod);
+    }
     setLines(
       editingBill.bill_items
         .map((i) => ({
@@ -343,7 +351,7 @@ function NewBillPage() {
       toast.error(`Not enough stock for ${overselling[0]!.name}`);
       return;
     }
-    if (status === "Finalized" && amountPaidNow > 0 && paymentMethod !== "Cheque" && !accountId) {
+    if (status === "Finalized" && amountPaidNow > 0 && !accountId) {
       toast.error("Select the account this payment lands in");
       return;
     }
@@ -430,6 +438,7 @@ function NewBillPage() {
             discount_value: Number(discountValue) || 0,
             total_amount: total,
             amount_paid: keptPaid,
+            payment_method: keptPaid > 0 ? paymentMethod : null,
             status,
           },
           billDate,
@@ -552,19 +561,7 @@ function NewBillPage() {
       : (customers.find((x) => x.id === customerId)?.name ?? "Customer");
 
     // Payment taken at the counter.
-    if (paidNow > 0 && paymentMethod === "Cheque") {
-      await supabase.from("cheques").insert({
-        cheque_number: chequeNumber || `${bill.bill_number ?? "BILL"}-CHQ`,
-        type: "Received",
-        party_name: customerName,
-        amount: paidNow,
-        cheque_date: chequeDate || billDate,
-        account_id: accountId || cashBankAccounts[0]?.id || "",
-        status: "Pending",
-        related_bill_id: bill.id,
-        notes: `Cheque against ${bill.bill_number ?? "bill"}`,
-      });
-    } else if (paidNow > 0 && accountId) {
+    if (paidNow > 0 && accountId) {
       await supabase.from("ledger_entries").insert({
         account_id: accountId,
         entry_date: billDate,
@@ -1040,15 +1037,13 @@ function NewBillPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="deposit-account">
-                    {paymentMethod === "Cheque" ? "Cheque deposit account" : "Deposit into"}
-                  </Label>
+                  <Label htmlFor="deposit-account">Deposit into</Label>
                   <Select value={accountId} onValueChange={setAccountId}>
                     <SelectTrigger id="deposit-account" className="h-11">
                       <SelectValue placeholder="Select account" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cashBankAccounts.map((a) => (
+                      {methodAccounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}
                         </SelectItem>
@@ -1056,33 +1051,6 @@ function NewBillPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {paymentMethod === "Cheque" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="cheque-number">Cheque number</Label>
-                      <Input
-                        id="cheque-number"
-                        className="h-11"
-                        value={chequeNumber}
-                        onChange={(e) => setChequeNumber(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cheque-date">Cheque date</Label>
-                      <Input
-                        id="cheque-date"
-                        type="date"
-                        className="h-11"
-                        value={chequeDate}
-                        onChange={(e) => setChequeDate(e.target.value)}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground sm:col-span-2">
-                      Cheques are recorded as Pending and only affect account balances once cleared.
-                    </p>
-                  </div>
-                )}
               </>
             )}
           </div>

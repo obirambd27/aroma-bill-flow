@@ -7,8 +7,35 @@ import { derivePaymentStatus, recalcBillBalance } from "@/lib/payment-math";
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
 
-export const PAYMENT_METHODS = ["Cash", "Bank Transfer", "Card", "Cheque"] as const;
+export const PAYMENT_METHODS = ["Cash", "Credit Card", "Bank Transfer"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Badge tone used wherever a payment method is displayed as a tag. */
+export const PAYMENT_METHOD_TONE: Record<string, "success" | "accent" | "warning" | "neutral"> = {
+  Cash: "success",
+  "Credit Card": "accent",
+  "Bank Transfer": "warning",
+};
+
+/**
+ * Cash always lands in "Cash in Hand"; card/bank payments may pick any bank
+ * (or cash) account the business holds.
+ */
+export function accountsForMethod<T extends { name: string; account_type: string }>(
+  method: PaymentMethod,
+  accounts: T[],
+) {
+  const cashBank = accounts.filter(
+    (a) => a.account_type === "Cash" || a.account_type === "Bank",
+  );
+  if (method === "Cash") {
+    const cash = cashBank.filter((a) => a.account_type === "Cash");
+    const preferred = cash.filter((a) => a.name === "Cash in Hand");
+    return preferred.length > 0 ? preferred : cash.length > 0 ? cash : cashBank;
+  }
+  const banks = cashBank.filter((a) => a.account_type === "Bank");
+  return banks.length > 0 ? banks : cashBank;
+}
 
 export { derivePaymentStatus };
 
@@ -134,7 +161,7 @@ export async function recordPayment(input: RecordPaymentInput) {
       payment_date: input.paymentDate,
       amount: input.amount,
       payment_method: input.method,
-      account_id: input.method === "Cheque" ? null : input.accountId,
+      account_id: input.accountId,
       reference_number: input.referenceNumber,
       notes: input.notes,
     })
@@ -174,22 +201,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     .filter(Boolean)
     .join(", ");
 
-  if (input.method === "Cheque") {
-    const chequeAccount = input.accountId ?? (await accountIdByName("Cash in Hand"));
-    if (chequeAccount) {
-      await supabase.from("cheques").insert({
-        cheque_number: input.chequeNumber || `PAY-${payment.id.slice(0, 8)}`,
-        type: "Received",
-        party_name: input.customerName,
-        amount: input.amount,
-        cheque_date: input.chequeDate || input.paymentDate,
-        account_id: chequeAccount,
-        status: "Pending",
-        related_bill_id: allocations[0]?.billId ?? null,
-        notes: billLabel ? `Payment against ${billLabel}` : null,
-      });
-    }
-  } else if (input.accountId) {
+  if (input.accountId) {
     await supabase.from("ledger_entries").insert({
       account_id: input.accountId,
       entry_date: input.paymentDate,
