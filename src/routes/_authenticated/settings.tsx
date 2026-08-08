@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings, type Settings } from "@/lib/data";
+import { DEFAULT_SHARE_FOOTER } from "@/lib/invoice-share";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -80,6 +81,7 @@ function SettingsPage() {
         invoice_prefix: (form.invoice_prefix || "INV-").slice(0, 12),
         invoice_footer_note: form.invoice_footer_note ?? null,
         terms_and_conditions: form.terms_and_conditions ?? null,
+        share_message_footer: form.share_message_footer ?? null,
         default_payment_terms: (form.default_payment_terms || "Due on Receipt").slice(0, 60),
         low_stock_threshold: Number(form.low_stock_threshold ?? 5),
       })
@@ -264,6 +266,21 @@ function SettingsPage() {
               value={form.default_payment_terms ?? ""}
               onChange={(e) => set("default_payment_terms", e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="share_message_footer">Share message footer</Label>
+            <Textarea
+              id="share_message_footer"
+              rows={2}
+              placeholder={DEFAULT_SHARE_FOOTER}
+              value={form.share_message_footer ?? ""}
+              onChange={(e) => set("share_message_footer", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Closing line for invoices shared via WhatsApp or email. Use {"{"}business_name{"}"} to
+              insert your business name.
+            </p>
           </div>
 
           <div className="space-y-2 sm:col-span-2">
