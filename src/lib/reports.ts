@@ -356,9 +356,24 @@ export function useTransactions(range: { from: string; to: string }) {
           ? created
           : `${date}T00:00:00.000Z`;
 
-      for (const b of (bills.data ?? []) as unknown as Row[]) {
+      const billRows = (bills.data ?? []) as unknown as Row[];
+      const saleAllocs = await allocationsByBill(billRows.map((b) => String(b["id"])));
+
+      for (const b of billRows) {
         if (b["status"] === "Draft") continue;
         const voided = b["status"] === "Voided";
+        // Only the money taken at billing time belongs on the sale row —
+        // later payments show up as their own "Payment Received" rows.
+        const breakdown = buildPaymentBreakdown(
+          {
+            total_amount: Number(b["total_amount"] ?? 0),
+            amount_paid: Number(b["amount_paid"] ?? 0),
+            payment_method: (b["payment_method"] as string | null) ?? null,
+            bill_date: String(b["bill_date"]),
+          },
+          saleAllocs[String(b["id"])] ?? [],
+        );
+        const upfront = voided ? {} : breakdown.upfrontByMethod;
         out.push({
           key: `sale-${b["id"]}`,
           id: String(b["id"]),
@@ -375,10 +390,12 @@ export function useTransactions(range: { from: string; to: string }) {
           amount: voided ? 0 : Number(b["total_amount"] ?? 0),
           direction: "in",
           status: voided ? "Voided" : String(b["payment_status"] ?? ""),
-          paymentMethod: voided ? null : ((b["payment_method"] as string | null) ?? null),
+          paymentMethod: Object.keys(upfront)[0] ?? null,
+          paidByMethod: upfront,
           link: { to: "/bills/$billId", params: { billId: String(b["id"]) } },
         });
       }
+
 
       for (const p of (purchases.data ?? []) as unknown as Row[]) {
         if (p["status"] === "Draft") continue;
