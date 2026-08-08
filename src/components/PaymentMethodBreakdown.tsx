@@ -20,7 +20,7 @@ export function sumByMethod(
   return totals;
 }
 
-export function PaymentMethodTag({ method }: { method?: string | null }) {
+export function PaymentMethodTag({ method }: { method?: string | null | undefined }) {
   if (!method) return <span className="text-xs text-muted-foreground">—</span>;
   return (
     <StatusBadge tone={PAYMENT_METHOD_TONE[method] ?? "neutral"}>{method}</StatusBadge>
