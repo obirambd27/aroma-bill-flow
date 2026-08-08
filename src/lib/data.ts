@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
 
 export type Settings = Tables<"settings">;
 export type Product = Tables<"products">;
