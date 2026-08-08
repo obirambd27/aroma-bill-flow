@@ -235,8 +235,10 @@ export type TxnRow = {
   amount: number;
   direction: "in" | "out" | "neutral";
   status: string;
-  /** Payment method for sale rows (Cash / Credit Card / Bank Transfer). */
+  /** Payment method for money actually received on this row. */
   paymentMethod?: string | null;
+  /** Money received on this row, split by method (sales may mix methods). */
+  paidByMethod?: Record<string, number>;
   /** Route for row click-through, when a detail page exists. */
   link?: { to: string; params?: Record<string, string> };
 };
