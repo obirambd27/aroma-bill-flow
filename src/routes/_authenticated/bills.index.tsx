@@ -38,6 +38,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBillHistory, useCustomers, useAllWarehouses, type BillHistoryRow } from "@/lib/data";
+import {
+  PaymentMethodTag,
+  PaymentMethodTiles,
+  type MethodTotals,
+} from "@/components/PaymentMethodBreakdown";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -137,12 +142,7 @@ function MultiSelect({
           );
         })}
         {selected.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-1 w-full"
-            onClick={() => onChange([])}
-          >
+          <Button variant="ghost" size="sm" className="mt-1 w-full" onClick={() => onChange([])}>
             Clear
           </Button>
         )}
@@ -175,6 +175,25 @@ function WarehouseCell({ names }: { names: string[] }) {
         </ul>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Chips for every method money actually came in on for this bill. */
+function MethodCell({ row }: { row: BillHistoryRow }) {
+  if (row.methods.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {row.methods.map((m) => (
+        <span key={m} className="inline-flex items-center gap-1">
+          <PaymentMethodTag method={m} />
+          <span className="numeric text-xs text-muted-foreground">
+            {formatMoney(row.paidByMethod[m] ?? 0)}
+          </span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -276,9 +295,7 @@ function RelatedDetail({ row }: { row: BillHistoryRow }) {
                 >
                   {r.return_number}
                 </Link>{" "}
-                <span className="numeric text-muted-foreground">
-                  {formatMoney(r.total_amount)}
-                </span>
+                <span className="numeric text-muted-foreground">{formatMoney(r.total_amount)}</span>
               </li>
             ))}
           </ul>
@@ -342,6 +359,7 @@ function BillsPage() {
   const [payStatuses, setPayStatuses] = useState<string[]>([]);
   const [billStatuses, setBillStatuses] = useState<string[]>([]);
   const [tax, setTax] = useState("all");
+  const [methodFilter, setMethodFilter] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -374,6 +392,7 @@ function BillsPage() {
       if (billStatuses.length && !billStatuses.includes(b.status)) return false;
       if (tax === "taxed" && !b.is_taxed) return false;
       if (tax === "untaxed" && b.is_taxed) return false;
+      if (methodFilter && !b.methods.includes(methodFilter)) return false;
       return true;
     });
   }, [
@@ -387,19 +406,26 @@ function BillsPage() {
     payStatuses,
     billStatuses,
     tax,
+    methodFilter,
   ]);
 
   const summary = useMemo(() => {
     let revenue = 0;
     let outstanding = 0;
+    let collected = 0;
+    const methodTotals: MethodTotals = {};
     const counts = { Paid: 0, Partial: 0, Unpaid: 0 } as Record<string, number>;
     for (const b of visible) {
       if (b.status === "Voided") continue;
       revenue += Number(b.total_amount);
       if (b.payment_status !== "Paid") outstanding += b.balanceDue;
       counts[b.payment_status] = (counts[b.payment_status] ?? 0) + 1;
+      for (const [method, amount] of Object.entries(b.paidByMethod)) {
+        methodTotals[method] = (methodTotals[method] ?? 0) + amount;
+        collected += amount;
+      }
     }
-    return { revenue, outstanding, counts };
+    return { revenue, outstanding, counts, methodTotals, collected };
   }, [visible]);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
@@ -458,6 +484,17 @@ function BillsPage() {
           <StatusBadge tone="error">Unpaid {summary.counts["Unpaid"] ?? 0}</StatusBadge>
         </div>
       </div>
+
+      <PaymentMethodTiles
+        label="Collected"
+        totals={summary.methodTotals}
+        totalSales={summary.collected}
+        active={methodFilter}
+        onSelect={(m) => {
+          setMethodFilter(m);
+          setPage(1);
+        }}
+      />
 
       <div className="surface-card overflow-hidden">
         {/* Search + filter toggle */}
@@ -682,6 +719,7 @@ function BillsPage() {
                   <th className="px-4 py-3">Warehouse</th>
                   <th className="px-4 py-3">Tax</th>
                   <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3">Method</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Total</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -751,6 +789,9 @@ function BillsPage() {
                         </StatusBadge>
                       </td>
                       <td className="px-4 py-3">
+                        <MethodCell row={b} />
+                      </td>
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
                           <ReturnBadge row={b} />
@@ -799,7 +840,7 @@ function BillsPage() {
                     </tr>
                     {expanded === b.id && (
                       <tr className="border-b border-border/60">
-                        <td colSpan={10} className="p-0">
+                        <td colSpan={11} className="p-0">
                           <RelatedDetail row={b} />
                         </td>
                       </tr>
@@ -833,9 +874,7 @@ function BillsPage() {
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="numeric text-base font-bold">
-                          {formatMoney(b.total_amount)}
-                        </p>
+                        <p className="numeric text-base font-bold">{formatMoney(b.total_amount)}</p>
                         <p className="numeric text-xs text-muted-foreground">
                           Due {formatMoney(b.balanceDue)}
                         </p>
@@ -847,6 +886,7 @@ function BillsPage() {
                       </StatusBadge>
                       <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
                       <ReturnBadge row={b} />
+                      <MethodCell row={b} />
                       <button
                         className="ml-auto text-xs font-medium text-primary"
                         onClick={(e) => {

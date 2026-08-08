@@ -1,5 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
+
+/** bill id → allocations (with the method the money came in on). */
+async function allocationsByBill(billIds: string[]) {
+  const map: Record<string, AllocationInput[]> = {};
+  if (billIds.length === 0) return map;
+  const { data, error } = await supabase
+    .from("payment_allocations")
+    .select(
+      "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+    )
+    .in("bill_id", billIds);
+  if (error) throw error;
+  for (const a of (data ?? []) as unknown as {
+    bill_id: string;
+    amount_allocated: number;
+    payments_received: {
+      payment_date: string;
+      payment_method: string | null;
+      reference_number: string | null;
+    } | null;
+  }[]) {
+    (map[a.bill_id] ??= []).push({
+      amount: Number(a.amount_allocated),
+      method: a.payments_received?.payment_method ?? null,
+      date: a.payments_received?.payment_date ?? null,
+      reference: a.payments_received?.reference_number ?? null,
+    });
+  }
+  return map;
+}
 
 /* ---------- Date helpers ---------- */
 
@@ -58,6 +89,9 @@ export type SalesRow = {
   amount_paid: number;
   payment_status: string;
   payment_method: string | null;
+  /** Money actually received on this bill, per method. */
+  paidByMethod: Record<string, number>;
+  methods: string[];
   is_taxed: boolean;
   status: string;
 };
@@ -75,12 +109,22 @@ export function useSalesReport(range: { from: string; to: string }) {
         .lte("bill_date", range.to)
         .order("bill_date", { ascending: false });
       if (error) throw error;
+      const allocs = await allocationsByBill((data ?? []).map((b) => String(b.id)));
       return (data ?? []).map((b) => {
         const r = b as unknown as {
           customers: { name: string } | null;
           warehouses: { name: string } | null;
           is_walk_in: boolean;
         } & Record<string, unknown>;
+        const breakdown = buildPaymentBreakdown(
+          {
+            total_amount: Number(r["total_amount"] ?? 0),
+            amount_paid: Number(r["amount_paid"] ?? 0),
+            payment_method: (r["payment_method"] as string | null) ?? null,
+            bill_date: String(r["bill_date"]),
+          },
+          allocs[String(r["id"])] ?? [],
+        );
         return {
           id: String(r["id"]),
           bill_date: String(r["bill_date"]),
@@ -93,9 +137,11 @@ export function useSalesReport(range: { from: string; to: string }) {
           discount_amount: Number(r["discount_amount"] ?? 0),
           tax_amount: Number(r["tax_amount"] ?? 0),
           total_amount: Number(r["total_amount"] ?? 0),
-          amount_paid: Number(r["amount_paid"] ?? 0),
+          amount_paid: breakdown.totalPaid,
           payment_status: String(r["payment_status"] ?? ""),
-          payment_method: (r["payment_method"] as string | null) ?? null,
+          payment_method: breakdown.methods[0] ?? null,
+          paidByMethod: breakdown.byMethod,
+          methods: breakdown.methods,
           is_taxed: Boolean(r["is_taxed"]),
           status: String(r["status"] ?? ""),
         } as SalesRow;
@@ -188,8 +234,10 @@ export type TxnRow = {
   amount: number;
   direction: "in" | "out" | "neutral";
   status: string;
-  /** Payment method for sale rows (Cash / Credit Card / Bank Transfer). */
+  /** Payment method for money actually received on this row. */
   paymentMethod?: string | null;
+  /** Money received on this row, split by method (sales may mix methods). */
+  paidByMethod?: Record<string, number>;
   /** Route for row click-through, when a detail page exists. */
   link?: { to: string; params?: Record<string, string> };
 };
@@ -271,27 +319,24 @@ export function useTransactions(range: { from: string; to: string }) {
           )
           .gte("entry_date", from)
           .lte("entry_date", to)
-          .in("entry_type", [
-            "Sale Payment",
-            "Purchase Payment",
-            "Expense",
-            "Purchase Return",
-          ]),
+          .in("entry_type", ["Sale Payment", "Purchase Payment", "Expense", "Purchase Return"]),
       ]);
 
       // Expenses live in their own table from Part 28 onwards; ignore if absent.
       let expenseRows: Row[] = [];
       try {
-        const res = await (supabase as unknown as {
-          from: (t: string) => {
-            select: (s: string) => {
-              gte: (
-                c: string,
-                v: string,
-              ) => { lte: (c: string, v: string) => Promise<{ data: Row[] | null }> };
+        const res = await (
+          supabase as unknown as {
+            from: (t: string) => {
+              select: (s: string) => {
+                gte: (
+                  c: string,
+                  v: string,
+                ) => { lte: (c: string, v: string) => Promise<{ data: Row[] | null }> };
+              };
             };
-          };
-        })
+          }
+        )
           .from("expenses")
           .select("*")
           .gte("expense_date", from)
@@ -307,9 +352,24 @@ export function useTransactions(range: { from: string; to: string }) {
           ? created
           : `${date}T00:00:00.000Z`;
 
-      for (const b of (bills.data ?? []) as unknown as Row[]) {
+      const billRows = (bills.data ?? []) as unknown as Row[];
+      const saleAllocs = await allocationsByBill(billRows.map((b) => String(b["id"])));
+
+      for (const b of billRows) {
         if (b["status"] === "Draft") continue;
         const voided = b["status"] === "Voided";
+        // Only the money taken at billing time belongs on the sale row —
+        // later payments show up as their own "Payment Received" rows.
+        const breakdown = buildPaymentBreakdown(
+          {
+            total_amount: Number(b["total_amount"] ?? 0),
+            amount_paid: Number(b["amount_paid"] ?? 0),
+            payment_method: (b["payment_method"] as string | null) ?? null,
+            bill_date: String(b["bill_date"]),
+          },
+          saleAllocs[String(b["id"])] ?? [],
+        );
+        const upfront = voided ? {} : breakdown.upfrontByMethod;
         out.push({
           key: `sale-${b["id"]}`,
           id: String(b["id"]),
@@ -326,7 +386,8 @@ export function useTransactions(range: { from: string; to: string }) {
           amount: voided ? 0 : Number(b["total_amount"] ?? 0),
           direction: "in",
           status: voided ? "Voided" : String(b["payment_status"] ?? ""),
-          paymentMethod: voided ? null : ((b["payment_method"] as string | null) ?? null),
+          paymentMethod: Object.keys(upfront)[0] ?? null,
+          paidByMethod: upfront,
           link: { to: "/bills/$billId", params: { billId: String(b["id"]) } },
         });
       }
@@ -357,6 +418,8 @@ export function useTransactions(range: { from: string; to: string }) {
 
       for (const p of (received.data ?? []) as unknown as Row[]) {
         const accountId = (p["account_id"] as string | null) ?? null;
+        const method = normalizeMethod(p["payment_method"] as string | null);
+        const amount = Number(p["amount"] ?? 0);
         out.push({
           key: `received-${p["id"]}`,
           id: String(p["id"]),
@@ -365,11 +428,12 @@ export function useTransactions(range: { from: string; to: string }) {
           at: ts(String(p["payment_date"]), p["created_at"]),
           reference: (p["reference_number"] as string) ?? "—",
           party: (p["customers"] as { name: string } | null)?.name ?? "Walk-in",
-          description: `Payment received (${p["payment_method"] ?? "—"})`,
-          paymentMethod: (p["payment_method"] as string | null) ?? null,
+          description: `Payment received (${method ?? "—"})`,
+          paymentMethod: method,
+          paidByMethod: method ? { [method]: amount } : {},
           accountId,
           account: accountId ? (accName[accountId] ?? "—") : "—",
-          amount: Number(p["amount"] ?? 0),
+          amount,
           direction: "in",
           status: "Completed",
         });
@@ -446,12 +510,10 @@ export function useTransactions(range: { from: string; to: string }) {
           accountId,
           account: accountName,
           amount: Math.abs(Number(l["amount"] ?? 0)),
-          direction:
-            type === "Payment Received" || type === "Purchase Return" ? "in" : "out",
+          direction: type === "Payment Received" || type === "Purchase Return" ? "in" : "out",
           status: "Posted",
         });
       }
-
 
       for (const e of expenseRows) {
         const accountId = (e["account_id"] as string | null) ?? null;
@@ -473,7 +535,6 @@ export function useTransactions(range: { from: string; to: string }) {
           link: { to: "/expenses/$expenseId", params: { expenseId: String(e["id"]) } },
         });
       }
-
 
       return out.sort((a, b) => b.at.localeCompare(a.at));
     },

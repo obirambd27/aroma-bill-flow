@@ -12,11 +12,8 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { downloadCSV, printReport } from "@/lib/export";
 import { cashDelta, shiftDay, todayISO, txnTone, useTransactions } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import {
-  PaymentMethodTag,
-  PaymentMethodTiles,
-  sumByMethod,
-} from "@/components/PaymentMethodBreakdown";
+import { PaymentMethodTag, PaymentMethodTiles } from "@/components/PaymentMethodBreakdown";
+import { PAYMENT_METHODS } from "@/lib/payments";
 
 export const Route = createFileRoute("/_authenticated/reports/day-book")({
   head: () => ({
@@ -47,19 +44,36 @@ function DayBook() {
   const [methodFilter, setMethodFilter] = useState<string | null>(search.method ?? null);
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
-  const range = useMemo(() => ({ from: from <= to ? from : to, to: to >= from ? to : from }), [from, to]);
+  const range = useMemo(
+    () => ({ from: from <= to ? from : to, to: to >= from ? to : from }),
+    [from, to],
+  );
   const { data: all = [], isLoading } = useTransactions(range);
 
   const chronological = useMemo(() => [...all].sort((a, b) => a.at.localeCompare(b.at)), [all]);
 
-  const saleRows = useMemo(() => chronological.filter((t) => t.type === "Sale"), [chronological]);
-  const methodTotals = useMemo(() => sumByMethod(saleRows), [saleRows]);
-  const totalSales = useMemo(() => saleRows.reduce((s, t) => s + t.amount, 0), [saleRows]);
+  // Tiles show money actually received today — upfront bill payments plus
+  // payments recorded against older bills — not the full value of each sale.
+  const methodTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const m of PAYMENT_METHODS) totals[m] = 0;
+    for (const t of chronological) {
+      for (const [method, amount] of Object.entries(t.paidByMethod ?? {})) {
+        totals[method] = (totals[method] ?? 0) + amount;
+      }
+    }
+    return totals;
+  }, [chronological]);
+
+  const totalCollected = useMemo(
+    () => Object.values(methodTotals).reduce((s, v) => s + v, 0),
+    [methodTotals],
+  );
 
   const rows = useMemo(
     () =>
       methodFilter
-        ? chronological.filter((t) => t.type === "Sale" && t.paymentMethod === methodFilter)
+        ? chronological.filter((t) => (t.paidByMethod?.[methodFilter] ?? 0) > 0)
         : chronological,
     [chronological, methodFilter],
   );
@@ -141,7 +155,12 @@ function DayBook() {
                 <ArrowLeft className="h-4 w-4" /> Reports
               </Link>
             </Button>
-            <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => stepDay(-1)}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous day"
+              onClick={() => stepDay(-1)}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="icon" aria-label="Next day" onClick={() => stepDay(1)}>
@@ -174,8 +193,9 @@ function DayBook() {
       </FilterPanel>
 
       <PaymentMethodTiles
+        label="Collected today"
         totals={methodTotals}
-        totalSales={totalSales}
+        totalSales={totalCollected}
         active={methodFilter}
         onSelect={setMethodFilter}
       />

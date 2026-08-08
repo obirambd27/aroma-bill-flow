@@ -17,20 +17,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { ExportMenu, Field, FilterPanel, SummaryCards } from "@/components/ReportChrome";
 import { formatDate, formatMoney } from "@/lib/format";
 import { downloadCSV, downloadXLSX, printReport } from "@/lib/export";
-import {
-  groupRows,
-  presetRange,
-  useSalesReport,
-  type Preset,
-  type SalesRow,
-} from "@/lib/reports";
+import { groupRows, presetRange, useSalesReport, type Preset, type SalesRow } from "@/lib/reports";
 import { useCustomers, useAllWarehouses } from "@/lib/data";
 import { PAYMENT_METHODS } from "@/lib/payments";
-import {
-  PaymentMethodTag,
-  PaymentMethodTiles,
-  sumByMethod,
-} from "@/components/PaymentMethodBreakdown";
+import { PaymentMethodTag, PaymentMethodTiles } from "@/components/PaymentMethodBreakdown";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/reports/sales")({
@@ -89,7 +79,7 @@ function SalesReport() {
       if (payment !== "all" && r.payment_status !== payment) return false;
       if (taxStatus === "taxed" && !r.is_taxed) return false;
       if (taxStatus === "untaxed" && r.is_taxed) return false;
-      if (methods.length > 0 && !methods.includes(r.payment_method ?? "")) return false;
+      if (methods.length > 0 && !r.methods.some((m) => methods.includes(m))) return false;
       return true;
     });
     const dir = sort.dir === "asc" ? 1 : -1;
@@ -101,9 +91,20 @@ function SalesReport() {
     });
   }, [rowsRaw, customerId, warehouseId, payment, taxStatus, methods, sort]);
 
-  const methodTotals = useMemo(
-    () => sumByMethod(rows.map((r) => ({ payment_method: r.payment_method, amount: r.total_amount }))),
-    [rows],
+  // Amounts actually received per method (upfront + later payments).
+  const methodTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const m of PAYMENT_METHODS) totals[m] = 0;
+    for (const r of rows) {
+      for (const [method, amount] of Object.entries(r.paidByMethod)) {
+        totals[method] = (totals[method] ?? 0) + amount;
+      }
+    }
+    return totals;
+  }, [rows]);
+  const collected = useMemo(
+    () => Object.values(methodTotals).reduce((s, v) => s + v, 0),
+    [methodTotals],
   );
   const methodChart = useMemo(
     () =>
@@ -136,7 +137,7 @@ function SalesReport() {
             ? r.bill_date
             : groupBy === "month"
               ? r.bill_date.slice(0, 7)
-              : (r.payment_method ?? "Unpaid / No method");
+              : r.methods.join(" + ") || "Unpaid / No method";
     return groupRows(rows, keyFn).map(([key, list]) => ({
       key,
       list,
@@ -168,7 +169,7 @@ function SalesReport() {
     r.discount_amount,
     r.tax_amount,
     r.total_amount,
-    r.payment_method ?? "—",
+    r.methods.map((m) => `${m}: ${r.paidByMethod[m] ?? 0}`).join(" | ") || "—",
     r.payment_status,
   ]);
 
@@ -186,9 +187,7 @@ function SalesReport() {
         { label: "Bills", value: String(totals.count) },
       ],
       headers,
-      rows: exportRows.map((r) =>
-        r.map((c, i) => (i >= 4 && i <= 7 ? formatMoney(Number(c)) : c)),
-      ),
+      rows: exportRows.map((r) => r.map((c, i) => (i >= 4 && i <= 7 ? formatMoney(Number(c)) : c))),
       numericFrom: 4,
     });
   };
@@ -365,7 +364,7 @@ function SalesReport() {
       />
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <PaymentMethodTiles totals={methodTotals} totalSales={totals.sales} />
+        <PaymentMethodTiles label="Collected" totals={methodTotals} totalSales={collected} />
         <Card className="p-4">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Sales by payment method
@@ -378,7 +377,13 @@ function SalesReport() {
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={methodChart} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="80%">
+                  <Pie
+                    data={methodChart}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="55%"
+                    outerRadius="80%"
+                  >
                     {methodChart.map((d) => (
                       <Cell key={d.name} fill={d.fill} />
                     ))}
@@ -499,7 +504,20 @@ function SalesReport() {
                       {formatMoney(r.total_amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <PaymentMethodTag method={r.payment_method} />
+                      <div className="flex flex-wrap items-center gap-1">
+                        {r.methods.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          r.methods.map((m) => (
+                            <span key={m} className="inline-flex items-center gap-1">
+                              <PaymentMethodTag method={m} />
+                              <span className="numeric text-xs text-muted-foreground">
+                                {formatMoney(r.paidByMethod[m] ?? 0)}
+                              </span>
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <StatusBadge tone={paymentTone(r.payment_status)}>

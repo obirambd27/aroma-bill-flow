@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
 
 export type Settings = Tables<"settings">;
 export type Product = Tables<"products">;
@@ -330,13 +331,16 @@ export type BillHistoryRow = Bill & {
   salesOrder: { id: string; order_number: string | null } | null;
   deliveryNotes: { id: string; delivery_number: string | null; status: string }[];
   balanceDue: number;
+  /** Money actually received on this bill, split by payment method. */
+  paidByMethod: Record<string, number>;
+  methods: string[];
 };
 
 export function useBillHistory() {
   return useQuery({
     queryKey: ["bill-history"],
     queryFn: async () => {
-      const [billsRes, whRes, returnsRes, creditRes, dnRes] = await Promise.all([
+      const [billsRes, whRes, returnsRes, creditRes, dnRes, allocRes] = await Promise.all([
         supabase
           .from("bills")
           .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
@@ -352,15 +356,41 @@ export function useBillHistory() {
         supabase
           .from("delivery_notes")
           .select("id, delivery_number, status, sales_order_id"),
+        supabase
+          .from("payment_allocations")
+          .select(
+            "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+          ),
       ]);
       if (billsRes.error) throw billsRes.error;
       if (whRes.error) throw whRes.error;
       if (returnsRes.error) throw returnsRes.error;
       if (creditRes.error) throw creditRes.error;
       if (dnRes.error) throw dnRes.error;
+      if (allocRes.error) throw allocRes.error;
 
       const whName: Record<string, string> = {};
       for (const w of whRes.data ?? []) whName[w.id] = w.name;
+
+      const allocByBill: Record<string, AllocationInput[]> = {};
+      for (const a of (allocRes.data ?? []) as unknown as {
+        bill_id: string;
+        amount_allocated: number;
+        payments_received: {
+          payment_date: string;
+          payment_method: string | null;
+          reference_number: string | null;
+        } | null;
+      }[]) {
+        (allocByBill[a.bill_id] ??= []).push({
+          amount: Number(a.amount_allocated),
+          method: a.payments_received?.payment_method ?? null,
+          date: a.payments_received?.payment_date ?? null,
+          reference: a.payments_received?.reference_number ?? null,
+        });
+      }
+
+
 
       const rows = (billsRes.data ?? []) as unknown as (Bill & {
         customers: { id: string; name: string } | null;
@@ -400,15 +430,18 @@ export function useBillHistory() {
               .filter((d) => d.sales_order_id === b.sales_order_id)
               .map((d) => ({ id: d.id, delivery_number: d.delivery_number, status: d.status }))
           : [];
+        const breakdown = buildPaymentBreakdown(b, allocByBill[b.id] ?? []);
         return {
           ...b,
+          paidByMethod: breakdown.byMethod,
+          methods: breakdown.methods,
           warehouseNames: [...ids].map((id) => whName[id] ?? "Unknown").sort(),
           returns,
           returnedAmount: returns.reduce((s, r) => s + r.total_amount, 0),
           creditNotes,
           salesOrder: b.sales_orders ?? null,
           deliveryNotes,
-          balanceDue: Math.max(Number(b.total_amount) - Number(b.amount_paid), 0),
+          balanceDue: breakdown.balanceDue,
         } as BillHistoryRow;
       });
     },
