@@ -1,5 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
+
+/** bill id → allocations (with the method the money came in on). */
+async function allocationsByBill(billIds: string[]) {
+  const map: Record<string, AllocationInput[]> = {};
+  if (billIds.length === 0) return map;
+  const { data, error } = await supabase
+    .from("payment_allocations")
+    .select(
+      "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+    )
+    .in("bill_id", billIds);
+  if (error) throw error;
+  for (const a of (data ?? []) as unknown as {
+    bill_id: string;
+    amount_allocated: number;
+    payments_received: {
+      payment_date: string;
+      payment_method: string | null;
+      reference_number: string | null;
+    } | null;
+  }[]) {
+    (map[a.bill_id] ??= []).push({
+      amount: Number(a.amount_allocated),
+      method: a.payments_received?.payment_method ?? null,
+      date: a.payments_received?.payment_date ?? null,
+      reference: a.payments_received?.reference_number ?? null,
+    });
+  }
+  return map;
+}
 
 /* ---------- Date helpers ---------- */
 
