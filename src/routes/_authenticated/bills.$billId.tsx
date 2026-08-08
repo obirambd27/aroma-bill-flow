@@ -61,6 +61,7 @@ function BillDetailPage() {
   const { data: warehouses = [] } = useAllWarehouses();
   const { data: products = [] } = useAllProducts();
   const { data: editHistory = [] } = useBillEditHistory(billId);
+  const { data: allocations = [] } = useBillAllocations(billId);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
