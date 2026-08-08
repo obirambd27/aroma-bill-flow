@@ -192,6 +192,12 @@ function NewBillPage() {
     setDiscountType(editingBill.discount_type === "percent" ? "percent" : "amount");
     setDiscountValue(String(editingBill.discount_value ?? 0));
     setAmountPaidInput(String(editingBill.amount_paid ?? 0));
+    if (
+      editingBill.payment_method &&
+      (PAYMENT_METHODS as readonly string[]).includes(editingBill.payment_method)
+    ) {
+      setPaymentMethod(editingBill.payment_method as PaymentMethod);
+    }
     setLines(
       editingBill.bill_items
         .map((i) => ({
@@ -1045,7 +1051,6 @@ function NewBillPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
               </>
             )}
           </div>
