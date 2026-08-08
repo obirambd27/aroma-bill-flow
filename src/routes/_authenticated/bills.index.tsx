@@ -347,6 +347,7 @@ function BillsPage() {
   const [payStatuses, setPayStatuses] = useState<string[]>([]);
   const [billStatuses, setBillStatuses] = useState<string[]>([]);
   const [tax, setTax] = useState("all");
+  const [methodFilter, setMethodFilter] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
