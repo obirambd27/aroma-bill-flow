@@ -244,7 +244,7 @@ function DashboardPage() {
       sumByMethod(
         bills
           .filter((b) => b.bill_date === today)
-          .map((b) => ({ payment_method: b.payment_method, amount: b.total_amount })),
+          .map((b) => ({ payment_method: b.payment_method, amount: b.amount_paid })),
       ),
     [bills, today],
   );
@@ -502,7 +502,7 @@ function DashboardPage() {
       </div>
 
       {/* Today's sales by payment method */}
-      <Panel title="Today's sales by payment method">
+      <Panel title="Today's collections by payment method">
         <ul className="divide-y divide-border">
           {PAYMENT_METHODS.map((m) => (
             <li key={m}>
