@@ -89,7 +89,7 @@ function SalesReport() {
       if (payment !== "all" && r.payment_status !== payment) return false;
       if (taxStatus === "taxed" && !r.is_taxed) return false;
       if (taxStatus === "untaxed" && r.is_taxed) return false;
-      if (methods.length > 0 && !methods.includes(r.payment_method ?? "")) return false;
+      if (methods.length > 0 && !r.methods.some((m) => methods.includes(m))) return false;
       return true;
     });
     const dir = sort.dir === "asc" ? 1 : -1;
@@ -101,9 +101,20 @@ function SalesReport() {
     });
   }, [rowsRaw, customerId, warehouseId, payment, taxStatus, methods, sort]);
 
-  const methodTotals = useMemo(
-    () => sumByMethod(rows.map((r) => ({ payment_method: r.payment_method, amount: r.total_amount }))),
-    [rows],
+  // Amounts actually received per method (upfront + later payments).
+  const methodTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const m of PAYMENT_METHODS) totals[m] = 0;
+    for (const r of rows) {
+      for (const [method, amount] of Object.entries(r.paidByMethod)) {
+        totals[method] = (totals[method] ?? 0) + amount;
+      }
+    }
+    return totals;
+  }, [rows]);
+  const collected = useMemo(
+    () => Object.values(methodTotals).reduce((s, v) => s + v, 0),
+    [methodTotals],
   );
   const methodChart = useMemo(
     () =>
