@@ -9,8 +9,15 @@ export type SheetRow = Record<string, string>;
 
 export type ParsedSheet = {
   fileName: string;
+  sheetName: string;
   headers: string[];
   rows: SheetRow[];
+  /** Every physical row read from the sheet, including the header row and blanks. */
+  rawRowCount: number;
+  /** rawRowCount minus the header row. */
+  dataRowCount: number;
+  /** Rows that were entirely empty and therefore not counted as data. */
+  blankRowsDropped: number;
 };
 
 const norm = (s: string) =>
@@ -26,25 +33,46 @@ export async function parseWorkbook(file: File): Promise<ParsedSheet> {
   if (!sheetName) throw new Error("The file has no sheets.");
   const ws = wb.Sheets[sheetName];
   if (!ws) throw new Error("The first sheet could not be read.");
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false, raw: false });
+  // blankrows: true so nothing is silently truncated; we count blanks explicitly.
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, {
+    header: 1,
+    blankrows: true,
+    defval: "",
+    raw: false,
+  });
   if (matrix.length === 0) throw new Error("The sheet is empty.");
   const headerRow = (matrix[0] ?? []).map((c) => String(c ?? "").trim());
   const headers = headerRow.filter((h) => h.length > 0);
   if (headers.length === 0) throw new Error("No column headers found in the first row.");
   const rows: SheetRow[] = [];
-  for (const raw of matrix.slice(1)) {
+  let blankRowsDropped = 0;
+  matrix.slice(1).forEach((raw, i) => {
     const row: SheetRow = {};
     let hasValue = false;
-    headerRow.forEach((h, i) => {
+    headerRow.forEach((h, c) => {
       if (!h) return;
-      const value = String((raw as unknown[])[i] ?? "").trim();
+      const value = String((raw as unknown[])[c] ?? "").trim();
       row[h] = value;
       if (value) hasValue = true;
     });
-    if (hasValue) rows.push(row);
-  }
-  return { fileName: file.name, headers, rows };
+    if (hasValue) {
+      row.__sheetRow = String(i + 2);
+      rows.push(row);
+    } else {
+      blankRowsDropped += 1;
+    }
+  });
+  return {
+    fileName: file.name,
+    sheetName,
+    headers,
+    rows,
+    rawRowCount: matrix.length,
+    dataRowCount: matrix.length - 1,
+    blankRowsDropped,
+  };
 }
+
 
 /** Find the first header whose normalised name matches one of the candidates. */
 export function matchHeader(headers: string[], candidates: string[]): string | null {
