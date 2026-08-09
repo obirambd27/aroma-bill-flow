@@ -9,8 +9,15 @@ export type SheetRow = Record<string, string>;
 
 export type ParsedSheet = {
   fileName: string;
+  sheetName: string;
   headers: string[];
   rows: SheetRow[];
+  /** Every physical row read from the sheet, including the header row and blanks. */
+  rawRowCount: number;
+  /** rawRowCount minus the header row. */
+  dataRowCount: number;
+  /** Rows that were entirely empty and therefore not counted as data. */
+  blankRowsDropped: number;
 };
 
 const norm = (s: string) =>
@@ -26,25 +33,46 @@ export async function parseWorkbook(file: File): Promise<ParsedSheet> {
   if (!sheetName) throw new Error("The file has no sheets.");
   const ws = wb.Sheets[sheetName];
   if (!ws) throw new Error("The first sheet could not be read.");
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false, raw: false });
+  // blankrows: true so nothing is silently truncated; we count blanks explicitly.
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, {
+    header: 1,
+    blankrows: true,
+    defval: "",
+    raw: false,
+  });
   if (matrix.length === 0) throw new Error("The sheet is empty.");
   const headerRow = (matrix[0] ?? []).map((c) => String(c ?? "").trim());
   const headers = headerRow.filter((h) => h.length > 0);
   if (headers.length === 0) throw new Error("No column headers found in the first row.");
   const rows: SheetRow[] = [];
-  for (const raw of matrix.slice(1)) {
+  let blankRowsDropped = 0;
+  matrix.slice(1).forEach((raw, i) => {
     const row: SheetRow = {};
     let hasValue = false;
-    headerRow.forEach((h, i) => {
+    headerRow.forEach((h, c) => {
       if (!h) return;
-      const value = String((raw as unknown[])[i] ?? "").trim();
+      const value = String((raw as unknown[])[c] ?? "").trim();
       row[h] = value;
       if (value) hasValue = true;
     });
-    if (hasValue) rows.push(row);
-  }
-  return { fileName: file.name, headers, rows };
+    if (hasValue) {
+      row["__sheetRow"] = String(i + 2);
+      rows.push(row);
+    } else {
+      blankRowsDropped += 1;
+    }
+  });
+  return {
+    fileName: file.name,
+    sheetName,
+    headers,
+    rows,
+    rawRowCount: matrix.length,
+    dataRowCount: matrix.length - 1,
+    blankRowsDropped,
+  };
 }
+
 
 /** Find the first header whose normalised name matches one of the candidates. */
 export function matchHeader(headers: string[], candidates: string[]): string | null {
@@ -114,13 +142,55 @@ export type ProductPreviewRow = {
   existingId?: string;
 };
 
+export const SKIP_REASONS = [
+  "Non-Inventory Item Type",
+  "Missing SKU",
+  "Missing Name",
+  "Invalid Price",
+  "Invalid Stock Quantity",
+  "Duplicate SKU within file",
+] as const;
+export type SkipReason = (typeof SKIP_REASONS)[number];
+
+export type SkippedRow = {
+  row: number;
+  name: string;
+  sku: string;
+  reason: SkipReason;
+  /** For duplicates: all row numbers sharing this SKU. */
+  collidesWith?: number[];
+  data: string;
+};
+
 export type ProductPreview = {
   rows: ProductPreviewRow[];
-  skipped: number;
-  duplicates: number;
+  creates: number;
+  updates: number;
+  skipped: SkippedRow[];
+  skipCounts: Record<SkipReason, number>;
+  /** Legacy alias kept for the failure-log helper. */
   failures: FailedRow[];
   mapped: Record<string, string | null>;
+  stats: {
+    rawRowCount: number;
+    dataRowCount: number;
+    blankRowsDropped: number;
+    consideredRows: number;
+    sheetName: string;
+  };
 };
+
+/** Strips currency symbols/formatting: "AED 65.00" → 65, "1,250.50" → 1250.5 */
+export function parseAmount(raw: string | undefined): number | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return 0;
+  const cleaned = s.replace(/[^\d.,\-]/g, "").replace(/,/g, "");
+  if (!cleaned || !/\d/.test(cleaned)) return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+const skuKey = (s: string) => s.trim().toLowerCase();
 
 export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPreview> {
   const h = sheet.headers;
@@ -138,48 +208,88 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
   const { data: existing, error } = await supabase.from("products").select("id, sku, name");
   if (error) throw error;
   const bySku = new Map<string, string>();
-  for (const p of existing ?? []) if (p.sku) bySku.set(p.sku.trim().toLowerCase(), p.id);
+  for (const p of existing ?? []) if (p.sku && p.sku.trim()) bySku.set(skuKey(p.sku), p.id);
+
+  const rowNumber = (r: SheetRow, i: number) => Number(r["__sheetRow"] ?? i + 2);
+
+  // Pass 1 — find SKUs that appear more than once in the file (case-insensitive, trimmed).
+  const skuRows = new Map<string, number[]>();
+  sheet.rows.forEach((r, i) => {
+    const sku = mapped.sku ? (r[mapped.sku] ?? "").trim() : "";
+    if (!sku) return;
+    const list = skuRows.get(skuKey(sku)) ?? [];
+    list.push(rowNumber(r, i));
+    skuRows.set(skuKey(sku), list);
+  });
 
   const rows: ProductPreviewRow[] = [];
-  const failures: FailedRow[] = [];
-  let skipped = 0;
-  let duplicates = 0;
-  const seenSku = new Set<string>();
+  const skipped: SkippedRow[] = [];
+  const skipCounts = Object.fromEntries(SKIP_REASONS.map((r) => [r, 0])) as Record<
+    SkipReason,
+    number
+  >;
+  const usedSku = new Set<string>();
+
+  const skip = (
+    rowNo: number,
+    name: string,
+    sku: string,
+    reason: SkipReason,
+    dump: string,
+    collidesWith?: number[],
+  ) => {
+    skipCounts[reason] += 1;
+    skipped.push({
+      row: rowNo,
+      name,
+      sku,
+      reason,
+      data: dump,
+      ...(collidesWith ? { collidesWith } : {}),
+    });
+  };
 
   sheet.rows.forEach((r, i) => {
-    const rowNo = i + 2;
-    const dump = Object.values(r).filter(Boolean).join(" | ").slice(0, 200);
-    const itemType = mapped.itemType ? (r[mapped.itemType] ?? "") : "Inventory";
-    if (mapped.itemType && norm(itemType) !== "inventory") {
-      skipped += 1;
-      return;
-    }
+    const rowNo = rowNumber(r, i);
+    const dump = Object.entries(r)
+      .filter(([k, v]) => k !== "__sheetRow" && v)
+      .map(([, v]) => v)
+      .join(" | ")
+      .slice(0, 200);
     const name = (r[mapped.name!] ?? "").trim();
+    const sku = mapped.sku ? (r[mapped.sku] ?? "").trim() : "";
+
+    const itemType = mapped.itemType ? (r[mapped.itemType] ?? "") : "Inventory";
+    if (mapped.itemType && itemType.trim() && norm(itemType) !== "inventory") {
+      skip(rowNo, name, sku, "Non-Inventory Item Type", dump);
+      return;
+    }
     if (!name) {
-      failures.push({ row: rowNo, reason: "Missing item name", data: dump });
+      skip(rowNo, name, sku, "Missing Name", dump);
       return;
     }
-    const priceRaw = mapped.price ? r[mapped.price] : "0";
-    const price = priceRaw ? num(priceRaw) : 0;
-    if (!Number.isFinite(price) || price < 0) {
-      failures.push({ row: rowNo, reason: "Invalid price", data: dump });
+    if (!sku) {
+      skip(rowNo, name, sku, "Missing SKU", dump);
       return;
     }
-    const stockRaw = mapped.stock ? r[mapped.stock] : "0";
-    const stock = stockRaw ? num(stockRaw) : 0;
-    if (!Number.isFinite(stock)) {
-      failures.push({ row: rowNo, reason: "Invalid stock quantity", data: dump });
+    const price = parseAmount(mapped.price ? r[mapped.price] : "0");
+    if (price === null || price < 0) {
+      skip(rowNo, name, sku, "Invalid Price", dump);
       return;
     }
-    const sku = mapped.sku ? (r[mapped.sku] ?? "").trim() || null : null;
-    const key = sku?.toLowerCase();
-    if (key && seenSku.has(key)) {
-      failures.push({ row: rowNo, reason: "Duplicate SKU within the file", data: dump });
+    const stock = parseAmount(mapped.stock ? r[mapped.stock] : "0");
+    if (stock === null) {
+      skip(rowNo, name, sku, "Invalid Stock Quantity", dump);
       return;
     }
-    if (key) seenSku.add(key);
-    const existingId = key ? bySku.get(key) : undefined;
-    if (existingId) duplicates += 1;
+    const key = skuKey(sku);
+    const collisions = skuRows.get(key) ?? [];
+    if (collisions.length > 1 && usedSku.has(key)) {
+      skip(rowNo, name, sku, "Duplicate SKU within file", dump, collisions);
+      return;
+    }
+    usedSku.add(key);
+    const existingId = bySku.get(key);
     rows.push({
       row: rowNo,
       name,
@@ -193,8 +303,40 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
     });
   });
 
-  return { rows, skipped, duplicates, failures, mapped };
+  const creates = rows.filter((r) => r.action === "create").length;
+  return {
+    rows,
+    creates,
+    updates: rows.length - creates,
+    skipped,
+    skipCounts,
+    failures: skipped.map((s) => ({ row: s.row, reason: s.reason, data: s.data })),
+    mapped,
+    stats: {
+      rawRowCount: sheet.rawRowCount,
+      dataRowCount: sheet.dataRowCount,
+      blankRowsDropped: sheet.blankRowsDropped,
+      consideredRows: sheet.rows.length,
+      sheetName: sheet.sheetName,
+    },
+  };
 }
+
+export function downloadSkipReport(preview: ProductPreview) {
+  downloadCSV(
+    "product-import-skip-report",
+    ["Row", "Item Name", "SKU", "Reason", "Collides with rows", "Row data"],
+    preview.skipped.map((s) => [
+      s.row,
+      s.name,
+      s.sku,
+      s.reason,
+      s.collidesWith?.join(", ") ?? "",
+      s.data,
+    ]),
+  );
+}
+
 
 export async function commitProductImport(
   preview: ProductPreview,
@@ -247,7 +389,7 @@ export async function commitProductImport(
   const summary: ImportSummary = {
     created: created.length,
     updated,
-    skipped: preview.skipped + preview.failures.length,
+    skipped: preview.skipped.length,
     failures: preview.failures,
   };
   await logImport("Products", fileName, summary, warehouseId);

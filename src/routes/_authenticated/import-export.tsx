@@ -24,6 +24,8 @@ import {
   commitCustomerImport,
   commitProductImport,
   downloadFailureLog,
+  downloadSkipReport,
+
   exportCustomers,
   exportProductsByWarehouse,
   exportProductsZoho,
@@ -158,6 +160,76 @@ function FilePicker({
 
 /* ---------------- Products ---------------- */
 
+function ImportBreakdown({ preview }: { preview: ProductPreview }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const { stats, skipCounts, skipped } = preview;
+  const categories = (Object.keys(skipCounts) as (keyof typeof skipCounts)[]).filter(
+    (k) => skipCounts[k] > 0,
+  );
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+      <p className="text-sm">
+        <span className="font-semibold numeric">{stats.consideredRows}</span> rows read from file →{" "}
+        <span className="font-semibold numeric">{preview.rows.length}</span> will import (
+        {preview.creates} create, {preview.updates} update) →{" "}
+        <span className="font-semibold numeric">{skipped.length}</span> skipped
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Sheet “{stats.sheetName}” · {stats.rawRowCount} physical rows read ({stats.dataRowCount}{" "}
+        after the header row) · {stats.blankRowsDropped} blank rows ignored
+      </p>
+
+      {categories.length > 0 && (
+        <ul className="space-y-1.5">
+          {categories.map((reason) => {
+            const rows = skipped.filter((s) => s.reason === reason);
+            const isOpen = open === reason;
+            return (
+              <li key={reason} className="rounded-md border border-border bg-background">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
+                  onClick={() => setOpen(isOpen ? null : reason)}
+                >
+                  <span>
+                    <span className="numeric font-semibold">{skipCounts[reason]}</span> {reason}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {isOpen ? "Hide rows" : "Show rows"}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="max-h-56 overflow-auto border-t border-border">
+                    <table className="w-full text-xs">
+                      <tbody className="divide-y divide-border">
+                        {rows.map((s, i) => (
+                          <tr key={`${s.row}-${i}`}>
+                            <td className="numeric w-16 px-3 py-1.5 text-muted-foreground">
+                              Row {s.row}
+                            </td>
+                            <td className="px-3 py-1.5">{s.name || "—"}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">{s.sku || "—"}</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">
+                              {s.collidesWith ? `Rows ${s.collidesWith.join(", ")}` : ""}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
+
 function ProductImport() {
   const queryClient = useQueryClient();
   const { data: warehouses = [] } = useAllWarehouses();
@@ -166,11 +238,13 @@ function ProductImport() {
   const [warehouseId, setWarehouseId] = useState("");
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const [lastPreview, setLastPreview] = useState<ProductPreview | null>(null);
 
   const reset = () => {
     setSheet(null);
     setPreview(null);
     setSummary(null);
+    setLastPreview(null);
   };
 
   const onFile = async (file: File) => {
@@ -197,6 +271,7 @@ function ProductImport() {
         fileName: sheet.fileName,
       });
       setSummary(result);
+      setLastPreview(preview);
       setPreview(null);
       queryClient.invalidateQueries();
       toast.success(`${result.created} created · ${result.updated} updated`);
@@ -208,25 +283,24 @@ function ProductImport() {
   };
 
   if (summary)
-    return <SummaryCard summary={summary} prefix="products" onReset={reset} />;
+    return (
+      <div className="space-y-3">
+        <SummaryCard summary={summary} prefix="products" onReset={reset} />
+        {lastPreview && lastPreview.skipped.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => downloadSkipReport(lastPreview)}>
+            <Download />
+            Download Skip Report (CSV) — {lastPreview.skipped.length} rows
+          </Button>
+        )}
+      </div>
+    );
 
   if (!preview) return <FilePicker label="Import Products" onFile={onFile} busy={busy} />;
 
-  const creates = preview.rows.filter((r) => r.action === "create").length;
-
   return (
     <div className="space-y-4">
-      <p className="text-sm">
-        <span className="font-semibold">{preview.rows.length}</span> products found,{" "}
-        <span className="font-semibold">{preview.skipped}</span> skipped (non-inventory items),{" "}
-        <span className="font-semibold">{preview.duplicates}</span> duplicates detected by SKU
-        {preview.failures.length > 0 && (
-          <>
-            , <span className="font-semibold">{preview.failures.length}</span> invalid rows
-          </>
-        )}
-        .
-      </p>
+      <ImportBreakdown preview={preview} />
+
 
       <div className="space-y-2 sm:max-w-sm">
         <Label>Assign imported stock to warehouse</Label>
@@ -289,21 +363,21 @@ function ProductImport() {
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={confirm} disabled={busy || !warehouseId || preview.rows.length === 0}>
-          {busy ? "Importing…" : `Confirm Import (${creates} new, ${preview.duplicates} updates)`}
+          {busy
+            ? "Importing…"
+            : `Confirm Import (${preview.creates} new, ${preview.updates} updates)`}
         </Button>
-        {preview.failures.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => downloadFailureLog("products", preview.failures)}
-          >
+        {preview.skipped.length > 0 && (
+          <Button variant="outline" onClick={() => downloadSkipReport(preview)}>
             <Download />
-            Invalid rows
+            Download Skip Report (CSV)
           </Button>
         )}
         <Button variant="ghost" onClick={reset}>
           Cancel
         </Button>
       </div>
+
     </div>
   );
 }
