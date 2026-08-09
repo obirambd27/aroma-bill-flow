@@ -1952,11 +1952,13 @@ export type Database = {
       }
       settings: {
         Row: {
+          bank_payment_details: string | null
           business_address: string
           business_email: string
           business_logo_url: string | null
           business_name: string
           business_phone: string
+          business_tagline: string | null
           created_at: string
           default_payment_terms: string
           default_tax_rate: number
@@ -1965,15 +1967,18 @@ export type Database = {
           invoice_prefix: string
           low_stock_threshold: number
           share_message_footer: string | null
+          signature_url: string | null
           tax_id: string | null
           terms_and_conditions: string | null
         }
         Insert: {
+          bank_payment_details?: string | null
           business_address?: string
           business_email?: string
           business_logo_url?: string | null
           business_name?: string
           business_phone?: string
+          business_tagline?: string | null
           created_at?: string
           default_payment_terms?: string
           default_tax_rate?: number
@@ -1982,15 +1987,18 @@ export type Database = {
           invoice_prefix?: string
           low_stock_threshold?: number
           share_message_footer?: string | null
+          signature_url?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
         }
         Update: {
+          bank_payment_details?: string | null
           business_address?: string
           business_email?: string
           business_logo_url?: string | null
           business_name?: string
           business_phone?: string
+          business_tagline?: string | null
           created_at?: string
           default_payment_terms?: string
           default_tax_rate?: number
@@ -1999,6 +2007,7 @@ export type Database = {
           invoice_prefix?: string
           low_stock_threshold?: number
           share_message_footer?: string | null
+          signature_url?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
         }
