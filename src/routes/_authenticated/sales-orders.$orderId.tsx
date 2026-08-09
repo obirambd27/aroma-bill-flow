@@ -6,6 +6,14 @@ import { ArrowLeft, Ban, FileText, Pencil, Printer, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
