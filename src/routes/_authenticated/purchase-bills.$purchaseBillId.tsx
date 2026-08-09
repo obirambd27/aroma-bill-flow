@@ -4,6 +4,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Ban, Download, Printer, RotateCcw, Wallet } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentOutDialog } from "@/components/RecordPaymentOutDialog";
 import {
