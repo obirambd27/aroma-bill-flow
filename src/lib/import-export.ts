@@ -389,7 +389,7 @@ export async function commitProductImport(
   const summary: ImportSummary = {
     created: created.length,
     updated,
-    skipped: preview.skipped + preview.failures.length,
+    skipped: preview.skipped.length,
     failures: preview.failures,
   };
   await logImport("Products", fileName, summary, warehouseId);
