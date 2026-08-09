@@ -145,18 +145,32 @@ export type DocItem = {
   name: string;
   subtitle?: string | null | undefined;
   quantity: number | string;
-  unitPrice: number | string;
-  lineTotal: number | string;
+  unitPrice?: number | string | undefined;
+  lineTotal?: number | string | undefined;
 };
 
-export function DocItemsList({ items, qtyLabel = "Qty" }: { items: DocItem[]; qtyLabel?: string }) {
+export function DocItemsList({
+  items,
+  qtyLabel = "Qty",
+  showPrices = true,
+}: {
+  items: DocItem[];
+  qtyLabel?: string | undefined;
+  showPrices?: boolean | undefined;
+}) {
+  const cols = showPrices
+    ? "grid-cols-[1fr_auto_auto_auto]"
+    : "grid-cols-[1fr_auto]";
   return (
     <section className="px-6 pt-8 sm:px-10">
-      <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-doc-label sm:gap-6">
+      <div className={cn(
+        "grid items-center gap-3 px-3 pb-2",
+        cols, "text-[10px] font-semibold uppercase tracking-[0.16em] text-doc-label sm:gap-6",
+      )}>
         <span>Product</span>
         <span className="w-12 text-center">{qtyLabel}</span>
-        <span className="w-20 text-right sm:w-24">Price</span>
-        <span className="w-20 text-right sm:w-28">Total</span>
+        {showPrices && <span className="w-20 text-right sm:w-24">Price</span>}
+        {showPrices && <span className="w-20 text-right sm:w-28">Total</span>}
       </div>
 
       <div className="space-y-1">
@@ -164,7 +178,8 @@ export function DocItemsList({ items, qtyLabel = "Qty" }: { items: DocItem[]; qt
           <div
             key={item.key}
             className={cn(
-              "grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 rounded-2xl px-3 py-3 sm:gap-6",
+              "grid items-center gap-3 rounded-2xl px-3 py-3 sm:gap-6",
+              cols,
               index % 2 === 0 ? "bg-doc-tint" : "bg-doc-sheet",
             )}
           >
@@ -182,12 +197,16 @@ export function DocItemsList({ items, qtyLabel = "Qty" }: { items: DocItem[]; qt
             <span className="numeric inline-flex w-12 justify-center rounded-full bg-doc-accent/10 px-2 py-1 text-xs font-semibold text-doc-label">
               {item.quantity}
             </span>
-            <span className="numeric w-20 text-right text-xs text-doc-muted sm:w-24">
-              {formatMoney(item.unitPrice)}
-            </span>
-            <span className="numeric w-20 text-right text-sm font-bold sm:w-28">
-              {formatMoney(item.lineTotal)}
-            </span>
+            {showPrices && (
+              <span className="numeric w-20 text-right text-xs text-doc-muted sm:w-24">
+                {formatMoney(item.unitPrice ?? 0)}
+              </span>
+            )}
+            {showPrices && (
+              <span className="numeric w-20 text-right text-sm font-bold sm:w-28">
+                {formatMoney(item.lineTotal ?? 0)}
+              </span>
+            )}
           </div>
         ))}
       </div>
