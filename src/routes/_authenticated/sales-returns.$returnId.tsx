@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { ArrowLeft, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { useSettings } from "@/lib/data";
 import { createCreditNoteFromReturn, returnTone, useSalesReturn } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
