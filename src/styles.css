@@ -240,8 +240,10 @@
     color: #000 !important;
     font-size: 10pt !important;
     line-height: 1.35 !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    /* Must stay visible: overflow:hidden clips everything past page 1. */
+    overflow: visible !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
   .invoice-sheet:not(.doc-sheet) * {
@@ -259,8 +261,24 @@
     filter: none !important;
   }
 
-  .invoice-sheet.doc-sheet .doc-blob {
+  /* Long words / emails / addresses must wrap instead of being clipped. */
+  .invoice-sheet * {
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  .invoice-sheet .whitespace-pre-line {
+    white-space: pre-line !important;
+  }
+
+  .invoice-sheet .doc-blob {
     display: none !important;
+  }
+
+  .invoice-sheet.doc-sheet header {
+    border-radius: 0 !important;
   }
 
   .invoice-sheet table {
@@ -268,12 +286,16 @@
     width: 100% !important;
   }
 
-
+  /* Individual rows/blocks avoid splitting, but the sheet itself may flow
+     onto as many pages as it needs. */
   .invoice-sheet tr,
-  .invoice-sheet section,
-  .invoice-sheet footer {
+  .invoice-sheet header,
+  .invoice-sheet footer,
+  .invoice-sheet section > div > div {
+    break-inside: avoid;
     page-break-inside: avoid;
   }
+
 
 
   /* ---- 72mm thermal roll ----

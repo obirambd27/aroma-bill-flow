@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings, type Settings } from "@/lib/data";
 import { DEFAULT_SHARE_FOOTER } from "@/lib/invoice-share";
+import { InvoicePreview } from "@/components/InvoicePreview";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -364,6 +365,17 @@ function SettingsPage() {
           <Button onClick={saveProfile} disabled={saving}>
             {saving ? "Saving…" : "Save"}
           </Button>
+        </div>
+      </Section>
+
+      <Section
+        title="Invoice Preview (A4)"
+        description="Live preview of your printed invoice — updates as you edit the tagline, bank details or signature above."
+      >
+        <div className="overflow-x-auto">
+          <div className="min-w-[560px]">
+            <InvoicePreview settings={form} />
+          </div>
         </div>
       </Section>
 

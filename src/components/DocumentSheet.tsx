@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
+import { WhatsAppQr } from "@/components/WhatsAppQr";
 
 /**
  * "Velvet & Oud" document template — shared visual language for every
@@ -70,8 +71,8 @@ export function DocHero({
       />
 
       <div className="relative flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="doc-logo flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -79,11 +80,11 @@ export function DocHero({
                 className="h-full w-full object-contain"
               />
             ) : (
-              (icon ?? <BottleIcon />)
+              <span className="text-doc-accent">{icon ?? <BottleIcon />}</span>
             )}
           </div>
-          <div>
-            <p className="font-display text-xl font-bold leading-tight sm:text-2xl">
+          <div className="min-w-0">
+            <p className="break-words font-display text-xl font-bold leading-tight sm:text-2xl">
               {businessName}
             </p>
             {tagline && (
@@ -128,8 +129,8 @@ export function DocPartyCards({
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-doc-label">
             {party.title}
           </p>
-          <p className="mt-2 font-display text-base font-bold">{party.name}</p>
-          <div className="mt-1 space-y-0.5 text-xs text-doc-muted">
+          <p className="mt-2 break-words font-display text-base font-bold">{party.name}</p>
+          <div className="mt-1 space-y-0.5 break-words text-xs text-doc-muted [overflow-wrap:anywhere]">
             {party.lines.filter(Boolean).map((line, i) => (
               <p key={i}>{line}</p>
             ))}
@@ -188,9 +189,11 @@ export function DocItemsList({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{item.name}</p>
+                <p className="break-words text-sm font-semibold [overflow-wrap:anywhere]">
+                  {item.name}
+                </p>
                 {item.subtitle && (
-                  <p className="truncate text-xs text-doc-muted">{item.subtitle}</p>
+                  <p className="break-words text-xs text-doc-muted">{item.subtitle}</p>
                 )}
               </div>
             </div>
@@ -288,16 +291,19 @@ export function DocFooter({
     <footer className="mt-8 border-t border-dashed border-doc-line px-6 py-7 sm:px-10">
       {children}
       <div className="flex flex-col gap-6 sm:flex-row sm:justify-between">
-        {paymentDetails ? (
+        <div className="flex items-start gap-5">
+          <WhatsAppQr />
+          {paymentDetails ? (
           <div className="max-w-xs">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-doc-label">
               Payment Information
             </p>
-            <p className="mt-2 whitespace-pre-line text-xs text-doc-muted">{paymentDetails}</p>
+            <p className="mt-2 whitespace-pre-line break-words text-xs text-doc-muted">
+              {paymentDetails}
+            </p>
           </div>
-        ) : (
-          <span />
-        )}
+          ) : null}
+        </div>
 
         <div className="max-w-xs sm:text-right">
           {terms && (
@@ -305,11 +311,11 @@ export function DocFooter({
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-doc-label">
                 Terms
               </p>
-              <p className="mt-2 whitespace-pre-line text-xs text-doc-muted">{terms}</p>
+              <p className="mt-2 whitespace-pre-line break-words text-xs text-doc-muted">{terms}</p>
             </>
           )}
-          {note && <p className="mt-2 text-xs text-doc-muted">{note}</p>}
-          {signatureUrl ? (
+          {note && <p className="mt-2 break-words text-xs text-doc-muted">{note}</p>}
+          {signatureUrl && (
             <div className="mt-4 sm:flex sm:flex-col sm:items-end">
               <img src={signatureUrl} alt="Authorised signature" className="h-14 object-contain" />
               <p className="mt-1 font-display text-sm font-bold text-doc-label">{businessName}</p>
@@ -317,11 +323,10 @@ export function DocFooter({
                 Authorized Signatory
               </p>
             </div>
-          ) : (
-            <p className="mt-3 text-[11px] italic text-doc-muted">
-              This is a computer generated bill and does not require a signature.
-            </p>
           )}
+          <p className="mt-3 text-[11px] italic text-doc-muted">
+            This is a computer generated bill and does not require a signature.
+          </p>
         </div>
       </div>
     </footer>
