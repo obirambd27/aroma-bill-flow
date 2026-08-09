@@ -13,7 +13,7 @@ export function DocumentSheet({
   className,
 }: {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <div className="doc-stage no-print-bg -mx-2 rounded-[32px] bg-doc-page p-2 sm:p-6 print:m-0 print:bg-transparent print:p-0">
@@ -50,10 +50,10 @@ export function DocHero({
   documentNumber,
   stats,
 }: {
-  logoUrl?: string | null;
-  icon?: ReactNode;
+  logoUrl?: string | null | undefined;
+  icon?: ReactNode | undefined;
   businessName: string;
-  tagline?: string | null;
+  tagline?: string | null | undefined;
   chipLabel: string;
   documentNumber: string;
   stats: DocStat[];
@@ -143,7 +143,7 @@ export function DocPartyCards({
 export type DocItem = {
   key: string;
   name: string;
-  subtitle?: string | null;
+  subtitle?: string | null | undefined;
   quantity: number | string;
   unitPrice: number | string;
   lineTotal: number | string;
@@ -195,7 +195,7 @@ export function DocItemsList({ items, qtyLabel = "Qty" }: { items: DocItem[]; qt
   );
 }
 
-export type DocStamp = { text: string; sub?: string | null; tone: "paid" | "unpaid" | "partial" };
+export type DocStamp = { text: string; sub?: string | null | undefined; tone: "paid" | "unpaid" | "partial" };
 
 const stampTone: Record<DocStamp["tone"], string> = {
   paid: "border-success text-success",
@@ -212,7 +212,7 @@ export function DocTotals({
   rows: { label: string; value: string }[];
   totalLabel?: string;
   totalValue: number | string;
-  stamp?: DocStamp | null;
+  stamp?: DocStamp | null | undefined;
 }) {
   return (
     <section className="flex flex-wrap items-end justify-between gap-6 px-6 pt-8 sm:px-10">
@@ -258,12 +258,12 @@ export function DocFooter({
   businessName,
   children,
 }: {
-  paymentDetails?: string | null;
-  terms?: string | null;
-  note?: string | null;
-  signatureUrl?: string | null;
+  paymentDetails?: string | null | undefined;
+  terms?: string | null | undefined;
+  note?: string | null | undefined;
+  signatureUrl?: string | null | undefined;
   businessName: string;
-  children?: ReactNode;
+  children?: ReactNode | undefined;
 }) {
   return (
     <footer className="mt-8 border-t border-dashed border-doc-line px-6 py-7 sm:px-10">
