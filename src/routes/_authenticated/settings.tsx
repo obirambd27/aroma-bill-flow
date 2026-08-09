@@ -98,14 +98,18 @@ function SettingsPage() {
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
 
-  const uploadLogo = async (file: File) => {
+  const uploadImage = async (
+    file: File,
+    field: "business_logo_url" | "signature_url",
+    label: string,
+  ) => {
     if (!settings) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Logo must be under 5MB");
+      toast.error(`${label} must be under 5MB`);
       return;
     }
     setUploading(true);
-    const path = `logo-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+    const path = `${field}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
     const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true });
     if (error) {
       setUploading(false);
@@ -116,12 +120,17 @@ function SettingsPage() {
       .from("branding")
       .createSignedUrl(path, 60 * 60 * 24 * 365);
     const url = data?.signedUrl ?? null;
-    set("business_logo_url", url);
-    await supabase.from("settings").update({ business_logo_url: url }).eq("id", settings.id);
+    set(field, url);
+    await supabase
+      .from("settings")
+      .update({ [field]: url })
+      .eq("id", settings.id);
     setUploading(false);
-    toast.success("Logo uploaded");
+    toast.success(`${label} uploaded`);
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
+
+  const uploadLogo = (file: File) => uploadImage(file, "business_logo_url", "Logo");
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading settings…</p>;
