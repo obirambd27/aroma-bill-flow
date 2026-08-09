@@ -91,7 +91,7 @@ function CreditNoteDetail() {
           businessName={settings?.business_name ?? "Fragrance"}
           tagline={settings?.business_tagline}
           chipLabel="Credit Note"
-          documentNumber={note.credit_note_number}
+          documentNumber={note.credit_note_number ?? "Draft"}
           stats={[
             { label: "Issued", value: formatDate(note.credit_note_date) },
             { label: "Credit Total", value: formatMoney(note.total_amount) },
