@@ -244,16 +244,30 @@
     break-inside: avoid;
   }
 
-  .invoice-sheet * {
+  .invoice-sheet:not(.doc-sheet) * {
     color: #000 !important;
     background: transparent !important;
     box-shadow: none !important;
+  }
+
+  /* "Velvet & Oud" documents keep their colours in print / PDF. */
+  .invoice-sheet.doc-sheet,
+  .invoice-sheet.doc-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .invoice-sheet.doc-sheet .doc-blob {
+    display: none !important;
   }
 
   .invoice-sheet table {
     min-width: 0 !important;
     width: 100% !important;
   }
+
 
   .invoice-sheet tr,
   .invoice-sheet section,
