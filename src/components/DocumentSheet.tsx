@@ -70,8 +70,8 @@ export function DocHero({
       />
 
       <div className="relative flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="doc-logo flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -79,11 +79,11 @@ export function DocHero({
                 className="h-full w-full object-contain"
               />
             ) : (
-              (icon ?? <BottleIcon />)
+              <span className="text-doc-accent">{icon ?? <BottleIcon />}</span>
             )}
           </div>
-          <div>
-            <p className="font-display text-xl font-bold leading-tight sm:text-2xl">
+          <div className="min-w-0">
+            <p className="break-words font-display text-xl font-bold leading-tight sm:text-2xl">
               {businessName}
             </p>
             {tagline && (
