@@ -82,6 +82,9 @@ function SettingsPage() {
         invoice_footer_note: form.invoice_footer_note ?? null,
         terms_and_conditions: form.terms_and_conditions ?? null,
         share_message_footer: form.share_message_footer ?? null,
+        business_tagline: form.business_tagline ?? null,
+        bank_payment_details: form.bank_payment_details ?? null,
+        signature_url: form.signature_url ?? null,
         default_payment_terms: (form.default_payment_terms || "Due on Receipt").slice(0, 60),
         low_stock_threshold: Number(form.low_stock_threshold ?? 5),
       })
