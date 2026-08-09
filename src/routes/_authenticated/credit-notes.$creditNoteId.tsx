@@ -4,6 +4,14 @@ import { ArrowLeft, Printer, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ApplyCreditDialog } from "@/components/ApplyCreditDialog";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { useSettings } from "@/lib/data";
 import { creditTone, useCreditNote } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
