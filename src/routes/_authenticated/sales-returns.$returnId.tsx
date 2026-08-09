@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { ArrowLeft, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { useSettings } from "@/lib/data";
 import { createCreditNoteFromReturn, returnTone, useSalesReturn } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -101,140 +109,71 @@ function SalesReturnDetail() {
         {ret.reason && <span className="text-xs text-muted-foreground">{ret.reason}</span>}
       </div>
 
-      <article className="invoice-sheet surface-card space-y-8 p-6 sm:p-10">
-        <header className="flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0 space-y-1">
-            <p className="text-lg font-semibold">{settings?.business_name ?? "Fragrance"}</p>
-            {settings?.business_address && (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {settings.business_address}
-              </p>
-            )}
-            {settings?.business_phone && (
-              <p className="text-sm text-muted-foreground">{settings.business_phone}</p>
-            )}
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold tracking-tight">SALES RETURN</p>
-            <p className="numeric mt-1 text-sm text-muted-foreground">{ret.return_number}</p>
-          </div>
-        </header>
+      <DocumentSheet>
+        <DocHero
+          logoUrl={settings?.business_logo_url}
+          businessName={settings?.business_name ?? "Fragrance"}
+          tagline={settings?.business_tagline}
+          chipLabel="Sales Return"
+          documentNumber={ret.return_number ?? "Draft"}
+          stats={[
+            { label: "Return Date", value: formatDate(ret.return_date) },
+            { label: "Original Bill", value: ret.bills?.bill_number ?? "—" },
+            { label: "Return Total", value: formatMoney(ret.total_amount) },
+          ]}
+        />
 
-        <section className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Returned By
-            </p>
-            <p className="mt-1 text-sm font-semibold">
-              {ret.customers ? (
-                <Link
-                  to="/customers/$customerId"
-                  params={{ customerId: ret.customers.id }}
-                  className="hover:underline"
-                >
-                  {ret.customers.name}
-                </Link>
-              ) : (
-                "Walk-in Customer"
-              )}
-            </p>
-            {ret.customers?.phone && (
-              <p className="text-sm text-muted-foreground">{ret.customers.phone}</p>
-            )}
-            {ret.customers?.address && (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {ret.customers.address}
-              </p>
-            )}
-          </div>
-          <dl className="space-y-1 text-sm sm:text-right">
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Return Date</dt>
-              <dd className="font-medium">{formatDate(ret.return_date)}</dd>
-            </div>
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Original Bill</dt>
-              <dd className="font-medium">
-                {ret.bills ? (
-                  <Link
-                    to="/bills/$billId"
-                    params={{ billId: ret.bills.id }}
-                    className="no-print hover:underline"
-                  >
-                    {ret.bills.bill_number}
-                  </Link>
-                ) : (
-                  "—"
-                )}
-              </dd>
-            </div>
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Restocked To</dt>
-              <dd className="font-medium">{ret.warehouses?.name ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Reason</dt>
-              <dd className="font-medium">{ret.reason ?? "—"}</dd>
-            </div>
-          </dl>
-        </section>
+        <DocPartyCards
+          left={{
+            title: "Returned By",
+            name: ret.customers?.name ?? "Walk-in Customer",
+            lines: [ret.customers?.address, ret.customers?.phone],
+          }}
+          right={{
+            title: "From",
+            name: settings?.business_name ?? "—",
+            lines: [
+              settings?.business_address,
+              settings?.business_phone,
+              ret.warehouses?.name ? `Restocked to: ${ret.warehouses.name}` : null,
+              ret.reason ? `Reason: ${ret.reason}` : null,
+            ],
+          }}
+        />
 
-        <section className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-y border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="py-2 pr-3">#</th>
-                <th className="py-2 pr-3">Item</th>
-                <th className="py-2 pr-3 text-right">Qty</th>
-                <th className="py-2 pr-3 text-right">Rate</th>
-                <th className="py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ret.sales_return_items.map((item, index) => (
-                <tr key={item.id} className="border-b border-border/60">
-                  <td className="py-3 pr-3 text-muted-foreground">{index + 1}</td>
-                  <td className="py-3 pr-3 font-medium">{item.product_name_snapshot}</td>
-                  <td className="numeric py-3 pr-3 text-right">{Number(item.quantity)}</td>
-                  <td className="numeric py-3 pr-3 text-right">{formatMoney(item.unit_price)}</td>
-                  <td className="numeric py-3 text-right font-medium">
-                    {formatMoney(item.line_total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+        <DocItemsList
+          items={ret.sales_return_items.map((item) => ({
+            key: item.id,
+            name: item.product_name_snapshot,
+            quantity: Number(item.quantity),
+            unitPrice: item.unit_price,
+            lineTotal: item.line_total,
+          }))}
+        />
 
-        <section className="flex flex-col gap-6 sm:flex-row sm:justify-between">
-          <p className="max-w-sm text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Total in words: </span>
+        <DocTotals
+          rows={[
+            { label: "Subtotal", value: formatMoney(ret.subtotal) },
+            ...(Number(ret.tax_amount) > 0
+              ? [{ label: "Tax", value: formatMoney(ret.tax_amount) }]
+              : []),
+          ]}
+          totalLabel="Return Total"
+          totalValue={ret.total_amount}
+        />
+
+        <DocFooter
+          terms={settings?.terms_and_conditions}
+          note={ret.notes}
+          signatureUrl={settings?.signature_url}
+          businessName={settings?.business_name ?? "—"}
+        >
+          <p className="mb-5 text-xs text-doc-muted">
+            <span className="font-semibold text-doc-ink">Total in words: </span>
             {amountInWords(ret.total_amount)}
           </p>
-          <dl className="w-full max-w-xs space-y-2 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="numeric font-medium">{formatMoney(ret.subtotal)}</dd>
-            </div>
-            {Number(ret.tax_amount) > 0 && (
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Tax</dt>
-                <dd className="numeric font-medium">{formatMoney(ret.tax_amount)}</dd>
-              </div>
-            )}
-            <div className="flex items-baseline justify-between border-t border-border pt-2">
-              <dt className="font-semibold">Return Total</dt>
-              <dd className="numeric text-xl font-bold">{formatMoney(ret.total_amount)}</dd>
-            </div>
-          </dl>
-        </section>
-
-        {ret.notes && (
-          <footer className="border-t border-border pt-4 text-sm text-muted-foreground">
-            <p className="whitespace-pre-line">{ret.notes}</p>
-          </footer>
-        )}
-      </article>
+        </DocFooter>
+      </DocumentSheet>
     </div>
   );
 }

@@ -20,6 +20,14 @@ import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
 import { useBillEditHistory } from "@/lib/bill-edit";
 import { ThermalReceipt } from "@/components/ThermalReceipt";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
@@ -300,208 +308,95 @@ function BillDetailPage() {
           balanceDue={balanceDue}
         />
       ) : (
-      <article className="invoice-sheet mx-auto w-full max-w-3xl rounded-2xl bg-card p-6 shadow-lg sm:p-10">
+        <DocumentSheet>
+          <DocHero
+            logoUrl={settings?.business_logo_url}
+            businessName={settings?.business_name ?? "—"}
+            tagline={settings?.business_tagline}
+            chipLabel={taxed ? "Tax Invoice" : "Invoice"}
+            documentNumber={bill.bill_number ?? "Draft"}
+            stats={[
+              { label: "Issued", value: formatDate(bill.bill_date) },
+              { label: "Due", value: formatDate(bill.bill_date) },
+              { label: "Amount Due", value: formatMoney(balanceDue) },
+            ]}
+          />
 
-        <header className="flex flex-col gap-6 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
-            {settings?.business_logo_url && (
-              <img
-                src={settings.business_logo_url}
-                alt={`${settings.business_name} logo`}
-                className="h-14 w-14 rounded-lg object-contain"
-              />
-            )}
-            <div className="space-y-0.5 text-xs text-muted-foreground">
-              <p className="text-base font-semibold text-foreground">
-                {settings?.business_name ?? "—"}
-              </p>
-              {settings?.business_address && <p>{settings.business_address}</p>}
-              {settings?.business_phone && <p>{settings.business_phone}</p>}
-              {settings?.business_email && <p>{settings.business_email}</p>}
-              {settings?.tax_id && <p>TRN: {settings.tax_id}</p>}
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-right sm:text-3xl">
-            {taxed ? "TAX INVOICE" : "INVOICE"}
-          </h1>
-        </header>
+          <DocPartyCards
+            left={{
+              title: "Billed To",
+              name: bill.customers?.name ?? "Walk-in Customer",
+              lines: [bill.customers?.address, bill.customers?.phone],
+            }}
+            right={{
+              title: "From",
+              name: settings?.business_name ?? "—",
+              lines: [
+                settings?.business_address,
+                settings?.business_phone,
+                settings?.business_email,
+                settings?.tax_id ? `TRN: ${settings.tax_id}` : null,
+              ],
+            }}
+          />
 
-        <section className="grid gap-6 border-b border-border py-6 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Bill To
+          <DocItemsList
+            items={bill.bill_items.map((item) => ({
+              key: item.id,
+              name: item.product_name_snapshot,
+              subtitle:
+                products.find((p) => p.id === item.product_id)?.sku ??
+                warehouseName(item.warehouse_id),
+              quantity: Number(item.quantity),
+              unitPrice: item.unit_price,
+              lineTotal: item.line_total,
+            }))}
+          />
+
+          <DocTotals
+            stamp={
+              bill.payment_status === "Paid"
+                ? { text: "Paid", sub: formatDate(bill.bill_date), tone: "paid" as const }
+                : bill.payment_status === "Partial"
+                  ? { text: "Partial", sub: formatMoney(balanceDue), tone: "partial" as const }
+                  : { text: "Unpaid", sub: formatDate(bill.bill_date), tone: "unpaid" as const }
+            }
+            rows={[
+              { label: "Subtotal", value: formatMoney(bill.subtotal) },
+              ...(taxed
+                ? [
+                    {
+                      label: `Tax (${Number(bill.tax_rate)}%)`,
+                      value: formatMoney(bill.tax_amount),
+                    },
+                  ]
+                : []),
+              ...(Number(bill.discount_amount) > 0
+                ? [{ label: "Discount", value: `−${formatMoney(bill.discount_amount)}` }]
+                : []),
+              ...breakdown.lines.map((line) => ({
+                label: `Paid · ${line.method}${line.date ? ` · ${formatDate(line.date)}` : ""}`,
+                value: formatMoney(line.amount),
+              })),
+              { label: "Amount Paid", value: formatMoney(paid) },
+              { label: "Balance Due", value: formatMoney(balanceDue) },
+            ]}
+            totalValue={total}
+          />
+
+          <DocFooter
+            paymentDetails={settings?.bank_payment_details}
+            terms={settings?.terms_and_conditions}
+            note={settings?.invoice_footer_note}
+            signatureUrl={settings?.signature_url}
+            businessName={settings?.business_name ?? "—"}
+          >
+            <p className="mb-5 text-xs text-doc-muted">
+              <span className="font-semibold text-doc-ink">Total in words: </span>
+              {amountInWords(total)}
             </p>
-            {bill.customers ? (
-              <>
-                <Link
-                  to="/customers/$customerId"
-                  params={{ customerId: bill.customers.id }}
-                  className="mt-1 block text-sm font-semibold hover:text-primary hover:underline"
-                >
-                  {bill.customers.name}
-                </Link>
-                {bill.customers.phone && (
-                  <p className="text-xs text-muted-foreground">{bill.customers.phone}</p>
-                )}
-                {bill.customers.address && (
-                  <p className="text-xs text-muted-foreground">{bill.customers.address}</p>
-                )}
-              </>
-            ) : (
-              <p className="mt-1 text-sm font-semibold">Walk-in Customer</p>
-            )}
-          </div>
-
-          <dl className="space-y-1.5 text-sm sm:text-right">
-            <div className="flex justify-between gap-4 sm:justify-end">
-              <dt className="text-muted-foreground">Invoice #</dt>
-              <dd className="numeric font-medium sm:w-40">{bill.bill_number ?? "Draft"}</dd>
-            </div>
-            <div className="flex justify-between gap-4 sm:justify-end">
-              <dt className="text-muted-foreground">Invoice Date</dt>
-              <dd className="numeric font-medium sm:w-40">{formatDate(bill.bill_date)}</dd>
-            </div>
-            <div className="flex justify-between gap-4 sm:justify-end">
-              <dt className="text-muted-foreground">Payment Terms</dt>
-              <dd className="font-medium sm:w-40">
-                {settings?.default_payment_terms || "Due on Receipt"}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4 sm:justify-end">
-              <dt className="text-muted-foreground">Due Date</dt>
-              <dd className="numeric font-medium sm:w-40">{formatDate(bill.bill_date)}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <div className="-mx-2 overflow-x-auto py-6">
-          <table className="w-full min-w-[560px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="px-2 py-2">#</th>
-                <th className="px-2 py-2">Item</th>
-                <th className="px-2 py-2">SKU</th>
-                <th className="px-2 py-2 text-right">Qty</th>
-                <th className="px-2 py-2 text-right">Rate</th>
-                {taxed && <th className="px-2 py-2 text-right">Amount</th>}
-                {taxed && <th className="px-2 py-2 text-right">Taxable</th>}
-                {taxed && <th className="px-2 py-2 text-right">Tax %</th>}
-                {taxed && <th className="px-2 py-2 text-right">Tax</th>}
-                <th className="px-2 py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bill.bill_items.map((item, index) => {
-                const amount = Number(item.line_total);
-                const rate = Number(bill.tax_rate);
-                const tax = taxed ? (amount * rate) / 100 : 0;
-                return (
-                  <tr key={item.id} className="border-b border-border/60 align-top last:border-0">
-                    <td className="numeric px-2 py-3 text-muted-foreground">{index + 1}</td>
-                    <td className="px-2 py-3">
-                      <p className="font-medium">{item.product_name_snapshot}</p>
-                      <p className="text-xs text-muted-foreground">
-                        From {warehouseName(item.warehouse_id)}
-                      </p>
-                    </td>
-                    <td className="px-2 py-3 text-xs text-muted-foreground">
-                      {products.find((p) => p.id === item.product_id)?.sku ?? "—"}
-                    </td>
-                    <td className="numeric px-2 py-3 text-right">{item.quantity}</td>
-                    <td className="numeric px-2 py-3 text-right">
-                      {formatMoney(item.unit_price)}
-                    </td>
-                    {taxed && (
-                      <td className="numeric px-2 py-3 text-right">{formatMoney(amount)}</td>
-                    )}
-                    {taxed && (
-                      <td className="numeric px-2 py-3 text-right">{formatMoney(amount)}</td>
-                    )}
-                    {taxed && <td className="numeric px-2 py-3 text-right">{rate}%</td>}
-                    {taxed && <td className="numeric px-2 py-3 text-right">{formatMoney(tax)}</td>}
-                    <td className="numeric px-2 py-3 text-right font-semibold">
-                      {formatMoney(amount + tax)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <section className="border-t border-border pt-6">
-          <dl className="ml-auto max-w-sm space-y-2 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="numeric font-medium">{formatMoney(bill.subtotal)}</dd>
-            </div>
-            {Number(bill.discount_amount) > 0 && (
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Discount</dt>
-                <dd className="numeric font-medium">−{formatMoney(bill.discount_amount)}</dd>
-              </div>
-            )}
-            {taxed && (
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Tax ({Number(bill.tax_rate)}%)</dt>
-                <dd className="numeric font-medium">{formatMoney(bill.tax_amount)}</dd>
-              </div>
-            )}
-            <div className="flex items-baseline justify-between border-t border-border pt-3">
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Grand Total
-              </dt>
-              <dd className="numeric text-2xl font-bold">{formatMoney(total)}</dd>
-            </div>
-            {breakdown.lines.map((line) => (
-              <div key={line.key} className="flex justify-between">
-                <dt className="text-muted-foreground">
-                  Paid · {line.method}
-                  {line.date ? ` · ${formatDate(line.date)}` : ""}
-                  {line.reference ? ` · ${line.reference}` : ""}
-                </dt>
-                <dd className="numeric font-medium">{formatMoney(line.amount)}</dd>
-              </div>
-            ))}
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Amount Paid</dt>
-              <dd className="numeric font-medium">{formatMoney(paid)}</dd>
-            </div>
-            <div
-              className={
-                balanceDue > 0
-                  ? "flex justify-between rounded-lg bg-destructive/10 px-3 py-2 text-destructive"
-                  : "flex justify-between"
-              }
-            >
-              <dt className="font-medium">Balance Due</dt>
-              <dd className="numeric font-bold">{formatMoney(balanceDue)}</dd>
-            </div>
-          </dl>
-
-          <p className="mt-5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Total in words: </span>
-            {amountInWords(total)}
-          </p>
-        </section>
-
-        <footer className="mt-8 flex flex-col gap-8 border-t border-border pt-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-sm space-y-3 text-xs text-muted-foreground">
-            {settings?.invoice_footer_note && <p>{settings.invoice_footer_note}</p>}
-            {settings?.terms_and_conditions && (
-              <div>
-                <p className="font-medium text-foreground">Terms &amp; Conditions</p>
-                <p className="whitespace-pre-line">{settings.terms_and_conditions}</p>
-              </div>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            <div className="mt-10 w-52 border-t border-border pt-2 text-center">
-              Authorized Signature
-            </div>
-          </div>
-        </footer>
-      </article>
+          </DocFooter>
+        </DocumentSheet>
       )}
 
       <EditHistorySection billId={bill.id} />

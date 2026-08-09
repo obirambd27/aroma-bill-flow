@@ -4,6 +4,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Ban, Download, Printer, RotateCcw, Wallet } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocTotals,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { Button } from "@/components/ui/button";
 import { RecordPaymentOutDialog } from "@/components/RecordPaymentOutDialog";
 import {
@@ -105,6 +113,12 @@ function PurchaseBillDetail() {
           <p className="mt-1 text-sm text-muted-foreground">
             {bill.vendors?.name ?? "Vendor"} · {formatDate(bill.bill_date)}
           </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StatusBadge tone={purchasePaymentTone(bill.payment_status)}>
+              {bill.payment_status}
+            </StatusBadge>
+            <StatusBadge tone={purchaseBillTone(bill.status)}>{bill.status}</StatusBadge>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="h-11" onClick={() => window.print()}>
@@ -143,134 +157,79 @@ function PurchaseBillDetail() {
         </div>
       </div>
 
-      <article className="surface-card space-y-8 p-5 sm:p-8 print:border-0 print:shadow-none">
-        <header className="flex flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
-          <div>
-            <p className="text-lg font-semibold">{settings?.business_name ?? "Fragrance"}</p>
-            {settings?.business_address && (
-              <p className="max-w-xs whitespace-pre-line text-sm text-muted-foreground">
-                {settings.business_address}
-              </p>
-            )}
-            {settings?.tax_id && (
-              <p className="text-sm text-muted-foreground">TRN: {settings.tax_id}</p>
-            )}
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Purchase Bill
-            </p>
-            <p className="numeric text-lg font-bold">{bill.bill_number ?? "—"}</p>
-            <p className="text-sm text-muted-foreground">{formatDate(bill.bill_date)}</p>
-            <div className="mt-2 flex justify-end gap-2">
-              <StatusBadge tone={purchasePaymentTone(bill.payment_status)}>
-                {bill.payment_status}
-              </StatusBadge>
-              <StatusBadge tone={purchaseBillTone(bill.status)}>{bill.status}</StatusBadge>
-            </div>
-          </div>
-        </header>
+      <DocumentSheet>
+        <DocHero
+          logoUrl={settings?.business_logo_url}
+          businessName={settings?.business_name ?? "Fragrance"}
+          tagline={settings?.business_tagline}
+          chipLabel="Purchase Bill"
+          documentNumber={bill.bill_number ?? "—"}
+          stats={[
+            { label: "Bill Date", value: formatDate(bill.bill_date) },
+            { label: "Paid", value: formatMoney(bill.amount_paid) },
+            { label: "Balance Due", value: formatMoney(balanceDue) },
+          ]}
+        />
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Bill from
-            </p>
-            <p className="mt-1 text-sm font-semibold">{bill.vendors?.name ?? "—"}</p>
-            {bill.vendors?.phone && (
-              <p className="text-sm text-muted-foreground">{bill.vendors.phone}</p>
-            )}
-            {bill.vendors?.email && (
-              <p className="text-sm text-muted-foreground">{bill.vendors.email}</p>
-            )}
-            {bill.vendors?.address && (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {bill.vendors.address}
-              </p>
-            )}
-          </div>
-          <div className="sm:text-right">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Received into
-            </p>
-            <p className="mt-1 text-sm font-semibold">{bill.warehouses?.name ?? "—"}</p>
-            {bill.purchase_orders?.id && (
-              <Link
-                to="/purchase-orders/$orderId"
-                params={{ orderId: bill.purchase_orders.id }}
-                className="text-sm text-primary hover:underline print:hidden"
-              >
-                From {bill.purchase_orders.order_number}
-              </Link>
-            )}
-          </div>
-        </div>
+        <DocPartyCards
+          left={{
+            title: "Bill From",
+            name: bill.vendors?.name ?? "—",
+            lines: [bill.vendors?.address, bill.vendors?.phone, bill.vendors?.email],
+          }}
+          right={{
+            title: "Received Into",
+            name: bill.warehouses?.name ?? "—",
+            lines: [
+              settings?.business_name,
+              settings?.tax_id ? `TRN: ${settings.tax_id}` : null,
+              bill.purchase_orders?.order_number
+                ? `From ${bill.purchase_orders.order_number}`
+                : null,
+            ],
+          }}
+        />
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px]">
-            <thead>
-              <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="py-3 pr-4">Item</th>
-                <th className="px-4 py-3 text-right">Qty</th>
-                <th className="px-4 py-3 text-right">Unit cost</th>
-                <th className="py-3 pl-4 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bill.purchase_bill_items.map((i) => (
-                <tr key={i.id} className="border-b border-border/60 last:border-0">
-                  <td className="py-3 pr-4 text-sm font-medium">{i.product_name_snapshot}</td>
-                  <td className="numeric px-4 py-3 text-right text-sm">{Number(i.quantity)}</td>
-                  <td className="numeric px-4 py-3 text-right text-sm">
-                    {formatMoney(i.unit_cost)}
-                  </td>
-                  <td className="numeric py-3 pl-4 text-right text-sm font-semibold">
-                    {formatMoney(i.line_total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DocItemsList
+          items={bill.purchase_bill_items.map((i) => ({
+            key: i.id,
+            name: i.product_name_snapshot,
+            quantity: Number(i.quantity),
+            unitPrice: i.unit_cost,
+            lineTotal: i.line_total,
+          }))}
+        />
 
-        <div className="flex flex-wrap justify-between gap-6">
-          <p className="max-w-xs text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Amount in words: </span>
+        <DocTotals
+          stamp={
+            bill.payment_status === "Paid"
+              ? { text: "Paid", sub: formatDate(bill.bill_date), tone: "paid" as const }
+              : bill.payment_status === "Partial"
+                ? { text: "Partial", sub: formatMoney(balanceDue), tone: "partial" as const }
+                : { text: "Unpaid", sub: formatDate(bill.bill_date), tone: "unpaid" as const }
+          }
+          rows={[
+            { label: "Subtotal", value: formatMoney(bill.subtotal) },
+            { label: "Tax", value: formatMoney(bill.tax_amount) },
+            { label: "Paid", value: formatMoney(bill.amount_paid) },
+            { label: "Balance due", value: formatMoney(balanceDue) },
+          ]}
+          totalLabel="Bill Total"
+          totalValue={bill.total_amount}
+        />
+
+        <DocFooter
+          paymentDetails={settings?.bank_payment_details}
+          note={bill.notes}
+          signatureUrl={settings?.signature_url}
+          businessName={settings?.business_name ?? "—"}
+        >
+          <p className="mb-5 text-xs text-doc-muted">
+            <span className="font-semibold text-doc-ink">Amount in words: </span>
             {amountInWords(Number(bill.total_amount))}
           </p>
-          <dl className="w-full max-w-xs space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="numeric font-medium">{formatMoney(bill.subtotal)}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Tax</dt>
-              <dd className="numeric font-medium">{formatMoney(bill.tax_amount)}</dd>
-            </div>
-            <div className="flex items-center justify-between border-t border-border pt-3">
-              <dt className="font-semibold">Total</dt>
-              <dd className="numeric text-2xl font-bold">{formatMoney(bill.total_amount)}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Paid</dt>
-              <dd className="numeric font-medium">{formatMoney(bill.amount_paid)}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Balance due</dt>
-              <dd className="numeric font-semibold">{formatMoney(balanceDue)}</dd>
-            </div>
-          </dl>
-        </div>
-
-        {bill.notes && (
-          <div className="border-t border-border pt-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Notes
-            </p>
-            <p className="mt-1 whitespace-pre-line text-sm">{bill.notes}</p>
-          </div>
-        )}
-      </article>
+        </DocFooter>
+      </DocumentSheet>
 
       <RecordPaymentOutDialog
         open={payOpen}

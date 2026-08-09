@@ -82,6 +82,9 @@ function SettingsPage() {
         invoice_footer_note: form.invoice_footer_note ?? null,
         terms_and_conditions: form.terms_and_conditions ?? null,
         share_message_footer: form.share_message_footer ?? null,
+        business_tagline: form.business_tagline ?? null,
+        bank_payment_details: form.bank_payment_details ?? null,
+        signature_url: form.signature_url ?? null,
         default_payment_terms: (form.default_payment_terms || "Due on Receipt").slice(0, 60),
         low_stock_threshold: Number(form.low_stock_threshold ?? 5),
       })
@@ -95,14 +98,18 @@ function SettingsPage() {
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
 
-  const uploadLogo = async (file: File) => {
+  const uploadImage = async (
+    file: File,
+    field: "business_logo_url" | "signature_url",
+    label: string,
+  ) => {
     if (!settings) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Logo must be under 5MB");
+      toast.error(`${label} must be under 5MB`);
       return;
     }
     setUploading(true);
-    const path = `logo-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+    const path = `${field}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
     const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true });
     if (error) {
       setUploading(false);
@@ -113,12 +120,19 @@ function SettingsPage() {
       .from("branding")
       .createSignedUrl(path, 60 * 60 * 24 * 365);
     const url = data?.signedUrl ?? null;
-    set("business_logo_url", url);
-    await supabase.from("settings").update({ business_logo_url: url }).eq("id", settings.id);
+    set(field, url);
+    await supabase
+      .from("settings")
+      .update(
+        field === "signature_url" ? { signature_url: url } : { business_logo_url: url },
+      )
+      .eq("id", settings.id);
     setUploading(false);
-    toast.success("Logo uploaded");
+    toast.success(`${label} uploaded`);
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
+
+  const uploadLogo = (file: File) => uploadImage(file, "business_logo_url", "Logo");
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading settings…</p>;
@@ -137,6 +151,17 @@ function SettingsPage() {
               className="h-11"
               value={form.business_name ?? ""}
               onChange={(e) => set("business_name", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="business_tagline">Business tagline</Label>
+            <Input
+              id="business_tagline"
+              className="h-11"
+              placeholder="Fine Fragrance House"
+              value={form.business_tagline ?? ""}
+              onChange={(e) => set("business_tagline", e.target.value)}
             />
           </div>
 
@@ -292,6 +317,46 @@ function SettingsPage() {
               value={form.terms_and_conditions ?? ""}
               onChange={(e) => set("terms_and_conditions", e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="bank_payment_details">Bank / payment details (shown on invoices)</Label>
+            <Textarea
+              id="bank_payment_details"
+              rows={3}
+              placeholder={"Bank: Emirates NBD\nAccount: 1234567890\nIBAN: AE00 0000 0000"}
+              value={form.bank_payment_details ?? ""}
+              onChange={(e) => set("bank_payment_details", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="signature">Signature image</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="grid h-16 w-32 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted">
+                {form.signature_url ? (
+                  <img
+                    src={form.signature_url}
+                    alt="Authorised signature"
+                    loading="lazy"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">No signature</span>
+                )}
+              </div>
+              <Input
+                id="signature"
+                type="file"
+                accept="image/*"
+                className="h-11 max-w-xs"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadImage(file, "signature_url", "Signature");
+                }}
+              />
+            </div>
           </div>
         </div>
 
