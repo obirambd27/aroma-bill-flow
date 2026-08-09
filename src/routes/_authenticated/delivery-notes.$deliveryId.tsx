@@ -4,6 +4,13 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  DocFooter,
+  DocHero,
+  DocItemsList,
+  DocPartyCards,
+  DocumentSheet,
+} from "@/components/DocumentSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/lib/data";
 import { deliveryTone, useDeliveryNote } from "@/lib/sales";
