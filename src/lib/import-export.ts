@@ -56,7 +56,7 @@ export async function parseWorkbook(file: File): Promise<ParsedSheet> {
       if (value) hasValue = true;
     });
     if (hasValue) {
-      row.__sheetRow = String(i + 2);
+      row["__sheetRow"] = String(i + 2);
       rows.push(row);
     } else {
       blankRowsDropped += 1;
