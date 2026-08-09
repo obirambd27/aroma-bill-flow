@@ -212,21 +212,10 @@ function ProductImport() {
 
   if (!preview) return <FilePicker label="Import Products" onFile={onFile} busy={busy} />;
 
-  const creates = preview.rows.filter((r) => r.action === "create").length;
-
   return (
     <div className="space-y-4">
-      <p className="text-sm">
-        <span className="font-semibold">{preview.rows.length}</span> products found,{" "}
-        <span className="font-semibold">{preview.skipped}</span> skipped (non-inventory items),{" "}
-        <span className="font-semibold">{preview.duplicates}</span> duplicates detected by SKU
-        {preview.failures.length > 0 && (
-          <>
-            , <span className="font-semibold">{preview.failures.length}</span> invalid rows
-          </>
-        )}
-        .
-      </p>
+      <ImportBreakdown preview={preview} />
+
 
       <div className="space-y-2 sm:max-w-sm">
         <Label>Assign imported stock to warehouse</Label>
