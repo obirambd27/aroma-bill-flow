@@ -307,6 +307,46 @@ function SettingsPage() {
               onChange={(e) => set("terms_and_conditions", e.target.value)}
             />
           </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="bank_payment_details">Bank / payment details (shown on invoices)</Label>
+            <Textarea
+              id="bank_payment_details"
+              rows={3}
+              placeholder={"Bank: Emirates NBD\nAccount: 1234567890\nIBAN: AE00 0000 0000"}
+              value={form.bank_payment_details ?? ""}
+              onChange={(e) => set("bank_payment_details", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="signature">Signature image</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="grid h-16 w-32 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted">
+                {form.signature_url ? (
+                  <img
+                    src={form.signature_url}
+                    alt="Authorised signature"
+                    loading="lazy"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">No signature</span>
+                )}
+              </div>
+              <Input
+                id="signature"
+                type="file"
+                accept="image/*"
+                className="h-11 max-w-xs"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadImage(file, "signature_url", "Signature");
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">
