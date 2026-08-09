@@ -289,21 +289,21 @@ function ProductImport() {
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={confirm} disabled={busy || !warehouseId || preview.rows.length === 0}>
-          {busy ? "Importing…" : `Confirm Import (${creates} new, ${preview.duplicates} updates)`}
+          {busy
+            ? "Importing…"
+            : `Confirm Import (${preview.creates} new, ${preview.updates} updates)`}
         </Button>
-        {preview.failures.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => downloadFailureLog("products", preview.failures)}
-          >
+        {preview.skipped.length > 0 && (
+          <Button variant="outline" onClick={() => downloadSkipReport(preview)}>
             <Download />
-            Invalid rows
+            Download Skip Report (CSV)
           </Button>
         )}
         <Button variant="ghost" onClick={reset}>
           Cancel
         </Button>
       </div>
+
     </div>
   );
 }
