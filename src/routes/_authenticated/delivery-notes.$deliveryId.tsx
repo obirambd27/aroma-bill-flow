@@ -85,114 +85,61 @@ function DeliveryNoteDetail() {
         <StatusBadge tone={deliveryTone(note.status)}>{note.status}</StatusBadge>
       </div>
 
-      <article className="invoice-sheet surface-card space-y-8 p-6 sm:p-10">
-        <header className="flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0 space-y-1">
-            <p className="text-lg font-semibold">{settings?.business_name ?? "Fragrance"}</p>
-            {settings?.business_address && (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {settings.business_address}
-              </p>
-            )}
-            {settings?.business_phone && (
-              <p className="text-sm text-muted-foreground">{settings.business_phone}</p>
-            )}
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold tracking-tight">DELIVERY NOTE</p>
-            <p className="numeric mt-1 text-sm text-muted-foreground">{note.delivery_number}</p>
-          </div>
-        </header>
+      <DocumentSheet>
+        <DocHero
+          logoUrl={settings?.business_logo_url}
+          businessName={settings?.business_name ?? "Fragrance"}
+          tagline={settings?.business_tagline}
+          chipLabel="Delivery Note"
+          documentNumber={note.delivery_number ?? "Draft"}
+          stats={[
+            { label: "Delivery Date", value: formatDate(note.delivery_date) },
+            { label: "Warehouse", value: note.warehouses?.name ?? "—" },
+            {
+              label: "Sales Order",
+              value: note.sales_orders?.order_number ?? "Standalone",
+            },
+          ]}
+        />
 
-        <section className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Deliver To
-            </p>
-            <p className="mt-1 text-sm font-semibold">
-              {note.customers ? (
-                <Link
-                  to="/customers/$customerId"
-                  params={{ customerId: note.customers.id }}
-                  className="hover:underline"
-                >
-                  {note.customers.name}
-                </Link>
-              ) : (
-                "Walk-in Customer"
-              )}
-            </p>
-            {note.customers?.phone && (
-              <p className="text-sm text-muted-foreground">{note.customers.phone}</p>
-            )}
-            {note.customers?.address && (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {note.customers.address}
-              </p>
-            )}
-          </div>
-          <dl className="space-y-1 text-sm sm:text-right">
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Delivery Date</dt>
-              <dd className="font-medium">{formatDate(note.delivery_date)}</dd>
-            </div>
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Warehouse</dt>
-              <dd className="font-medium">{note.warehouses?.name ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between sm:justify-end sm:gap-6">
-              <dt className="text-muted-foreground">Sales Order</dt>
-              <dd className="font-medium">
-                {note.sales_orders ? (
-                  <Link
-                    to="/sales-orders/$orderId"
-                    params={{ orderId: note.sales_orders.id }}
-                    className="no-print hover:underline"
-                  >
-                    {note.sales_orders.order_number}
-                  </Link>
-                ) : (
-                  "Standalone"
-                )}
-              </dd>
-            </div>
-          </dl>
-        </section>
+        <DocPartyCards
+          left={{
+            title: "Deliver To",
+            name: note.customers?.name ?? "Walk-in Customer",
+            lines: [note.customers?.address, note.customers?.phone],
+          }}
+          right={{
+            title: "From",
+            name: settings?.business_name ?? "—",
+            lines: [
+              settings?.business_address,
+              settings?.business_phone,
+              settings?.business_email,
+            ],
+          }}
+        />
 
-        <section className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-y border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="py-2 pr-3">#</th>
-                <th className="py-2 pr-3">Item</th>
-                <th className="py-2 text-right">Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {note.delivery_note_items.map((item, index) => (
-                <tr key={item.id} className="border-b border-border/60">
-                  <td className="py-3 pr-3 text-muted-foreground">{index + 1}</td>
-                  <td className="py-3 pr-3 font-medium">{item.product_name_snapshot}</td>
-                  <td className="numeric py-3 text-right">{Number(item.quantity)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+        <DocItemsList
+          showPrices={false}
+          qtyLabel="Quantity"
+          items={note.delivery_note_items.map((item) => ({
+            key: item.id,
+            name: item.product_name_snapshot,
+            quantity: Number(item.quantity),
+          }))}
+        />
 
-        {note.notes && (
-          <p className="whitespace-pre-line text-sm text-muted-foreground">{note.notes}</p>
-        )}
-
-        <footer className="flex flex-wrap justify-between gap-8 border-t border-border pt-8 text-sm">
-          <div className="w-48 border-t border-border pt-2 text-muted-foreground">
-            Received By
-          </div>
-          <div className="w-48 border-t border-border pt-2 text-right text-muted-foreground">
-            Authorized Signature
-          </div>
-        </footer>
-      </article>
+        <DocFooter
+          terms={settings?.terms_and_conditions}
+          note={note.notes}
+          signatureUrl={settings?.signature_url}
+          businessName={settings?.business_name ?? "—"}
+        >
+          <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-doc-label">
+            Received By ________________________
+          </p>
+        </DocFooter>
+      </DocumentSheet>
     </div>
   );
 }
