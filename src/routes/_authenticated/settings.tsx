@@ -155,6 +155,17 @@ function SettingsPage() {
           </div>
 
           <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="business_tagline">Business tagline</Label>
+            <Input
+              id="business_tagline"
+              className="h-11"
+              placeholder="Fine Fragrance House"
+              value={form.business_tagline ?? ""}
+              onChange={(e) => set("business_tagline", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="logo">Logo</Label>
             <div className="flex flex-wrap items-center gap-4">
               <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted">
