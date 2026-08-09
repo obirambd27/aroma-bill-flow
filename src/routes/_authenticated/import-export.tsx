@@ -160,6 +160,76 @@ function FilePicker({
 
 /* ---------------- Products ---------------- */
 
+function ImportBreakdown({ preview }: { preview: ProductPreview }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const { stats, skipCounts, skipped } = preview;
+  const categories = (Object.keys(skipCounts) as (keyof typeof skipCounts)[]).filter(
+    (k) => skipCounts[k] > 0,
+  );
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+      <p className="text-sm">
+        <span className="font-semibold numeric">{stats.consideredRows}</span> rows read from file →{" "}
+        <span className="font-semibold numeric">{preview.rows.length}</span> will import (
+        {preview.creates} create, {preview.updates} update) →{" "}
+        <span className="font-semibold numeric">{skipped.length}</span> skipped
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Sheet “{stats.sheetName}” · {stats.rawRowCount} physical rows read ({stats.dataRowCount}{" "}
+        after the header row) · {stats.blankRowsDropped} blank rows ignored
+      </p>
+
+      {categories.length > 0 && (
+        <ul className="space-y-1.5">
+          {categories.map((reason) => {
+            const rows = skipped.filter((s) => s.reason === reason);
+            const isOpen = open === reason;
+            return (
+              <li key={reason} className="rounded-md border border-border bg-background">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
+                  onClick={() => setOpen(isOpen ? null : reason)}
+                >
+                  <span>
+                    <span className="numeric font-semibold">{skipCounts[reason]}</span> {reason}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {isOpen ? "Hide rows" : "Show rows"}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="max-h-56 overflow-auto border-t border-border">
+                    <table className="w-full text-xs">
+                      <tbody className="divide-y divide-border">
+                        {rows.map((s, i) => (
+                          <tr key={`${s.row}-${i}`}>
+                            <td className="numeric w-16 px-3 py-1.5 text-muted-foreground">
+                              Row {s.row}
+                            </td>
+                            <td className="px-3 py-1.5">{s.name || "—"}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">{s.sku || "—"}</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">
+                              {s.collidesWith ? `Rows ${s.collidesWith.join(", ")}` : ""}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
+
 function ProductImport() {
   const queryClient = useQueryClient();
   const { data: warehouses = [] } = useAllWarehouses();
