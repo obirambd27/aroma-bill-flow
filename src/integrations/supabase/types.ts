@@ -632,6 +632,30 @@ export type Database = {
         }
         Relationships: []
       }
+      day_book_overrides: {
+        Row: {
+          book_date: string
+          created_at: string
+          id: string
+          opening_cash: number
+          updated_at: string
+        }
+        Insert: {
+          book_date: string
+          created_at?: string
+          id?: string
+          opening_cash?: number
+          updated_at?: string
+        }
+        Update: {
+          book_date?: string
+          created_at?: string
+          id?: string
+          opening_cash?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_note_items: {
         Row: {
           delivery_note_id: string
