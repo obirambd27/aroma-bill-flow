@@ -62,97 +62,69 @@ function PurchaseReturnDetailPage() {
         </Button>
       </div>
 
-      <article className="print-document surface-card mx-auto w-full max-w-3xl space-y-6 p-6 sm:p-8">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <h1 className="text-xl font-bold">{settings?.business_name ?? "Fragrance Billing"}</h1>
-            <p className="text-xs text-muted-foreground">{settings?.business_address}</p>
-            <p className="text-xs text-muted-foreground">{settings?.business_phone}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Purchase Return</p>
-            <p className="text-lg font-bold">{ret.return_number}</p>
-            <p className="text-xs text-muted-foreground">{formatDate(ret.return_date)}</p>
-            <div className="mt-2 flex justify-end">
-              <StatusBadge tone={purchaseReturnTone(ret.status)}>{ret.status}</StatusBadge>
-            </div>
-          </div>
-        </header>
+      <div className="no-print">
+        <StatusBadge tone={purchaseReturnTone(ret.status)}>{ret.status}</StatusBadge>
+      </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Vendor</p>
-            <p className="text-sm font-medium">{ret.vendors?.name ?? "—"}</p>
-            {ret.vendors?.address && (
-              <p className="text-xs text-muted-foreground">{ret.vendors.address}</p>
-            )}
-            {ret.vendors?.phone && (
-              <p className="text-xs text-muted-foreground">{ret.vendors.phone}</p>
-            )}
-          </div>
-          <div className="sm:text-right">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Details</p>
-            <p className="text-sm">Warehouse: {ret.warehouses?.name ?? "—"}</p>
-            <p className="text-sm">
-              Against:{" "}
-              {ret.purchase_bills ? (
-                <Link
-                  to="/purchase-bills/$purchaseBillId"
-                  params={{ purchaseBillId: ret.purchase_bills.id }}
-                  className="font-medium underline underline-offset-2"
-                >
-                  {ret.purchase_bills.bill_number ?? "Purchase bill"}
-                </Link>
-              ) : (
-                "Standalone"
-              )}
-            </p>
-            {ret.reason && <p className="text-sm text-muted-foreground">Reason: {ret.reason}</p>}
-          </div>
-        </div>
+      <DocumentSheet>
+        <DocHero
+          logoUrl={settings?.business_logo_url}
+          businessName={settings?.business_name ?? "Fragrance Billing"}
+          tagline={settings?.business_tagline}
+          chipLabel="Purchase Return"
+          documentNumber={ret.return_number ?? "Draft"}
+          stats={[
+            { label: "Return Date", value: formatDate(ret.return_date) },
+            {
+              label: "Against",
+              value: ret.purchase_bills?.bill_number ?? "Standalone",
+            },
+            { label: "Return Total", value: formatMoney(ret.total_amount) },
+          ]}
+        />
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="py-2">Item</th>
-                <th className="py-2 text-right">Qty</th>
-                <th className="py-2 text-right">Unit Cost</th>
-                <th className="py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ret.purchase_return_items.map((i) => (
-                <tr key={i.id} className="border-b border-border/60 last:border-0">
-                  <td className="py-2.5 font-medium">{i.product_name_snapshot}</td>
-                  <td className="numeric py-2.5 text-right">{Number(i.quantity)}</td>
-                  <td className="numeric py-2.5 text-right">{formatMoney(i.unit_cost)}</td>
-                  <td className="numeric py-2.5 text-right">{formatMoney(i.line_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DocPartyCards
+          left={{
+            title: "Vendor",
+            name: ret.vendors?.name ?? "—",
+            lines: [ret.vendors?.address, ret.vendors?.phone],
+          }}
+          right={{
+            title: "Details",
+            name: ret.warehouses?.name ?? "—",
+            lines: [
+              settings?.business_name,
+              settings?.business_phone,
+              ret.reason ? `Reason: ${ret.reason}` : null,
+            ],
+          }}
+        />
 
-        <div className="ml-auto w-full max-w-xs space-y-2 border-t border-border pt-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="numeric">{formatMoney(ret.subtotal)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tax</span>
-            <span className="numeric">{formatMoney(ret.tax_amount)}</span>
-          </div>
-          <div className="flex items-center justify-between border-t border-border pt-2">
-            <span className="text-sm font-medium">Total</span>
-            <span className="numeric text-xl font-bold">{formatMoney(ret.total_amount)}</span>
-          </div>
-        </div>
+        <DocItemsList
+          items={ret.purchase_return_items.map((i) => ({
+            key: i.id,
+            name: i.product_name_snapshot,
+            quantity: Number(i.quantity),
+            unitPrice: i.unit_cost,
+            lineTotal: i.line_total,
+          }))}
+        />
 
-        {ret.notes && (
-          <p className="border-t border-border pt-4 text-xs text-muted-foreground">{ret.notes}</p>
-        )}
-      </article>
+        <DocTotals
+          rows={[
+            { label: "Subtotal", value: formatMoney(ret.subtotal) },
+            { label: "Tax", value: formatMoney(ret.tax_amount) },
+          ]}
+          totalLabel="Return Total"
+          totalValue={ret.total_amount}
+        />
+
+        <DocFooter
+          note={ret.notes}
+          signatureUrl={settings?.signature_url}
+          businessName={settings?.business_name ?? "—"}
+        />
+      </DocumentSheet>
 
       <JournalSection
         linkColumn="related_return_id"
