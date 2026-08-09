@@ -123,7 +123,9 @@ function SettingsPage() {
     set(field, url);
     await supabase
       .from("settings")
-      .update({ [field]: url })
+      .update(
+        field === "signature_url" ? { signature_url: url } : { business_logo_url: url },
+      )
       .eq("id", settings.id);
     setUploading(false);
     toast.success(`${label} uploaded`);
