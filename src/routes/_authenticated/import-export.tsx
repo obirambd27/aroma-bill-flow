@@ -238,11 +238,13 @@ function ProductImport() {
   const [warehouseId, setWarehouseId] = useState("");
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const [lastPreview, setLastPreview] = useState<ProductPreview | null>(null);
 
   const reset = () => {
     setSheet(null);
     setPreview(null);
     setSummary(null);
+    setLastPreview(null);
   };
 
   const onFile = async (file: File) => {
@@ -269,6 +271,7 @@ function ProductImport() {
         fileName: sheet.fileName,
       });
       setSummary(result);
+      setLastPreview(preview);
       setPreview(null);
       queryClient.invalidateQueries();
       toast.success(`${result.created} created · ${result.updated} updated`);
@@ -280,7 +283,17 @@ function ProductImport() {
   };
 
   if (summary)
-    return <SummaryCard summary={summary} prefix="products" onReset={reset} />;
+    return (
+      <div className="space-y-3">
+        <SummaryCard summary={summary} prefix="products" onReset={reset} />
+        {lastPreview && lastPreview.skipped.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => downloadSkipReport(lastPreview)}>
+            <Download />
+            Download Skip Report (CSV) — {lastPreview.skipped.length} rows
+          </Button>
+        )}
+      </div>
+    );
 
   if (!preview) return <FilePicker label="Import Products" onFile={onFile} busy={busy} />;
 
