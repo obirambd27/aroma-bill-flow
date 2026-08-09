@@ -70,6 +70,16 @@
 
 :root {
   --radius: 0.75rem;
+  /* "Velvet & Oud" document template palette (always light, print-safe) */
+  --doc-page: oklch(0.933 0.026 296);
+  --doc-sheet: oklch(1 0 0);
+  --doc-accent: oklch(0.541 0.246 293);
+  --doc-accent-foreground: oklch(1 0 0);
+  --doc-tint: oklch(0.972 0.014 298);
+  --doc-label: oklch(0.491 0.235 293);
+  --doc-ink: oklch(0.2 0.015 300);
+  --doc-muted: oklch(0.55 0.02 300);
+  --doc-line: oklch(0.9 0.02 298);
   --background: oklch(0.982 0.002 300);
   --foreground: oklch(0.18 0.008 300);
   --card: oklch(1 0 0);
