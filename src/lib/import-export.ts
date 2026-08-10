@@ -369,11 +369,17 @@ export async function commitProductImport(
     for (const row of preview.rows) {
       if (row.action === "update" && row.existingId) {
         // Only write back the columns that were actually present in the file.
-        const patch: Record<string, unknown> = { name: row.name };
-        if (row.brand !== null) patch["brand"] = row.brand;
-        if (row.price !== null) patch["price"] = row.price;
-        if (row.costPrice !== null) patch["cost_price"] = row.costPrice;
-        if (row.isActive !== null) patch["is_active"] = row.isActive;
+        const patch: {
+          name: string;
+          brand?: string | null;
+          price?: number;
+          cost_price?: number;
+          is_active?: boolean;
+        } = { name: row.name };
+        if (row.brand !== null) patch.brand = row.brand;
+        if (row.price !== null) patch.price = row.price;
+        if (row.costPrice !== null) patch.cost_price = row.costPrice;
+        if (row.isActive !== null) patch.is_active = row.isActive;
         const { error } = await supabase
           .from("products")
           .update(patch)
