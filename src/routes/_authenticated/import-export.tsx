@@ -328,6 +328,7 @@ function ProductImport() {
               <th className="px-3 py-2 text-left">Action</th>
               <th className="px-3 py-2 text-left">Item</th>
               <th className="px-3 py-2 text-left">SKU</th>
+              <th className="px-3 py-2 text-right">Cost</th>
               <th className="px-3 py-2 text-right">Rate</th>
               <th className="px-3 py-2 text-right">Stock</th>
             </tr>
@@ -348,8 +349,13 @@ function ProductImport() {
                 </td>
                 <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{r.sku ?? "—"}</td>
-                <td className="numeric px-3 py-2 text-right">{formatMoney(r.price)}</td>
-                <td className="numeric px-3 py-2 text-right">{r.stock}</td>
+                <td className="numeric px-3 py-2 text-right">
+                  {r.costPrice != null ? formatMoney(r.costPrice) : "—"}
+                </td>
+                <td className="numeric px-3 py-2 text-right">
+                  {r.price != null ? formatMoney(r.price) : "—"}
+                </td>
+                <td className="numeric px-3 py-2 text-right">{r.stock ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -588,7 +594,7 @@ function ImportExportPage() {
         <TabsContent value="products" className="mt-4 space-y-6">
           <Section
             title="Import products"
-            description="Reads Item Name, SKU, Brand, Rate, Stock On Hand, Item Type and Status. Only Inventory items are imported."
+            description="Reads Item Name, SKU, Brand, Rate, Purchase/Cost Price, Stock On Hand, Item Type and Status. Only Inventory items are imported. For existing SKUs only the columns present in your file are updated — so a file with just SKU + Purchase Price updates cost prices alone."
           >
             <ProductImport />
           </Section>

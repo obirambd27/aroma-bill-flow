@@ -106,6 +106,21 @@ function ProductsPage() {
     return dir === "desc" ? sorted.reverse() : sorted;
   }, [products, query, brand, category, stockStatus, sort, stockTotals, globalThreshold]);
 
+  const inventory = useMemo(() => {
+    let qty = 0;
+    let value = 0;
+    let missingCost = 0;
+    for (const p of products) {
+      const q = stockTotals[p.id] ?? 0;
+      if (q <= 0) continue;
+      qty += q;
+      const cost = p.cost_price != null ? Number(p.cost_price) : null;
+      if (cost == null) missingCost += 1;
+      value += q * (cost ?? 0);
+    }
+    return { qty, value, missingCost };
+  }, [products, stockTotals]);
+
   const openNew = () => {
     setEditing(null);
     setFormOpen(true);
@@ -154,6 +169,27 @@ function ProductsPage() {
           </div>
         }
       />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Products</p>
+          <p className="numeric mt-1 text-2xl font-bold">{products.length}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Units in stock</p>
+          <p className="numeric mt-1 text-2xl font-bold">{inventory.qty}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Total stock value (at cost)</p>
+          <p className="numeric mt-1 text-2xl font-bold">{formatMoney(inventory.value)}</p>
+          {inventory.missingCost > 0 && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {inventory.missingCost} in-stock product{inventory.missingCost === 1 ? "" : "s"} have
+              no cost price
+            </p>
+          )}
+        </div>
+      </div>
 
       <div className="surface-card overflow-hidden">
         <div className="space-y-3 border-b border-border p-4">
