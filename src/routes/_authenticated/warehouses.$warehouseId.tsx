@@ -74,7 +74,7 @@ function WarehouseDetailPage() {
   const totalValue = useMemo(
     () =>
       rows.reduce(
-        (sum, r) => sum + Number(r.stock_on_hand) * Number(r.products?.price ?? 0),
+        (sum, r) => sum + Number(r.stock_on_hand) * Number(r.products?.cost_price ?? r.products?.price ?? 0),
         0,
       ),
     [rows],
@@ -198,7 +198,7 @@ function WarehouseDetailPage() {
                         {onHand - committed}
                       </td>
                       <td className="numeric px-4 py-3 text-right text-sm">
-                        {formatMoney(onHand * Number(p.price))}
+                        {formatMoney(onHand * Number(p.cost_price ?? p.price))}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Button

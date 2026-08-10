@@ -125,6 +125,7 @@ export const PRODUCT_HEADERS = {
   sku: ["SKU", "Item SKU", "Code"],
   brand: ["Brand", "Manufacturer"],
   price: ["Rate", "Selling Price", "Price"],
+  costPrice: ["Purchase Price", "Cost Price", "Purchase Rate", "Cost", "Buying Price"],
   stock: ["Stock On Hand", "Opening Stock", "Quantity", "Stock"],
   itemType: ["Item Type", "Product Type", "Type"],
   status: ["Status", "Is Active"],
@@ -135,9 +136,10 @@ export type ProductPreviewRow = {
   name: string;
   sku: string | null;
   brand: string | null;
-  price: number;
-  stock: number;
-  isActive: boolean;
+  price: number | null;
+  costPrice: number | null;
+  stock: number | null;
+  isActive: boolean | null;
   action: "create" | "update";
   existingId?: string;
 };
@@ -147,6 +149,7 @@ export const SKIP_REASONS = [
   "Missing SKU",
   "Missing Name",
   "Invalid Price",
+  "Invalid Cost Price",
   "Invalid Stock Quantity",
   "Duplicate SKU within file",
 ] as const;
@@ -199,6 +202,7 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
     sku: matchHeader(h, PRODUCT_HEADERS.sku),
     brand: matchHeader(h, PRODUCT_HEADERS.brand),
     price: matchHeader(h, PRODUCT_HEADERS.price),
+    costPrice: matchHeader(h, PRODUCT_HEADERS.costPrice),
     stock: matchHeader(h, PRODUCT_HEADERS.stock),
     itemType: matchHeader(h, PRODUCT_HEADERS.itemType),
     status: matchHeader(h, PRODUCT_HEADERS.status),
@@ -272,15 +276,29 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
       skip(rowNo, name, sku, "Missing SKU", dump);
       return;
     }
-    const price = parseAmount(mapped.price ? r[mapped.price] : "0");
-    if (price === null || price < 0) {
-      skip(rowNo, name, sku, "Invalid Price", dump);
-      return;
+    let price: number | null = null;
+    if (mapped.price) {
+      price = parseAmount(r[mapped.price]);
+      if (price === null || price < 0) {
+        skip(rowNo, name, sku, "Invalid Price", dump);
+        return;
+      }
     }
-    const stock = parseAmount(mapped.stock ? r[mapped.stock] : "0");
-    if (stock === null) {
-      skip(rowNo, name, sku, "Invalid Stock Quantity", dump);
-      return;
+    let costPrice: number | null = null;
+    if (mapped.costPrice) {
+      costPrice = parseAmount(r[mapped.costPrice]);
+      if (costPrice === null || costPrice < 0) {
+        skip(rowNo, name, sku, "Invalid Cost Price", dump);
+        return;
+      }
+    }
+    let stock: number | null = null;
+    if (mapped.stock) {
+      stock = parseAmount(r[mapped.stock]);
+      if (stock === null) {
+        skip(rowNo, name, sku, "Invalid Stock Quantity", dump);
+        return;
+      }
     }
     const key = skuKey(sku);
     const collisions = skuRows.get(key) ?? [];
@@ -296,8 +314,9 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
       sku,
       brand: mapped.brand ? (r[mapped.brand] ?? "").trim() || null : null,
       price,
+      costPrice,
       stock,
-      isActive: mapped.status ? isActiveValue(r[mapped.status]) : true,
+      isActive: mapped.status ? isActiveValue(r[mapped.status]) : null,
       action: existingId ? "update" : "create",
       ...(existingId ? { existingId } : {}),
     });
@@ -349,12 +368,24 @@ export async function commitProductImport(
   try {
     for (const row of preview.rows) {
       if (row.action === "update" && row.existingId) {
+        // Only write back the columns that were actually present in the file.
+        const patch: {
+          name: string;
+          brand?: string | null;
+          price?: number;
+          cost_price?: number;
+          is_active?: boolean;
+        } = { name: row.name };
+        if (row.brand !== null) patch.brand = row.brand;
+        if (row.price !== null) patch.price = row.price;
+        if (row.costPrice !== null) patch.cost_price = row.costPrice;
+        if (row.isActive !== null) patch.is_active = row.isActive;
         const { error } = await supabase
           .from("products")
-          .update({ name: row.name, brand: row.brand, price: row.price, is_active: row.isActive })
+          .update(patch)
           .eq("id", row.existingId);
         if (error) throw error;
-        await addStock(row.existingId, warehouseId, row.stock);
+        if (row.stock !== null) await addStock(row.existingId, warehouseId, row.stock);
         updated += 1;
       } else {
         const { data, error } = await supabase
@@ -363,15 +394,16 @@ export async function commitProductImport(
             name: row.name,
             sku: row.sku,
             brand: row.brand,
-            price: row.price,
-            is_active: row.isActive,
+            price: row.price ?? 0,
+            cost_price: row.costPrice,
+            is_active: row.isActive ?? true,
             unit: "pcs",
           })
           .select("id")
           .single();
         if (error) throw error;
         created.push(data.id);
-        await addStock(data.id, warehouseId, row.stock);
+        await addStock(data.id, warehouseId, row.stock ?? 0);
       }
     }
   } catch (err) {

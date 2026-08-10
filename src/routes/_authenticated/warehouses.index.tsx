@@ -44,7 +44,7 @@ function WarehousesPage() {
 
   const priceById = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const p of products) map[p.id] = Number(p.price);
+    for (const p of products) map[p.id] = Number(p.cost_price ?? p.price);
     return map;
   }, [products]);
 
