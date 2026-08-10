@@ -44,6 +44,7 @@ import {
   type MethodTotals,
 } from "@/components/PaymentMethodBreakdown";
 import { formatDate, formatMoney } from "@/lib/format";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bills/")({
@@ -548,26 +549,15 @@ function BillsPage() {
               </SelectContent>
             </Select>
             {preset === "custom" && (
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  className="h-11"
-                  value={from}
-                  onChange={(e) => {
-                    setFrom(e.target.value);
-                    resetPage();
-                  }}
-                />
-                <Input
-                  type="date"
-                  className="h-11"
-                  value={to}
-                  onChange={(e) => {
-                    setTo(e.target.value);
-                    resetPage();
-                  }}
-                />
-              </div>
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onChange={(r) => {
+                  setFrom(r.from);
+                  setTo(r.to);
+                  resetPage();
+                }}
+              />
             )}
           </div>
 
