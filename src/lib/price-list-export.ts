@@ -23,10 +23,15 @@ export function downloadCatalogXLSX(listName: string, rows: CatalogRow[]) {
 /** Client-facing catalog print view (grouped by brand, no stock figures). */
 export function printCatalog(opts: {
   listName: string;
-  clientName?: string | null;
-  business: { name?: string | null; tagline?: string | null; phone?: string | null; logo?: string | null };
+  clientName?: string | null | undefined;
+  business: {
+    name?: string | null | undefined;
+    tagline?: string | null | undefined;
+    phone?: string | null | undefined;
+    logo?: string | null | undefined;
+  };
   rows: CatalogRow[];
-  note?: string | null;
+  note?: string | null | undefined;
 }) {
   const esc = (v: string) =>
     v.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] as string);

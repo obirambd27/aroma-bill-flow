@@ -37,6 +37,7 @@ import { Route as AuthenticatedExpensesNewRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPaymentsOutIndexRouteImport } from './routes/_authenticated/payments-out.index'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments.index'
 import { Route as AuthenticatedPriceListsIndexRouteImport } from './routes/_authenticated/price-lists.index'
+import { Route as AuthenticatedPriceListsListIdRouteImport } from './routes/_authenticated/price-lists.$listId'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedPurchaseBillsIndexRouteImport } from './routes/_authenticated/purchase-bills.index'
@@ -222,6 +223,12 @@ const AuthenticatedPriceListsIndexRoute =
     path: '/price-lists/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPriceListsListIdRoute =
+  AuthenticatedPriceListsListIdRouteImport.update({
+    id: '/price-lists/$listId',
+    path: '/price-lists/$listId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProductsIndexRoute =
   AuthenticatedProductsIndexRouteImport.update({
     id: '/products/',
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/expenses/$expenseId': typeof AuthenticatedExpensesExpenseIdRoute
   '/expenses/new': typeof AuthenticatedExpensesNewRoute
+  '/price-lists/$listId': typeof AuthenticatedPriceListsListIdRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/purchase-bills/$purchaseBillId': typeof AuthenticatedPurchaseBillsPurchaseBillIdRoute
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
@@ -452,6 +460,7 @@ export interface FileRoutesByTo {
   '/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/expenses/$expenseId': typeof AuthenticatedExpensesExpenseIdRoute
   '/expenses/new': typeof AuthenticatedExpensesNewRoute
+  '/price-lists/$listId': typeof AuthenticatedPriceListsListIdRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/purchase-bills/$purchaseBillId': typeof AuthenticatedPurchaseBillsPurchaseBillIdRoute
   '/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
@@ -509,6 +518,7 @@ export interface FileRoutesById {
   '/_authenticated/delivery-notes/new': typeof AuthenticatedDeliveryNotesNewRoute
   '/_authenticated/expenses/$expenseId': typeof AuthenticatedExpensesExpenseIdRoute
   '/_authenticated/expenses/new': typeof AuthenticatedExpensesNewRoute
+  '/_authenticated/price-lists/$listId': typeof AuthenticatedPriceListsListIdRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/_authenticated/purchase-bills/$purchaseBillId': typeof AuthenticatedPurchaseBillsPurchaseBillIdRoute
   '/_authenticated/purchase-bills/new': typeof AuthenticatedPurchaseBillsNewRoute
@@ -566,6 +576,7 @@ export interface FileRouteTypes {
     | '/delivery-notes/new'
     | '/expenses/$expenseId'
     | '/expenses/new'
+    | '/price-lists/$listId'
     | '/products/$productId'
     | '/purchase-bills/$purchaseBillId'
     | '/purchase-bills/new'
@@ -621,6 +632,7 @@ export interface FileRouteTypes {
     | '/delivery-notes/new'
     | '/expenses/$expenseId'
     | '/expenses/new'
+    | '/price-lists/$listId'
     | '/products/$productId'
     | '/purchase-bills/$purchaseBillId'
     | '/purchase-bills/new'
@@ -677,6 +689,7 @@ export interface FileRouteTypes {
     | '/_authenticated/delivery-notes/new'
     | '/_authenticated/expenses/$expenseId'
     | '/_authenticated/expenses/new'
+    | '/_authenticated/price-lists/$listId'
     | '/_authenticated/products/$productId'
     | '/_authenticated/purchase-bills/$purchaseBillId'
     | '/_authenticated/purchase-bills/new'
@@ -920,6 +933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPriceListsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/price-lists/$listId': {
+      id: '/_authenticated/price-lists/$listId'
+      path: '/price-lists/$listId'
+      fullPath: '/price-lists/$listId'
+      preLoaderRoute: typeof AuthenticatedPriceListsListIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
       path: '/products'
@@ -1120,6 +1140,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDeliveryNotesNewRoute: typeof AuthenticatedDeliveryNotesNewRoute
   AuthenticatedExpensesExpenseIdRoute: typeof AuthenticatedExpensesExpenseIdRoute
   AuthenticatedExpensesNewRoute: typeof AuthenticatedExpensesNewRoute
+  AuthenticatedPriceListsListIdRoute: typeof AuthenticatedPriceListsListIdRoute
   AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRoute
   AuthenticatedPurchaseBillsPurchaseBillIdRoute: typeof AuthenticatedPurchaseBillsPurchaseBillIdRoute
   AuthenticatedPurchaseBillsNewRoute: typeof AuthenticatedPurchaseBillsNewRoute
@@ -1175,6 +1196,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDeliveryNotesNewRoute: AuthenticatedDeliveryNotesNewRoute,
   AuthenticatedExpensesExpenseIdRoute: AuthenticatedExpensesExpenseIdRoute,
   AuthenticatedExpensesNewRoute: AuthenticatedExpensesNewRoute,
+  AuthenticatedPriceListsListIdRoute: AuthenticatedPriceListsListIdRoute,
   AuthenticatedProductsProductIdRoute: AuthenticatedProductsProductIdRoute,
   AuthenticatedPurchaseBillsPurchaseBillIdRoute:
     AuthenticatedPurchaseBillsPurchaseBillIdRoute,
