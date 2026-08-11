@@ -36,6 +36,7 @@ import { Route as AuthenticatedExpensesExpenseIdRouteImport } from './routes/_au
 import { Route as AuthenticatedExpensesNewRouteImport } from './routes/_authenticated/expenses.new'
 import { Route as AuthenticatedPaymentsOutIndexRouteImport } from './routes/_authenticated/payments-out.index'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments.index'
+import { Route as AuthenticatedPriceListsIndexRouteImport } from './routes/_authenticated/price-lists.index'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedPurchaseBillsIndexRouteImport } from './routes/_authenticated/purchase-bills.index'
@@ -213,6 +214,12 @@ const AuthenticatedPaymentsIndexRoute =
   AuthenticatedPaymentsIndexRouteImport.update({
     id: '/payments/',
     path: '/payments/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPriceListsIndexRoute =
+  AuthenticatedPriceListsIndexRouteImport.update({
+    id: '/price-lists/',
+    path: '/price-lists/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProductsIndexRoute =
@@ -416,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/expenses/': typeof AuthenticatedExpensesIndexRoute
   '/payments-out/': typeof AuthenticatedPaymentsOutIndexRoute
   '/payments/': typeof AuthenticatedPaymentsIndexRoute
+  '/price-lists/': typeof AuthenticatedPriceListsIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
   '/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
@@ -470,6 +478,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof AuthenticatedExpensesIndexRoute
   '/payments-out': typeof AuthenticatedPaymentsOutIndexRoute
   '/payments': typeof AuthenticatedPaymentsIndexRoute
+  '/price-lists': typeof AuthenticatedPriceListsIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/purchase-bills': typeof AuthenticatedPurchaseBillsIndexRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersIndexRoute
@@ -526,6 +535,7 @@ export interface FileRoutesById {
   '/_authenticated/expenses/': typeof AuthenticatedExpensesIndexRoute
   '/_authenticated/payments-out/': typeof AuthenticatedPaymentsOutIndexRoute
   '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
+  '/_authenticated/price-lists/': typeof AuthenticatedPriceListsIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/purchase-bills/': typeof AuthenticatedPurchaseBillsIndexRoute
   '/_authenticated/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
@@ -582,6 +592,7 @@ export interface FileRouteTypes {
     | '/expenses/'
     | '/payments-out/'
     | '/payments/'
+    | '/price-lists/'
     | '/products/'
     | '/purchase-bills/'
     | '/purchase-orders/'
@@ -636,6 +647,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/payments-out'
     | '/payments'
+    | '/price-lists'
     | '/products'
     | '/purchase-bills'
     | '/purchase-orders'
@@ -691,6 +703,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses/'
     | '/_authenticated/payments-out/'
     | '/_authenticated/payments/'
+    | '/_authenticated/price-lists/'
     | '/_authenticated/products/'
     | '/_authenticated/purchase-bills/'
     | '/_authenticated/purchase-orders/'
@@ -898,6 +911,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/payments/'
       preLoaderRoute: typeof AuthenticatedPaymentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/price-lists/': {
+      id: '/_authenticated/price-lists/'
+      path: '/price-lists'
+      fullPath: '/price-lists/'
+      preLoaderRoute: typeof AuthenticatedPriceListsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/products/': {
@@ -1126,6 +1146,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpensesIndexRoute: typeof AuthenticatedExpensesIndexRoute
   AuthenticatedPaymentsOutIndexRoute: typeof AuthenticatedPaymentsOutIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
+  AuthenticatedPriceListsIndexRoute: typeof AuthenticatedPriceListsIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseBillsIndexRoute: typeof AuthenticatedPurchaseBillsIndexRoute
   AuthenticatedPurchaseOrdersIndexRoute: typeof AuthenticatedPurchaseOrdersIndexRoute
@@ -1185,6 +1206,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpensesIndexRoute: AuthenticatedExpensesIndexRoute,
   AuthenticatedPaymentsOutIndexRoute: AuthenticatedPaymentsOutIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
+  AuthenticatedPriceListsIndexRoute: AuthenticatedPriceListsIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseBillsIndexRoute: AuthenticatedPurchaseBillsIndexRoute,
   AuthenticatedPurchaseOrdersIndexRoute: AuthenticatedPurchaseOrdersIndexRoute,
@@ -1209,13 +1231,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
