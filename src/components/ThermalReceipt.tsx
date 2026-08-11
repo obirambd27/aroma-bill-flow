@@ -119,6 +119,12 @@ export function ThermalReceipt({
 
       <div className="text-center text-[10px]">
         {settings?.invoice_footer_note && <p>{settings.invoice_footer_note}</p>}
+        <div className="mt-2 flex justify-center">
+          <WhatsAppQr size={72} caption="Scan to order on WhatsApp" />
+        </div>
+        <p className="mt-2 text-[9px] leading-tight">
+          This is a computer generated bill and does not require a signature.
+        </p>
         <p className="mt-1 font-bold">Thank you!</p>
       </div>
     </article>
