@@ -26,6 +26,7 @@ import {
   BarChart3,
   Banknote,
   Receipt,
+  Tags,
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ const NAV = [
   { to: "/purchase-bills", label: "Purchase Bills", icon: FileText, group: "Purchases" },
   { to: "/purchase-returns", label: "Purchase Returns", icon: RotateCcw, group: "Purchases" },
   { to: "/payments-out", label: "Payments Out", icon: Banknote, group: "Purchases" },
+  { to: "/price-lists", label: "Price Lists", icon: Tags, group: "Inventory" },
   { to: "/products", label: "Products", icon: Package, group: "Inventory" },
   { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
   { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
