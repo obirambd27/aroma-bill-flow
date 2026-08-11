@@ -1234,6 +1234,87 @@ export type Database = {
           },
         ]
       }
+      price_list_items: {
+        Row: {
+          created_at: string
+          custom_price: number | null
+          id: string
+          is_included: boolean
+          price_list_id: string
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_price?: number | null
+          id?: string
+          is_included?: boolean
+          price_list_id: string
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_price?: number | null
+          id?: string
+          is_included?: boolean
+          price_list_id?: string
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_list_items_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_lists: {
+        Row: {
+          below_min_increase_percent: number
+          client_name: string | null
+          created_at: string
+          default_min_quantity: number | null
+          id: string
+          is_share_enabled: boolean
+          name: string
+          share_token: string
+          updated_at: string
+        }
+        Insert: {
+          below_min_increase_percent?: number
+          client_name?: string | null
+          created_at?: string
+          default_min_quantity?: number | null
+          id?: string
+          is_share_enabled?: boolean
+          name: string
+          share_token?: string
+          updated_at?: string
+        }
+        Update: {
+          below_min_increase_percent?: number
+          client_name?: string | null
+          created_at?: string
+          default_min_quantity?: number | null
+          id?: string
+          is_share_enabled?: boolean
+          name?: string
+          share_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_stock: {
         Row: {
           committed_stock: number
