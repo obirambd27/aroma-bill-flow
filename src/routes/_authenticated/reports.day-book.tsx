@@ -331,9 +331,16 @@ function DayBookPage() {
                 hint="Expected in drawer"
                 tone={book.closingCash >= 0 ? "positive" : "negative"}
               />
+              <StatCard
+                label="In Hand Cash"
+                value={formatMoney(book.inHandCash)}
+                hint="Today's sales + collections − expenses"
+                tone={book.inHandCash >= 0 ? "positive" : "negative"}
+              />
               <StatCard label="Cash Collection" value={formatMoney(book.collection["Cash"] ?? 0)} />
               <StatCard label="Total Purchase Bills" value={formatMoney(book.totalPurchaseBills)} />
               <StatCard label="Total Expenses" value={formatMoney(book.totalExpenses)} />
+
               <StatCard
                 label="POS Collection (Credit Card)"
                 value={formatMoney(book.collection["Credit Card"] ?? 0)}

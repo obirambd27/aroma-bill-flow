@@ -69,7 +69,11 @@ export type DayBook = {
   totalCollected: number;
   totalPurchaseBills: number;
   totalExpenses: number;
+  todaysSales: number;
+  paymentsCollected: number;
+  inHandCash: number;
   collectedOtherInvoiceDate: number;
+
   cashToBank: number;
   bankToCash: number;
   netSales: number;
@@ -290,10 +294,13 @@ export function useDayBook(date: string) {
       }
 
       let collectedOther = 0;
+      let receivedTotal = 0;
       for (const p of (receivedRes.data ?? []) as unknown as Row[]) {
         const method = normalizeMethod(p["payment_method"] as string | null);
         const amount = num(p["amount"]);
+        receivedTotal += amount;
         addCollection(method, amount);
+
         const lines = (p["payment_allocations"] ?? []) as {
           amount_allocated: number;
           bills: { bill_date: string; bill_number: string | null } | null;
@@ -474,7 +481,11 @@ export function useDayBook(date: string) {
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
+        todaysSales: round2(netSalesInvoices),
+        paymentsCollected: round2(receivedTotal),
+        inHandCash: round2(netSalesInvoices + receivedTotal - totalExpenses),
         collectedOtherInvoiceDate: round2(collectedOther),
+
         cashToBank: round2(cashToBank),
         bankToCash: round2(bankToCash),
         netSales: round2(netSalesInvoices - creditNotesTotal),
