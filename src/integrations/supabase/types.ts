@@ -56,6 +56,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_delete_log: {
+        Row: {
+          bill_date: string | null
+          bill_id: string | null
+          bill_number: string | null
+          created_at: string
+          customer_name: string | null
+          deleted_at: string
+          id: string
+          reason: string | null
+          snapshot: Json
+          total_amount: number
+        }
+        Insert: {
+          bill_date?: string | null
+          bill_id?: string | null
+          bill_number?: string | null
+          created_at?: string
+          customer_name?: string | null
+          deleted_at?: string
+          id?: string
+          reason?: string | null
+          snapshot?: Json
+          total_amount?: number
+        }
+        Update: {
+          bill_date?: string | null
+          bill_id?: string | null
+          bill_number?: string | null
+          created_at?: string
+          customer_name?: string | null
+          deleted_at?: string
+          id?: string
+          reason?: string | null
+          snapshot?: Json
+          total_amount?: number
+        }
+        Relationships: []
+      }
       bill_edit_history: {
         Row: {
           bill_id: string
