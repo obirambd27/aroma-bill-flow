@@ -481,7 +481,11 @@ export function useDayBook(date: string) {
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
+        todaysSales: round2(netSalesInvoices),
+        paymentsCollected: round2(receivedTotal),
+        inHandCash: round2(netSalesInvoices + receivedTotal - totalExpenses),
         collectedOtherInvoiceDate: round2(collectedOther),
+
         cashToBank: round2(cashToBank),
         bankToCash: round2(bankToCash),
         netSales: round2(netSalesInvoices - creditNotesTotal),
