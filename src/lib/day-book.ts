@@ -294,10 +294,13 @@ export function useDayBook(date: string) {
       }
 
       let collectedOther = 0;
+      let receivedTotal = 0;
       for (const p of (receivedRes.data ?? []) as unknown as Row[]) {
         const method = normalizeMethod(p["payment_method"] as string | null);
         const amount = num(p["amount"]);
+        receivedTotal += amount;
         addCollection(method, amount);
+
         const lines = (p["payment_allocations"] ?? []) as {
           amount_allocated: number;
           bills: { bill_date: string; bill_number: string | null } | null;
