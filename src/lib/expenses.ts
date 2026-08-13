@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAll } from "@/lib/fetch-all";
 import type { Tables } from "@/integrations/supabase/types";
 import { accountIdByName } from "@/lib/payments";
 
@@ -23,13 +24,15 @@ export function useExpenses() {
   return useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("expenses")
-        .select(SELECT)
-        .order("expense_date", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as unknown as ExpenseRow[];
+      const data = await fetchAll<ExpenseRow>((f, t) =>
+        supabase
+          .from("expenses")
+          .select(SELECT)
+          .order("expense_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(f, t) as never,
+      );
+      return data;
     },
   });
 }
