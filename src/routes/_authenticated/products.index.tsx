@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Package, Search, ArrowUpDown, LayoutGrid, List, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination, usePaged } from "@/components/Pagination";
 import { StatusBadge, stockTone } from "@/components/StatusBadge";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,8 @@ function ProductsPage() {
     });
     return dir === "desc" ? sorted.reverse() : sorted;
   }, [products, query, brand, category, stockStatus, sort, stockTotals, globalThreshold]);
+
+  const { pageItems: paged, props: pageProps } = usePaged(visible, 50);
 
   const inventory = useMemo(() => {
     let qty = 0;
@@ -301,7 +304,7 @@ function ProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((p) => {
+                {paged.map((p) => {
                   const s = statusOf(p);
                   return (
                     <tr
@@ -386,7 +389,7 @@ function ProductsPage() {
                 view === "table" ? "md:hidden" : "lg:grid-cols-3"
               }`}
             >
-              {visible.map((p) => {
+              {paged.map((p) => {
                 const s = statusOf(p);
                 return (
                   <div key={p.id} className="rounded-xl border border-border p-4">
@@ -441,6 +444,7 @@ function ProductsPage() {
                 );
               })}
             </div>
+            <Pagination {...pageProps} label="products" />
           </>
         )}
       </div>
