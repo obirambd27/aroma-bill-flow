@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
 import { CustomerTagChips } from "@/components/CustomerTags";
+import { Pagination, usePaged } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -58,6 +59,8 @@ function CustomersPage() {
       return true;
     });
   }, [customers, query, remindersOnly, dueByCustomer, selectedTags, assignments]);
+
+  const { pageItems: paged, props: pageProps } = usePaged(visible, 50);
 
   const toggleTag = (id: string) =>
     setSelectedTags((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
@@ -191,7 +194,7 @@ function CustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((c) => (
+                {paged.map((c) => (
                   <tr
                     key={c.id}
                     className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
@@ -224,7 +227,7 @@ function CustomersPage() {
             </table>
 
             <div className="divide-y divide-border/60 md:hidden">
-              {visible.map((c) => (
+              {paged.map((c) => (
                 <Link
                   key={c.id}
                   to="/customers/$customerId"
@@ -252,6 +255,7 @@ function CustomersPage() {
                 </Link>
               ))}
             </div>
+            <Pagination {...pageProps} label="customers" />
           </>
         )}
       </div>
