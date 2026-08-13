@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
+import { fetchAll } from "@/lib/fetch-all";
 
 export type Settings = Tables<"settings">;
 export type Product = Tables<"products">;
@@ -19,10 +20,10 @@ export function useStockTotals() {
   return useQuery({
     queryKey: ["stock-totals"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_stock")
-        .select("product_id, stock_on_hand, committed_stock");
-      if (error) throw error;
+      const data = await fetchAll<{ product_id: string; stock_on_hand: number; committed_stock: number }>(
+        (f, t) =>
+          supabase.from("product_stock").select("product_id, stock_on_hand, committed_stock").range(f, t),
+      );
       const totals: Record<string, number> = {};
       for (const row of data ?? []) {
         totals[row.product_id] = (totals[row.product_id] ?? 0) + Number(row.stock_on_hand);
@@ -47,13 +48,10 @@ export function useProducts() {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return data as Product[];
+      const data = await fetchAll<Product>((f, t) =>
+        supabase.from("products").select("*").eq("is_active", true).order("name").range(f, t),
+      );
+      return data;
     },
   });
 }
@@ -62,9 +60,10 @@ export function useCustomers() {
   return useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*").order("name");
-      if (error) throw error;
-      return data as Customer[];
+      const data = await fetchAll<Customer>((f, t) =>
+        supabase.from("customers").select("*").order("name").range(f, t),
+      );
+      return data;
     },
   });
 }
@@ -73,12 +72,14 @@ export function useBills() {
   return useQuery({
     queryKey: ["bills"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bills")
-        .select("*, customers(name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as (Bill & { customers: { name: string } | null })[];
+      const data = await fetchAll<Bill & { customers: { name: string } | null }>((f, t) =>
+        supabase
+          .from("bills")
+          .select("*, customers(name)")
+          .order("created_at", { ascending: false })
+          .range(f, t) as never,
+      );
+      return data;
     },
   });
 }
@@ -103,9 +104,10 @@ export function useProductStock() {
   return useQuery({
     queryKey: ["product_stock"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("product_stock").select("*");
-      if (error) throw error;
-      return data as ProductStock[];
+      const data = await fetchAll<ProductStock>((f, t) =>
+        supabase.from("product_stock").select("*").range(f, t),
+      );
+      return data;
     },
   });
 }
@@ -215,9 +217,10 @@ export function useAllProducts() {
   return useQuery({
     queryKey: ["products-all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").order("name");
-      if (error) throw error;
-      return data as Product[];
+      const data = await fetchAll<Product>((f, t) =>
+        supabase.from("products").select("*").order("name").range(f, t),
+      );
+      return data;
     },
   });
 }
@@ -242,12 +245,14 @@ export function useWarehouseStock(warehouseId: string) {
   return useQuery({
     queryKey: ["warehouse-stock", warehouseId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_stock")
-        .select("*, products(*)")
-        .eq("warehouse_id", warehouseId);
-      if (error) throw error;
-      return data as (ProductStock & { products: Product | null })[];
+      const data = await fetchAll<ProductStock & { products: Product | null }>((f, t) =>
+        supabase
+          .from("product_stock")
+          .select("*, products(*)")
+          .eq("warehouse_id", warehouseId)
+          .range(f, t) as never,
+      );
+      return data;
     },
   });
 }
@@ -341,11 +346,14 @@ export function useBillHistory() {
     queryKey: ["bill-history"],
     queryFn: async () => {
       const [billsRes, whRes, returnsRes, creditRes, dnRes, allocRes] = await Promise.all([
-        supabase
-          .from("bills")
-          .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
-          .order("bill_date", { ascending: false })
-          .order("created_at", { ascending: false }),
+        fetchAll<Record<string, unknown>>((f, t) =>
+          supabase
+            .from("bills")
+            .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
+            .order("bill_date", { ascending: false })
+            .order("created_at", { ascending: false })
+            .range(f, t) as never,
+        ).then((data) => ({ data, error: null })),
         supabase.from("warehouses").select("id, name"),
         supabase
           .from("sales_returns")
@@ -356,11 +364,14 @@ export function useBillHistory() {
         supabase
           .from("delivery_notes")
           .select("id, delivery_number, status, sales_order_id"),
-        supabase
-          .from("payment_allocations")
-          .select(
-            "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
-          ),
+        fetchAll<Record<string, unknown>>((f, t) =>
+          supabase
+            .from("payment_allocations")
+            .select(
+              "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+            )
+            .range(f, t) as never,
+        ).then((data) => ({ data, error: null })),
       ]);
       if (billsRes.error) throw billsRes.error;
       if (whRes.error) throw whRes.error;

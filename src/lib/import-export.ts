@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAll } from "@/lib/fetch-all";
 import { downloadCSV, downloadXLSX } from "@/lib/export";
 
 /* ---------------- Sheet parsing ---------------- */
@@ -209,7 +210,10 @@ export async function buildProductPreview(sheet: ParsedSheet): Promise<ProductPr
   };
   if (!mapped.name) throw new Error("Could not find an “Item Name” column in this file.");
 
-  const { data: existing, error } = await supabase.from("products").select("id, sku, name");
+  const existing = await fetchAll<{ id: string; sku: string | null; name: string }>((f, t) =>
+    supabase.from("products").select("id, sku, name").range(f, t),
+  );
+  const error = null as { message: string } | null;
   if (error) throw error;
   const bySku = new Map<string, string>();
   for (const p of existing ?? []) if (p.sku && p.sku.trim()) bySku.set(skuKey(p.sku), p.id);
@@ -527,10 +531,9 @@ export async function buildCustomerPreview(
   const nameCols = columnsFor("name");
   if (nameCols.length === 0) throw new Error("Map at least one column to “Name”.");
 
-  const { data: existing, error } = await supabase
-    .from("customers")
-    .select("id, phone, email");
-  if (error) throw error;
+  const existing = await fetchAll<{ id: string; phone: string | null; email: string | null }>(
+    (f, t) => supabase.from("customers").select("id, phone, email").range(f, t),
+  );
   const byPhone = new Map<string, string>();
   const byEmail = new Map<string, string>();
   for (const c of existing ?? []) {
@@ -666,7 +669,9 @@ export function useImportLogs() {
 
 export async function exportProductsZoho() {
   const [{ data: products, error }, { data: stock, error: stockErr }] = await Promise.all([
-    supabase.from("products").select("id, name, sku, brand, price, is_active").order("name"),
+    fetchAll<{ id: string; name: string; sku: string | null; brand: string | null; price: number; is_active: boolean }>((f, t) =>
+      supabase.from("products").select("id, name, sku, brand, price, is_active").order("name").range(f, t),
+    ).then((data) => ({ data, error: null })),
     supabase.from("product_stock").select("product_id, stock_on_hand"),
   ]);
   if (error) throw error;
@@ -693,7 +698,9 @@ export async function exportProductsZoho() {
 export async function exportProductsByWarehouse() {
   const [{ data: products, error }, { data: stock, error: stockErr }, { data: warehouses }] =
     await Promise.all([
-      supabase.from("products").select("id, name, sku").order("name"),
+      fetchAll<{ id: string; name: string; sku: string | null }>((f, t) =>
+        supabase.from("products").select("id, name, sku").order("name").range(f, t),
+      ).then((data) => ({ data, error: null })),
       supabase.from("product_stock").select("product_id, warehouse_id, stock_on_hand"),
       supabase.from("warehouses").select("id, name"),
     ]);
@@ -723,11 +730,21 @@ export async function exportProductsByWarehouse() {
 }
 
 export async function exportCustomers(mode: "zoho" | "full") {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("name, phone, email, address, is_active, total_spend, last_purchase_at")
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAll<{
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    is_active: boolean;
+    total_spend: number;
+    last_purchase_at: string | null;
+  }>((f, t) =>
+    supabase
+      .from("customers")
+      .select("name, phone, email, address, is_active, total_spend, last_purchase_at")
+      .order("name")
+      .range(f, t),
+  );
   const core = ["Display Name", "Phone", "Email", "Billing Address", "Status"];
   const headers = mode === "full" ? [...core, "Total Spend", "Last Purchase Date"] : core;
   const rows = (data ?? []).map((c) => {
