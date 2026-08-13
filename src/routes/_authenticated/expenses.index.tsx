@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus, Receipt, RefreshCw, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination, usePaged } from "@/components/Pagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,8 @@ function ExpensesPage() {
       return matchesQuery && matchesCategory && matchesFrom && matchesTo;
     });
   }, [expenses, query, categoryId, from, to]);
+
+  const { pageItems: paged, props: pageProps } = usePaged(visible, 50);
 
   const total = visible.reduce((s, e) => s + Number(e.amount), 0);
   const thisMonth = visible
@@ -222,7 +225,7 @@ function ExpensesPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((e) => (
+                {paged.map((e) => (
                   <tr
                     key={e.id}
                     className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
@@ -257,7 +260,7 @@ function ExpensesPage() {
             </table>
 
             <div className="divide-y divide-border/60 md:hidden">
-              {visible.map((e) => (
+              {paged.map((e) => (
                 <Link
                   key={e.id}
                   to="/expenses/$expenseId"
@@ -284,6 +287,7 @@ function ExpensesPage() {
                 </Link>
               ))}
             </div>
+            <Pagination {...pageProps} label="expenses" />
           </>
         )}
       </div>
