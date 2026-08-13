@@ -669,7 +669,7 @@ export function useImportLogs() {
 
 export async function exportProductsZoho() {
   const [{ data: products, error }, { data: stock, error: stockErr }] = await Promise.all([
-    fetchAll<Record<string, unknown>>((f, t) =>
+    fetchAll<{ id: string; name: string; sku: string | null; brand: string | null; price: number; is_active: boolean }>((f, t) =>
       supabase.from("products").select("id, name, sku, brand, price, is_active").order("name").range(f, t),
     ).then((data) => ({ data, error: null })),
     supabase.from("product_stock").select("product_id, stock_on_hand"),
@@ -698,7 +698,7 @@ export async function exportProductsZoho() {
 export async function exportProductsByWarehouse() {
   const [{ data: products, error }, { data: stock, error: stockErr }, { data: warehouses }] =
     await Promise.all([
-      fetchAll<Record<string, unknown>>((f, t) =>
+      fetchAll<{ id: string; name: string; sku: string | null }>((f, t) =>
         supabase.from("products").select("id, name, sku").order("name").range(f, t),
       ).then((data) => ({ data, error: null })),
       supabase.from("product_stock").select("product_id, warehouse_id, stock_on_hand"),
