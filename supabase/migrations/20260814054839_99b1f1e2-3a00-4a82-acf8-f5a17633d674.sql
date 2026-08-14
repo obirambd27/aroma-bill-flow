@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS active_invoice_template text NOT NULL DEFAULT 'velvet_oud';
