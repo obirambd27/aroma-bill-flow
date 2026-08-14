@@ -225,3 +225,68 @@ export async function recordPayment(input: RecordPaymentInput) {
 
   return payment;
 }
+
+/** Marker stored on payments created from the billing screen itself. */
+export const COUNTER_PAYMENT_NOTE = "Counter payment at billing";
+
+export type CounterPaymentInput = {
+  billId: string;
+  customerId: string | null;
+  paymentDate: string;
+  amount: number;
+  method: PaymentMethod | string;
+  accountId: string | null;
+  referenceNumber: string | null;
+};
+
+/**
+ * Mirrors money taken on the New Bill screen into `payments_received` so the
+ * Payments page, day book and reports see it like any other collection.
+ *
+ * It does NOT touch `bills.amount_paid` or the ledger — the billing screen
+ * already writes those. Re-running it replaces the previous counter payment
+ * for the same bill (used when a bill is edited).
+ */
+export async function syncCounterPayment(input: CounterPaymentInput) {
+  const { data: existing } = await supabase
+    .from("payment_allocations")
+    .select("payment_id, payments_received(notes)")
+    .eq("bill_id", input.billId);
+
+  const staleIds = ((existing ?? []) as unknown as {
+    payment_id: string;
+    payments_received: { notes: string | null } | null;
+  }[])
+    .filter((r) => r.payments_received?.notes === COUNTER_PAYMENT_NOTE)
+    .map((r) => r.payment_id);
+
+  if (staleIds.length > 0) {
+    await supabase.from("payment_allocations").delete().in("payment_id", staleIds);
+    await supabase.from("payments_received").delete().in("id", staleIds);
+  }
+
+  if (input.amount <= 0.001) return null;
+
+  const { data: payment, error } = await supabase
+    .from("payments_received")
+    .insert({
+      customer_id: input.customerId,
+      payment_date: input.paymentDate,
+      amount: input.amount,
+      payment_method: input.method,
+      account_id: input.accountId,
+      reference_number: input.referenceNumber,
+      notes: COUNTER_PAYMENT_NOTE,
+    })
+    .select()
+    .single();
+  if (error || !payment) throw error ?? new Error("Could not log the counter payment");
+
+  await supabase.from("payment_allocations").insert({
+    payment_id: payment.id,
+    bill_id: input.billId,
+    amount_allocated: input.amount,
+  });
+
+  return payment;
+}
