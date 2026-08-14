@@ -53,6 +53,7 @@ import {
   accountIdByName,
   accountsForMethod,
   derivePaymentStatus,
+  syncCounterPayment,
   useCustomerLastPrices,
   type PaymentMethod,
 } from "@/lib/payments";
@@ -449,6 +450,18 @@ function NewBillPage() {
           after,
         });
 
+        await syncCounterPayment({
+          billId: editingBill.id,
+          customerId: customerId === "walk-in" ? null : customerId,
+          paymentDate: billDate,
+          amount: keptPaid,
+          method: paymentMethod,
+          accountId: accountId || null,
+          referenceNumber: editingBill.bill_number ?? null,
+        });
+
+
+
         setSaving(false);
         queryClient.invalidateQueries();
         toast.success("Bill updated");
@@ -569,6 +582,19 @@ function NewBillPage() {
         amount: paidNow,
         related_bill_id: bill.id,
         description: `Payment for ${bill.bill_number ?? "bill"} · ${customerName}`,
+      });
+    }
+
+    // Mirror counter payments into Payments Received so they show up there too.
+    if (paidNow > 0) {
+      await syncCounterPayment({
+        billId: bill.id,
+        customerId: isWalkIn ? null : customerId,
+        paymentDate: billDate,
+        amount: paidNow,
+        method: paymentMethod,
+        accountId: accountId || null,
+        referenceNumber: bill.bill_number ?? null,
       });
     }
 

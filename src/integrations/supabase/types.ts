@@ -2096,6 +2096,7 @@ export type Database = {
       }
       settings: {
         Row: {
+          active_invoice_template: string
           bank_payment_details: string | null
           business_address: string
           business_email: string
@@ -2116,6 +2117,7 @@ export type Database = {
           terms_and_conditions: string | null
         }
         Insert: {
+          active_invoice_template?: string
           bank_payment_details?: string | null
           business_address?: string
           business_email?: string
@@ -2136,6 +2138,7 @@ export type Database = {
           terms_and_conditions?: string | null
         }
         Update: {
+          active_invoice_template?: string
           bank_payment_details?: string | null
           business_address?: string
           business_email?: string
