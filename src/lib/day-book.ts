@@ -130,11 +130,17 @@ async function allocationsByBill(billIds: string[]) {
   if (billIds.length === 0) return map;
   const { data, error } = await supabase
     .from("payment_allocations")
-    .select("bill_id, amount_allocated, payments_received(payment_date, payment_method)")
+    .select("bill_id, amount_allocated, payments_received(payment_date, payment_method, notes)")
     .in("bill_id", billIds);
   if (error) throw error;
   for (const a of (data ?? []) as unknown as Row[]) {
-    const p = a["payments_received"] as { payment_date: string; payment_method: string } | null;
+    const p = a["payments_received"] as {
+      payment_date: string;
+      payment_method: string;
+      notes: string | null;
+    } | null;
+    // Counter payments are already represented by the bill's own upfront amount.
+    if (p?.notes === COUNTER_PAYMENT_NOTE) continue;
     (map[String(a["bill_id"])] ??= []).push({
       amount: num(a["amount_allocated"]),
       method: p?.payment_method ?? null,
@@ -178,7 +184,7 @@ export function useDayBook(date: string) {
         supabase
           .from("payments_received")
           .select(
-            "id, payment_date, created_at, amount, payment_method, reference_number, customers(name), payment_allocations(amount_allocated, bills(bill_date, bill_number))",
+            "id, payment_date, created_at, amount, payment_method, reference_number, notes, customers(name), payment_allocations(amount_allocated, bills(bill_date, bill_number))",
           )
           .eq("payment_date", date),
         supabase
@@ -296,6 +302,8 @@ export function useDayBook(date: string) {
       let collectedOther = 0;
       let receivedTotal = 0;
       for (const p of (receivedRes.data ?? []) as unknown as Row[]) {
+        // Counter payments already appear on their sales invoice voucher.
+        if (p["notes"] === COUNTER_PAYMENT_NOTE) continue;
         const method = normalizeMethod(p["payment_method"] as string | null);
         const amount = num(p["amount"]);
         receivedTotal += amount;
