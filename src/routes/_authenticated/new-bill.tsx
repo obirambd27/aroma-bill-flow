@@ -450,6 +450,18 @@ function NewBillPage() {
           after,
         });
 
+        await syncCounterPayment({
+          billId: editingBill.id,
+          customerId: customerId === "walk-in" ? null : customerId,
+          paymentDate: billDate,
+          amount: keptPaid,
+          method: paymentMethod,
+          accountId: accountId || null,
+          referenceNumber: editingBill.bill_number ?? null,
+        });
+
+
+
         setSaving(false);
         queryClient.invalidateQueries();
         toast.success("Bill updated");
