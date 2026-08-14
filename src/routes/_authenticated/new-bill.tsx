@@ -573,6 +573,19 @@ function NewBillPage() {
       });
     }
 
+    // Mirror counter payments into Payments Received so they show up there too.
+    if (paidNow > 0) {
+      await syncCounterPayment({
+        billId: bill.id,
+        customerId: isWalkIn ? null : customerId,
+        paymentDate: billDate,
+        amount: paidNow,
+        method: paymentMethod,
+        accountId: accountId || null,
+        referenceNumber: bill.bill_number ?? null,
+      });
+    }
+
     // Revenue is booked in full regardless of payment status.
     const revenueId = await accountIdByName("Sales Revenue");
     if (revenueId) {
