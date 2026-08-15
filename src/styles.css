@@ -177,6 +177,25 @@
   box-shadow: var(--shadow-card);
 }
 
+/* "Orange Bulk" invoice template re-themes the shared document tokens. */
+.doc-orange {
+  --doc-accent: oklch(0.68 0.18 48);
+  --doc-accent-foreground: oklch(1 0 0);
+  --doc-tint: oklch(0.972 0.02 65);
+  --doc-label: oklch(0.55 0.15 48);
+  --doc-line: oklch(0.9 0.02 65);
+}
+
+/* Print tables carry the repeating header / footer on every page. */
+.doc-print-table > thead {
+  display: table-header-group;
+}
+
+.doc-print-table > tfoot {
+  display: table-footer-group;
+}
+
+
 /* ---------- Print / PDF ---------- */
 @media print {
   @page {
