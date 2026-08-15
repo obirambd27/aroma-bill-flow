@@ -12,10 +12,44 @@ import { WhatsAppQr } from "@/components/WhatsAppQr";
 export function DocumentSheet({
   children,
   className,
+  runningHead,
+  runningFoot,
 }: {
   children: ReactNode;
   className?: string | undefined;
+  /** Rendered once on screen, repeated on every printed page. */
+  runningHead?: ReactNode | undefined;
+  /** Rendered once on screen, repeated at the bottom of every printed page. */
+  runningFoot?: ReactNode | undefined;
 }) {
+  const body =
+    runningHead || runningFoot ? (
+      /* A print table: browsers repeat thead / tfoot on every printed page. */
+      <table className="doc-print-table w-full border-collapse">
+        {runningHead ? (
+          <thead>
+            <tr>
+              <td className="p-0">{runningHead}</td>
+            </tr>
+          </thead>
+        ) : null}
+        {runningFoot ? (
+          <tfoot>
+            <tr>
+              <td className="p-0">{runningFoot}</td>
+            </tr>
+          </tfoot>
+        ) : null}
+        <tbody>
+          <tr>
+            <td className="p-0">{children}</td>
+          </tr>
+        </tbody>
+      </table>
+    ) : (
+      children
+    );
+
   return (
     <div className="doc-stage no-print-bg -mx-2 rounded-[32px] bg-doc-page p-2 sm:p-6 print:m-0 print:bg-transparent print:p-0">
       <article
@@ -34,11 +68,12 @@ export function DocumentSheet({
           aria-hidden
           className="doc-blob pointer-events-none absolute -right-20 bottom-10 -z-10 h-72 w-72 rounded-full bg-doc-accent/10 blur-3xl"
         />
-        {children}
+        {body}
       </article>
     </div>
   );
 }
+
 
 export type DocStat = { label: string; value: string };
 
