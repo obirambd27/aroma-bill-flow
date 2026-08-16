@@ -315,6 +315,18 @@
     page-break-inside: avoid;
   }
 
+  /* …except the print-table rows that carry the whole flowing document. */
+  .invoice-sheet .doc-print-table > thead > tr,
+  .invoice-sheet .doc-print-table > tbody > tr,
+  .invoice-sheet .doc-print-table > tfoot > tr,
+  .invoice-sheet .doc-print-table > thead > tr > td,
+  .invoice-sheet .doc-print-table > tbody > tr > td,
+  .invoice-sheet .doc-print-table > tfoot > tr > td {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+
 
 
   /* ---- 72mm thermal roll ----
