@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Trash2, Wallet } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +70,8 @@ function BillDetailPage() {
   const [voidOpen, setVoidOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [printView, setPrintView] = useState<PrintView>(lastPrintView);
 
   useEffect(() => {
@@ -190,6 +192,41 @@ function BillDetailPage() {
       toast.error(err instanceof Error ? err.message : "Could not void this bill");
     } finally {
       setVoiding(false);
+    }
+  };
+
+  /** Permanently removes a voided bill, keeping an immutable snapshot in the delete log. */
+  const deleteBill = async () => {
+    setDeleting(true);
+    try {
+      const { error: logError } = await supabase.from("bill_delete_log").insert({
+        bill_id: bill.id,
+        bill_number: bill.bill_number,
+        bill_date: bill.bill_date,
+        customer_name: bill.customers?.name ?? "Walk-in Customer",
+        total_amount: Number(bill.total_amount),
+        reason: "Deleted from invoice page (voided bill)",
+        snapshot: JSON.parse(JSON.stringify(bill)),
+      });
+      if (logError) throw logError;
+
+      await supabase.from("bill_edit_history").delete().eq("bill_id", bill.id);
+      await supabase.from("ledger_entries").delete().eq("related_bill_id", bill.id);
+      await supabase.from("stock_movements").delete().eq("related_bill_id", bill.id);
+      await supabase.from("payment_allocations").delete().eq("bill_id", bill.id);
+      await supabase.from("payments").delete().eq("bill_id", bill.id);
+      await supabase.from("bill_items").delete().eq("bill_id", bill.id);
+
+      const { error } = await supabase.from("bills").delete().eq("id", bill.id);
+      if (error) throw error;
+
+      toast.success("Bill deleted — a snapshot is kept in the delete log");
+      queryClient.invalidateQueries();
+      void navigate({ to: "/bills" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete this bill");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -355,6 +392,30 @@ function BillDetailPage() {
       />
 
 
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this bill permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The invoice and its line items will be removed from bill history. A full snapshot is
+              written to the deleted-bills log first, so the record is never lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void deleteBill();
+              }}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting…" : "Delete bill"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>
