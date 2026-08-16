@@ -289,6 +289,18 @@ function BillDetailPage() {
                 Void Bill
               </Button>
             )}
+            {bill.status === "Voided" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Bill
+              </Button>
+            )}
+
           </div>
         </div>
       </div>
