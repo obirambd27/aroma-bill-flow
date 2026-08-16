@@ -20,15 +20,10 @@ import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
 import { useBillEditHistory } from "@/lib/bill-edit";
 import { ThermalReceipt } from "@/components/ThermalReceipt";
-import {
-  DocFooter,
-  DocHero,
-  DocItemsList,
-  DocPartyCards,
-  DocTotals,
-  DocumentSheet,
-} from "@/components/DocumentSheet";
+import { InvoiceDocumentView } from "@/components/invoice-templates";
+import { buildInvoiceDoc } from "@/lib/invoice-doc";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
