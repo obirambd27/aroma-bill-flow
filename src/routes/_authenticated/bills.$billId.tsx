@@ -308,96 +308,18 @@ function BillDetailPage() {
           balanceDue={balanceDue}
         />
       ) : (
-        <DocumentSheet>
-          <DocHero
-            logoUrl={settings?.business_logo_url}
-            businessName={settings?.business_name ?? "—"}
-            tagline={settings?.business_tagline}
-            chipLabel={taxed ? "Tax Invoice" : "Invoice"}
-            documentNumber={bill.bill_number ?? "Draft"}
-            stats={[
-              { label: "Issued", value: formatDate(bill.bill_date) },
-              { label: "Due", value: formatDate(bill.bill_date) },
-              { label: "Amount Due", value: formatMoney(balanceDue) },
-            ]}
-          />
-
-          <DocPartyCards
-            left={{
-              title: "Billed To",
-              name: bill.customers?.name ?? "Walk-in Customer",
-              lines: [bill.customers?.address, bill.customers?.phone],
-            }}
-            right={{
-              title: "From",
-              name: settings?.business_name ?? "—",
-              lines: [
-                settings?.business_address,
-                settings?.business_phone,
-                settings?.business_email,
-                settings?.tax_id ? `TRN: ${settings.tax_id}` : null,
-              ],
-            }}
-          />
-
-          <DocItemsList
-            items={bill.bill_items.map((item) => ({
-              key: item.id,
-              name: item.product_name_snapshot,
-              subtitle:
-                products.find((p) => p.id === item.product_id)?.sku ??
-                warehouseName(item.warehouse_id),
-              quantity: Number(item.quantity),
-              unitPrice: item.unit_price,
-              lineTotal: item.line_total,
-            }))}
-          />
-
-          <DocTotals
-            stamp={
-              bill.payment_status === "Paid"
-                ? { text: "Paid", sub: formatDate(bill.bill_date), tone: "paid" as const }
-                : bill.payment_status === "Partial"
-                  ? { text: "Partial", sub: formatMoney(balanceDue), tone: "partial" as const }
-                  : { text: "Unpaid", sub: formatDate(bill.bill_date), tone: "unpaid" as const }
-            }
-            rows={[
-              { label: "Subtotal", value: formatMoney(bill.subtotal) },
-              ...(taxed
-                ? [
-                    {
-                      label: `Tax (${Number(bill.tax_rate)}%)`,
-                      value: formatMoney(bill.tax_amount),
-                    },
-                  ]
-                : []),
-              ...(Number(bill.discount_amount) > 0
-                ? [{ label: "Discount", value: `−${formatMoney(bill.discount_amount)}` }]
-                : []),
-              ...breakdown.lines.map((line) => ({
-                label: `Paid · ${line.method}${line.date ? ` · ${formatDate(line.date)}` : ""}`,
-                value: formatMoney(line.amount),
-              })),
-              { label: "Amount Paid", value: formatMoney(paid) },
-              { label: "Balance Due", value: formatMoney(balanceDue) },
-            ]}
-            totalValue={total}
-          />
-
-          <DocFooter
-            paymentDetails={settings?.bank_payment_details}
-            terms={settings?.terms_and_conditions}
-            note={settings?.invoice_footer_note}
-            signatureUrl={settings?.signature_url}
-            businessName={settings?.business_name ?? "—"}
-          >
-            <p className="mb-5 text-xs text-doc-muted">
-              <span className="font-semibold text-doc-ink">Total in words: </span>
-              {amountInWords(total)}
-            </p>
-          </DocFooter>
-        </DocumentSheet>
+        <InvoiceDocumentView
+          templateId={settings?.active_invoice_template}
+          doc={buildInvoiceDoc(bill, settings, {
+            allocations,
+            amountInWords: amountInWords(total),
+            itemSubtitle: (item) =>
+              products.find((p) => p.id === item.product_id)?.sku ??
+              warehouseName(item.warehouse_id),
+          })}
+        />
       )}
+
 
       <EditHistorySection billId={bill.id} />
 
