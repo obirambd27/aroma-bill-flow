@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Trash2, Wallet } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +20,10 @@ import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
 import { useBillEditHistory } from "@/lib/bill-edit";
 import { ThermalReceipt } from "@/components/ThermalReceipt";
-import {
-  DocFooter,
-  DocHero,
-  DocItemsList,
-  DocPartyCards,
-  DocTotals,
-  DocumentSheet,
-} from "@/components/DocumentSheet";
+import { InvoiceDocumentView } from "@/components/invoice-templates";
+import { buildInvoiceDoc } from "@/lib/invoice-doc";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
@@ -75,6 +70,8 @@ function BillDetailPage() {
   const [voidOpen, setVoidOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [voiding, setVoiding] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [printView, setPrintView] = useState<PrintView>(lastPrintView);
 
   useEffect(() => {
@@ -198,6 +195,41 @@ function BillDetailPage() {
     }
   };
 
+  /** Permanently removes a voided bill, keeping an immutable snapshot in the delete log. */
+  const deleteBill = async () => {
+    setDeleting(true);
+    try {
+      const { error: logError } = await supabase.from("bill_delete_log").insert({
+        bill_id: bill.id,
+        bill_number: bill.bill_number,
+        bill_date: bill.bill_date,
+        customer_name: bill.customers?.name ?? "Walk-in Customer",
+        total_amount: Number(bill.total_amount),
+        reason: "Deleted from invoice page (voided bill)",
+        snapshot: JSON.parse(JSON.stringify(bill)),
+      });
+      if (logError) throw logError;
+
+      await supabase.from("bill_edit_history").delete().eq("bill_id", bill.id);
+      await supabase.from("ledger_entries").delete().eq("related_bill_id", bill.id);
+      await supabase.from("stock_movements").delete().eq("related_bill_id", bill.id);
+      await supabase.from("payment_allocations").delete().eq("bill_id", bill.id);
+      await supabase.from("payments").delete().eq("bill_id", bill.id);
+      await supabase.from("bill_items").delete().eq("bill_id", bill.id);
+
+      const { error } = await supabase.from("bills").delete().eq("id", bill.id);
+      if (error) throw error;
+
+      toast.success("Bill deleted — a snapshot is kept in the delete log");
+      queryClient.invalidateQueries();
+      void navigate({ to: "/bills" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete this bill");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handlePdf = () => {
     toast.info("Choose “Save as PDF” in the print dialog");
     setTimeout(() => window.print(), 250);
@@ -294,6 +326,18 @@ function BillDetailPage() {
                 Void Bill
               </Button>
             )}
+            {bill.status === "Voided" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Bill
+              </Button>
+            )}
+
           </div>
         </div>
       </div>
@@ -308,96 +352,18 @@ function BillDetailPage() {
           balanceDue={balanceDue}
         />
       ) : (
-        <DocumentSheet>
-          <DocHero
-            logoUrl={settings?.business_logo_url}
-            businessName={settings?.business_name ?? "—"}
-            tagline={settings?.business_tagline}
-            chipLabel={taxed ? "Tax Invoice" : "Invoice"}
-            documentNumber={bill.bill_number ?? "Draft"}
-            stats={[
-              { label: "Issued", value: formatDate(bill.bill_date) },
-              { label: "Due", value: formatDate(bill.bill_date) },
-              { label: "Amount Due", value: formatMoney(balanceDue) },
-            ]}
-          />
-
-          <DocPartyCards
-            left={{
-              title: "Billed To",
-              name: bill.customers?.name ?? "Walk-in Customer",
-              lines: [bill.customers?.address, bill.customers?.phone],
-            }}
-            right={{
-              title: "From",
-              name: settings?.business_name ?? "—",
-              lines: [
-                settings?.business_address,
-                settings?.business_phone,
-                settings?.business_email,
-                settings?.tax_id ? `TRN: ${settings.tax_id}` : null,
-              ],
-            }}
-          />
-
-          <DocItemsList
-            items={bill.bill_items.map((item) => ({
-              key: item.id,
-              name: item.product_name_snapshot,
-              subtitle:
-                products.find((p) => p.id === item.product_id)?.sku ??
-                warehouseName(item.warehouse_id),
-              quantity: Number(item.quantity),
-              unitPrice: item.unit_price,
-              lineTotal: item.line_total,
-            }))}
-          />
-
-          <DocTotals
-            stamp={
-              bill.payment_status === "Paid"
-                ? { text: "Paid", sub: formatDate(bill.bill_date), tone: "paid" as const }
-                : bill.payment_status === "Partial"
-                  ? { text: "Partial", sub: formatMoney(balanceDue), tone: "partial" as const }
-                  : { text: "Unpaid", sub: formatDate(bill.bill_date), tone: "unpaid" as const }
-            }
-            rows={[
-              { label: "Subtotal", value: formatMoney(bill.subtotal) },
-              ...(taxed
-                ? [
-                    {
-                      label: `Tax (${Number(bill.tax_rate)}%)`,
-                      value: formatMoney(bill.tax_amount),
-                    },
-                  ]
-                : []),
-              ...(Number(bill.discount_amount) > 0
-                ? [{ label: "Discount", value: `−${formatMoney(bill.discount_amount)}` }]
-                : []),
-              ...breakdown.lines.map((line) => ({
-                label: `Paid · ${line.method}${line.date ? ` · ${formatDate(line.date)}` : ""}`,
-                value: formatMoney(line.amount),
-              })),
-              { label: "Amount Paid", value: formatMoney(paid) },
-              { label: "Balance Due", value: formatMoney(balanceDue) },
-            ]}
-            totalValue={total}
-          />
-
-          <DocFooter
-            paymentDetails={settings?.bank_payment_details}
-            terms={settings?.terms_and_conditions}
-            note={settings?.invoice_footer_note}
-            signatureUrl={settings?.signature_url}
-            businessName={settings?.business_name ?? "—"}
-          >
-            <p className="mb-5 text-xs text-doc-muted">
-              <span className="font-semibold text-doc-ink">Total in words: </span>
-              {amountInWords(total)}
-            </p>
-          </DocFooter>
-        </DocumentSheet>
+        <InvoiceDocumentView
+          templateId={settings?.active_invoice_template}
+          doc={buildInvoiceDoc(bill, settings, {
+            allocations,
+            amountInWords: amountInWords(total),
+            itemSubtitle: (item) =>
+              products.find((p) => p.id === item.product_id)?.sku ??
+              warehouseName(item.warehouse_id),
+          })}
+        />
       )}
+
 
       <EditHistorySection billId={bill.id} />
 
@@ -426,6 +392,30 @@ function BillDetailPage() {
       />
 
 
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this bill permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The invoice and its line items will be removed from bill history. A full snapshot is
+              written to the deleted-bills log first, so the record is never lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void deleteBill();
+              }}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting…" : "Delete bill"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
         <AlertDialogContent>

@@ -32,7 +32,7 @@ export function InvoiceDocumentView({
   templateId,
 }: {
   doc: InvoiceDoc;
-  templateId?: string | null;
+  templateId?: string | null | undefined;
 }) {
   const id = resolveTemplateId(templateId);
   return id === "orange_bulk" ? (

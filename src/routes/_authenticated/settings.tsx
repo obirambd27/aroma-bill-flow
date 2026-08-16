@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSettings, type Settings } from "@/lib/data";
 import { DEFAULT_SHARE_FOOTER } from "@/lib/invoice-share";
 import { InvoicePreview } from "@/components/InvoicePreview";
+import { InvoiceTemplateGallery } from "@/components/InvoiceTemplateGallery";
+import type { InvoiceTemplateId } from "@/lib/invoice-doc";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -130,6 +132,21 @@ function SettingsPage() {
       .eq("id", settings.id);
     setUploading(false);
     toast.success(`${label} uploaded`);
+    queryClient.invalidateQueries({ queryKey: ["settings"] });
+  };
+
+  const selectTemplate = async (id: InvoiceTemplateId) => {
+    if (!settings) return;
+    set("active_invoice_template", id);
+    const { error } = await supabase
+      .from("settings")
+      .update({ active_invoice_template: id })
+      .eq("id", settings.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Invoice template updated");
     queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
 
@@ -366,6 +383,17 @@ function SettingsPage() {
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>
+      </Section>
+
+      <Section
+        title="Invoice Template"
+        description="Pick the look of your printed and shared A4 invoices."
+      >
+        <InvoiceTemplateGallery
+          settings={form}
+          activeId={form.active_invoice_template}
+          onSelect={(id) => void selectTemplate(id)}
+        />
       </Section>
 
       <Section
