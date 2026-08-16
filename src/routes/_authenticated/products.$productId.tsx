@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Package, Pencil, SlidersHorizontal } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowLeft, Package, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge, stockTone } from "@/components/StatusBadge";
 import { MovementBadge } from "@/components/MovementBadge";
@@ -56,11 +59,44 @@ function ProductDetailPage() {
   const { data: sales = [] } = useProductSales(productId);
   const { data: settings } = useSettings();
   const { data: warehouses = [] } = useWarehouses();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deleting, setDeleting] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [adjust, setAdjust] = useState<AdjustTarget | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+
+  /** Products already billed are kept for history — deactivate those instead. */
+  const removeProduct = async () => {
+    if (!product) return;
+    const { count, error: countError } = await supabase
+      .from("bill_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", product.id);
+    if (countError) {
+      toast.error(countError.message);
+      return;
+    }
+    if ((count ?? 0) > 0) {
+      toast.error("This product appears on bills. Mark it inactive instead of deleting.");
+      return;
+    }
+    if (!confirm(`Delete ${product.name}? This cannot be undone.`)) return;
+    setDeleting(true);
+    await supabase.from("stock_movements").delete().eq("product_id", product.id);
+    await supabase.from("product_stock").delete().eq("product_id", product.id);
+    const { error } = await supabase.from("products").delete().eq("id", product.id);
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    queryClient.invalidateQueries();
+    toast.success("Product deleted");
+    void navigate({ to: "/products" });
+  };
 
   const totalStock = useMemo(
     () => stockRows.reduce((s, r) => s + Number(r.stock_on_hand), 0),
@@ -109,9 +145,19 @@ function ProductDetailPage() {
           product.category ?? "Uncategorised"
         }`}
         actions={
-          <Button variant="outline" className="h-11" onClick={() => setEditOpen(true)}>
-            <Pencil /> Edit
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="h-11" onClick={() => setEditOpen(true)}>
+              <Pencil /> Edit
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 text-destructive hover:text-destructive"
+              disabled={deleting}
+              onClick={() => void removeProduct()}
+            >
+              <Trash2 /> {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
         }
       />
 
