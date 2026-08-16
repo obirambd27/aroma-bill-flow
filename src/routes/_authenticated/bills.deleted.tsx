@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +72,7 @@ function DeletedBillsPage() {
         {isLoading ? (
           <p className="p-6 text-sm text-muted-foreground">Loading log…</p>
         ) : rows.length === 0 ? (
-          <EmptyState title="No deleted bills" description="Deleted invoices will appear here." />
+          <EmptyState icon={Trash2} title="No deleted bills" description="Deleted invoices will appear here." />
         ) : (
           <div className="w-full overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">

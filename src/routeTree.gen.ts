@@ -22,6 +22,7 @@ import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAccountsAccountIdRouteImport } from './routes/_authenticated/accounts.$accountId'
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills.index'
 import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenticated/bills.$billId'
+import { Route as AuthenticatedBillsDeletedRouteImport } from './routes/_authenticated/bills.deleted'
 import { Route as AuthenticatedCashBankIndexRouteImport } from './routes/_authenticated/cash-bank.index'
 import { Route as AuthenticatedCreditNotesIndexRouteImport } from './routes/_authenticated/credit-notes.index'
 import { Route as AuthenticatedCreditNotesCreditNoteIdRouteImport } from './routes/_authenticated/credit-notes.$creditNoteId'
@@ -131,6 +132,12 @@ const AuthenticatedBillsBillIdRoute =
   AuthenticatedBillsBillIdRouteImport.update({
     id: '/bills/$billId',
     path: '/bills/$billId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBillsDeletedRoute =
+  AuthenticatedBillsDeletedRouteImport.update({
+    id: '/bills/deleted',
+    path: '/bills/deleted',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCashBankIndexRoute =
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/bills/deleted': typeof AuthenticatedBillsDeletedRoute
   '/credit-notes/$creditNoteId': typeof AuthenticatedCreditNotesCreditNoteIdRoute
   '/credit-notes/new': typeof AuthenticatedCreditNotesNewRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -453,6 +461,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/bills/deleted': typeof AuthenticatedBillsDeletedRoute
   '/credit-notes/$creditNoteId': typeof AuthenticatedCreditNotesCreditNoteIdRoute
   '/credit-notes/new': typeof AuthenticatedCreditNotesNewRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -511,6 +520,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/_authenticated/bills/deleted': typeof AuthenticatedBillsDeletedRoute
   '/_authenticated/credit-notes/$creditNoteId': typeof AuthenticatedCreditNotesCreditNoteIdRoute
   '/_authenticated/credit-notes/new': typeof AuthenticatedCreditNotesNewRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/accounts/$accountId'
     | '/bills/$billId'
+    | '/bills/deleted'
     | '/credit-notes/$creditNoteId'
     | '/credit-notes/new'
     | '/customers/$customerId'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/accounts/$accountId'
     | '/bills/$billId'
+    | '/bills/deleted'
     | '/credit-notes/$creditNoteId'
     | '/credit-notes/new'
     | '/customers/$customerId'
@@ -682,6 +694,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/accounts/$accountId'
     | '/_authenticated/bills/$billId'
+    | '/_authenticated/bills/deleted'
     | '/_authenticated/credit-notes/$creditNoteId'
     | '/_authenticated/credit-notes/new'
     | '/_authenticated/customers/$customerId'
@@ -826,6 +839,13 @@ declare module '@tanstack/react-router' {
       path: '/bills/$billId'
       fullPath: '/bills/$billId'
       preLoaderRoute: typeof AuthenticatedBillsBillIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bills/deleted': {
+      id: '/_authenticated/bills/deleted'
+      path: '/bills/deleted'
+      fullPath: '/bills/deleted'
+      preLoaderRoute: typeof AuthenticatedBillsDeletedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cash-bank/': {
@@ -1133,6 +1153,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAccountsAccountIdRoute: typeof AuthenticatedAccountsAccountIdRoute
   AuthenticatedBillsBillIdRoute: typeof AuthenticatedBillsBillIdRoute
+  AuthenticatedBillsDeletedRoute: typeof AuthenticatedBillsDeletedRoute
   AuthenticatedCreditNotesCreditNoteIdRoute: typeof AuthenticatedCreditNotesCreditNoteIdRoute
   AuthenticatedCreditNotesNewRoute: typeof AuthenticatedCreditNotesNewRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
@@ -1187,6 +1208,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAccountsAccountIdRoute: AuthenticatedAccountsAccountIdRoute,
   AuthenticatedBillsBillIdRoute: AuthenticatedBillsBillIdRoute,
+  AuthenticatedBillsDeletedRoute: AuthenticatedBillsDeletedRoute,
   AuthenticatedCreditNotesCreditNoteIdRoute:
     AuthenticatedCreditNotesCreditNoteIdRoute,
   AuthenticatedCreditNotesNewRoute: AuthenticatedCreditNotesNewRoute,
