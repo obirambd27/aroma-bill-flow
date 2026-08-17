@@ -9,7 +9,7 @@ import { Pagination, usePaged } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCustomers } from "@/lib/data";
+import { useCustomers, useCustomerOutstanding } from "@/lib/data";
 import { useCustomerTags, useDueReminders, useTagAssignments, tagClass } from "@/lib/crm";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/customers/")({
 
 function CustomersPage() {
   const { data: customers = [], isLoading } = useCustomers();
+  const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: tags = [] } = useCustomerTags();
   const { data: assignments = {} } = useTagAssignments();
   const { data: dueReminders = [] } = useDueReminders();
@@ -184,12 +185,14 @@ function CustomersPage() {
           />
         ) : (
           <>
-            <table className="hidden w-full md:table">
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px]">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3 text-right">Total spend</th>
+                  <th className="px-4 py-3 text-right">Outstanding</th>
                   <th className="px-4 py-3 text-right">Last purchase</th>
                 </tr>
               </thead>
@@ -218,6 +221,15 @@ function CustomersPage() {
                     <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                       {formatMoney(c.total_spend)}
                     </td>
+                    <td
+                      className={`numeric px-4 py-3 text-right text-sm font-semibold ${
+                        (outstanding[c.id] ?? 0) > 0
+                          ? "text-warning-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {(outstanding[c.id] ?? 0) > 0 ? formatMoney(outstanding[c.id]) : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                       {formatDate(c.last_purchase_at)}
                     </td>
@@ -225,6 +237,8 @@ function CustomersPage() {
                 ))}
               </tbody>
             </table>
+            </div>
+
 
             <div className="divide-y divide-border/60 md:hidden">
               {paged.map((c) => (
@@ -252,6 +266,11 @@ function CustomersPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     Last purchase: {formatDate(c.last_purchase_at)}
                   </p>
+                  {(outstanding[c.id] ?? 0) > 0 && (
+                    <p className="mt-1 text-xs font-medium text-warning-foreground">
+                      Outstanding: {formatMoney(outstanding[c.id])}
+                    </p>
+                  )}
                 </Link>
               ))}
             </div>

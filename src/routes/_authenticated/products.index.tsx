@@ -289,7 +289,8 @@ function ProductsPage() {
           />
         ) : (
           <>
-            <table className={`w-full ${view === "table" ? "hidden md:table" : "hidden"}`}>
+            <div className={`overflow-x-auto ${view === "table" ? "hidden md:block" : "hidden"}`}>
+            <table className="w-full min-w-[960px]">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Product</th>
@@ -383,6 +384,8 @@ function ProductsPage() {
                 })}
               </tbody>
             </table>
+            </div>
+
 
             <div
               className={`grid gap-3 p-4 sm:grid-cols-2 ${
