@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -25,6 +25,10 @@ import {
   commitProductImport,
   downloadFailureLog,
   downloadSkipReport,
+  fetchWarehouseStockMap,
+  summarizeStockImpact,
+  type StockImportMode,
+
 
   exportCustomers,
   exportProductsByWarehouse,
@@ -236,15 +240,32 @@ function ProductImport() {
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
   const [preview, setPreview] = useState<ProductPreview | null>(null);
   const [warehouseId, setWarehouseId] = useState("");
+  const [stockMode, setStockMode] = useState<StockImportMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [lastPreview, setLastPreview] = useState<ProductPreview | null>(null);
+
+  const matchedIds = (preview?.rows ?? [])
+    .filter((r) => r.action === "update" && r.existingId && r.stock !== null)
+    .map((r) => r.existingId!);
+
+  const { data: currentStock } = useQuery({
+    queryKey: ["import-current-stock", warehouseId, matchedIds.length, sheet?.fileName],
+    queryFn: () => fetchWarehouseStockMap(warehouseId, matchedIds),
+    enabled: Boolean(warehouseId && matchedIds.length),
+  });
+
+  const impact =
+    preview && currentStock
+      ? summarizeStockImpact(preview, currentStock, stockMode ?? "add")
+      : null;
 
   const reset = () => {
     setSheet(null);
     setPreview(null);
     setSummary(null);
     setLastPreview(null);
+    setStockMode(null);
   };
 
   const onFile = async (file: File) => {
@@ -254,6 +275,7 @@ function ProductImport() {
       const built = await buildProductPreview(parsed);
       setSheet(parsed);
       setPreview(built);
+      setStockMode(null);
       setSummary(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not read that file");
@@ -263,12 +285,13 @@ function ProductImport() {
   };
 
   const confirm = async () => {
-    if (!preview || !sheet || !warehouseId) return;
+    if (!preview || !sheet || !warehouseId || !stockMode) return;
     setBusy(true);
     try {
       const result = await commitProductImport(preview, {
         warehouseId,
         fileName: sheet.fileName,
+        stockMode,
       });
       setSummary(result);
       setLastPreview(preview);
@@ -321,6 +344,86 @@ function ProductImport() {
         </p>
       </div>
 
+      <div className="space-y-3 rounded-lg border border-border p-4">
+        <div>
+          <p className="text-sm font-semibold">
+            How should imported stock quantities be applied to products that already exist?
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Required — pick one before importing. Applies only to matched SKUs in the selected
+            warehouse. New products always start at their imported quantity.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              {
+                value: "add" as const,
+                title: "Add to existing stock",
+                desc: "For new shipments/restocks — imported quantity is added on top of current stock.",
+              },
+              {
+                value: "replace" as const,
+                title: "Replace existing stock",
+                desc: "For a fresh physical count — imported quantity becomes the new stock figure.",
+              },
+            ]
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setStockMode(opt.value)}
+              className={`rounded-lg border p-3 text-left transition ${
+                stockMode === opt.value
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border hover:bg-muted/40"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <span
+                  className={`flex size-4 items-center justify-center rounded-full border ${
+                    stockMode === opt.value ? "border-primary" : "border-muted-foreground/50"
+                  }`}
+                >
+                  {stockMode === opt.value && (
+                    <span className="size-2 rounded-full bg-primary" />
+                  )}
+                </span>
+                {opt.title}
+              </span>
+              <span className="mt-1 block text-xs text-muted-foreground">{opt.desc}</span>
+            </button>
+          ))}
+        </div>
+
+        {stockMode && (
+          <div className="rounded-md bg-muted/40 p-3 text-sm">
+            <p className="font-medium">
+              Mode: {stockMode === "replace" ? "Replace existing stock" : "Add to existing stock"}
+            </p>
+            {!warehouseId ? (
+              <p className="text-xs text-muted-foreground">
+                Select a warehouse to see how existing stock will change.
+              </p>
+            ) : impact ? (
+              <p className="text-xs text-muted-foreground">
+                <span className="numeric font-semibold text-foreground">{impact.matched}</span>{" "}
+                products matched —{" "}
+                {stockMode === "replace"
+                  ? "stock will be corrected based on your file's counts: "
+                  : "stock will be added on top of current stock: "}
+                <span className="numeric">{impact.increased}</span> increased,{" "}
+                <span className="numeric">{impact.decreased}</span> decreased,{" "}
+                <span className="numeric">{impact.unchanged}</span> unchanged
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Calculating stock impact…</p>
+            )}
+          </div>
+        )}
+      </div>
+
+
       <div className="max-h-80 overflow-auto rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
@@ -368,7 +471,10 @@ function ProductImport() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={confirm} disabled={busy || !warehouseId || preview.rows.length === 0}>
+        <Button
+          onClick={confirm}
+          disabled={busy || !warehouseId || !stockMode || preview.rows.length === 0}
+        >
           {busy
             ? "Importing…"
             : `Confirm Import (${preview.creates} new, ${preview.updates} updates)`}
