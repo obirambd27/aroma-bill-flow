@@ -142,7 +142,23 @@ async function addStock(productId: string, warehouseId: string, delta: number) {
   }
 }
 
+/**
+ * Deletes every ledger entry this bill created itself (sale, receivable and the
+ * counter payment), leaving entries owned by the Payments Received module.
+ * Account balances self-correct through the delete trigger, so re-applying the
+ * corrected figures afterwards can never leave a duplicate behind.
+ */
+export async function clearBillLedgerEntries(billId: string) {
+  const { error } = await supabase
+    .from("ledger_entries")
+    .delete()
+    .eq("related_bill_id", billId)
+    .is("related_payment_id", null);
+  if (error) throw error;
+}
+
 export type ApplyEditInput = {
+
   billId: string;
   billNumber: string | null;
   originalStatus: string;
