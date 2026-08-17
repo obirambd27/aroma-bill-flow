@@ -384,6 +384,8 @@ function ProductsPage() {
                 })}
               </tbody>
             </table>
+            </div>
+
 
             <div
               className={`grid gap-3 p-4 sm:grid-cols-2 ${
