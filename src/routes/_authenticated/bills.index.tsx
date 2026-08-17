@@ -507,6 +507,53 @@ function BillsPage() {
         }}
       />
 
+      {/* Today's collection against previously-due bills */}
+      <div className="surface-card p-4">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-3 text-left"
+          onClick={() => setCollectionOpen((v) => !v)}
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <CalendarClock className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Today&apos;s collection (older bills)
+              </p>
+              <p className="numeric text-2xl font-bold">{formatMoney(todaysCollection.total)}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+            {todaysCollection.lines.length} payment
+            {todaysCollection.lines.length === 1 ? "" : "s"}
+            {todaysCollection.lines.length > 0 &&
+              (collectionOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              ))}
+          </div>
+        </button>
+        {collectionOpen && todaysCollection.lines.length > 0 && (
+          <ul className="mt-3 divide-y divide-border/60 border-t border-border/60">
+            {todaysCollection.lines.map((l) => (
+              <li key={l.key} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{l.customer}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {l.billNumber} · billed {formatDate(l.billDate)}
+                    {l.method ? ` · ${l.method}` : ""}
+                  </p>
+                </div>
+                <span className="numeric shrink-0 font-semibold">{formatMoney(l.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="surface-card overflow-hidden">
         {/* Search + filter toggle */}
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
