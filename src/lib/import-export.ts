@@ -361,13 +361,70 @@ export function downloadSkipReport(preview: ProductPreview) {
 }
 
 
+export type StockImportMode = "add" | "replace";
+
+/** Current stock_on_hand for the given products in one warehouse. */
+export async function fetchWarehouseStockMap(
+  warehouseId: string,
+  productIds: string[],
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (!warehouseId || productIds.length === 0) return map;
+  const chunk = 200;
+  for (let i = 0; i < productIds.length; i += chunk) {
+    const slice = productIds.slice(i, i + chunk);
+    const { data, error } = await supabase
+      .from("product_stock")
+      .select("product_id, stock_on_hand")
+      .eq("warehouse_id", warehouseId)
+      .in("product_id", slice);
+    if (error) throw error;
+    for (const r of data ?? []) map.set(r.product_id, Number(r.stock_on_hand));
+  }
+  return map;
+}
+
+export type StockImpact = {
+  matched: number;
+  increased: number;
+  decreased: number;
+  unchanged: number;
+  totalDelta: number;
+};
+
+/** How the matched (existing) rows will change stock in the chosen warehouse. */
+export function summarizeStockImpact(
+  preview: ProductPreview,
+  current: Map<string, number>,
+  mode: StockImportMode,
+): StockImpact {
+  const impact: StockImpact = {
+    matched: 0,
+    increased: 0,
+    decreased: 0,
+    unchanged: 0,
+    totalDelta: 0,
+  };
+  for (const row of preview.rows) {
+    if (row.action !== "update" || !row.existingId || row.stock === null) continue;
+    impact.matched += 1;
+    const now = current.get(row.existingId) ?? 0;
+    const delta = mode === "replace" ? row.stock - now : row.stock;
+    impact.totalDelta += delta;
+    if (delta > 0) impact.increased += 1;
+    else if (delta < 0) impact.decreased += 1;
+    else impact.unchanged += 1;
+  }
+  return impact;
+}
+
 export async function commitProductImport(
   preview: ProductPreview,
-  opts: { warehouseId: string; fileName: string },
+  opts: { warehouseId: string; fileName: string; stockMode: StockImportMode },
 ): Promise<ImportSummary> {
   const created: string[] = [];
   let updated = 0;
-  const { warehouseId, fileName } = opts;
+  const { warehouseId, fileName, stockMode } = opts;
 
   try {
     for (const row of preview.rows) {
@@ -389,7 +446,8 @@ export async function commitProductImport(
           .update(patch)
           .eq("id", row.existingId);
         if (error) throw error;
-        if (row.stock !== null) await addStock(row.existingId, warehouseId, row.stock);
+        if (row.stock !== null)
+          await applyStock(row.existingId, warehouseId, row.stock, stockMode);
         updated += 1;
       } else {
         const { data, error } = await supabase
@@ -407,7 +465,7 @@ export async function commitProductImport(
           .single();
         if (error) throw error;
         created.push(data.id);
-        await addStock(data.id, warehouseId, row.stock ?? 0);
+        await applyStock(data.id, warehouseId, row.stock ?? 0, "add");
       }
     }
   } catch (err) {
@@ -432,7 +490,12 @@ export async function commitProductImport(
   return summary;
 }
 
-async function addStock(productId: string, warehouseId: string, quantity: number) {
+async function applyStock(
+  productId: string,
+  warehouseId: string,
+  quantity: number,
+  mode: StockImportMode,
+) {
   const { data: existing, error } = await supabase
     .from("product_stock")
     .select("id, stock_on_hand")
@@ -441,30 +504,35 @@ async function addStock(productId: string, warehouseId: string, quantity: number
     .maybeSingle();
   if (error) throw error;
 
+  const current = existing ? Number(existing.stock_on_hand) : 0;
+  const target = mode === "replace" ? quantity : current + quantity;
+  const delta = target - current;
+
   if (existing) {
     const { error: upErr } = await supabase
       .from("product_stock")
-      .update({ stock_on_hand: Number(existing.stock_on_hand) + quantity })
+      .update({ stock_on_hand: target })
       .eq("id", existing.id);
     if (upErr) throw upErr;
   } else {
     const { error: insErr } = await supabase
       .from("product_stock")
-      .insert({ product_id: productId, warehouse_id: warehouseId, stock_on_hand: quantity });
+      .insert({ product_id: productId, warehouse_id: warehouseId, stock_on_hand: target });
     if (insErr) throw insErr;
   }
 
-  if (quantity !== 0) {
+  if (delta !== 0) {
     const { error: mvErr } = await supabase.from("stock_movements").insert({
       product_id: productId,
       warehouse_id: warehouseId,
-      movement_type: "Initial Stock",
-      quantity_change: quantity,
-      reason: "Excel import",
+      movement_type: mode === "replace" ? "Stock Import - Recount" : "Initial Stock",
+      quantity_change: delta,
+      reason: mode === "replace" ? "Excel import (recount)" : "Excel import",
     });
     if (mvErr) throw mvErr;
   }
 }
+
 
 /* ---------------- Customer import ---------------- */
 
