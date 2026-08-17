@@ -184,27 +184,13 @@ export async function applyBillEdit(input: ApplyEditInput) {
       });
     }
 
-    // 2. Reverse the net ledger effect per account (append-only).
-    const { data: entries } = await supabase
-      .from("ledger_entries")
-      .select("account_id, amount")
-      .eq("related_bill_id", input.billId);
-    const netByAccount: Record<string, number> = {};
-    for (const e of entries ?? []) {
-      netByAccount[e.account_id] = (netByAccount[e.account_id] ?? 0) + Number(e.amount);
-    }
-    for (const [accountId, net] of Object.entries(netByAccount)) {
-      if (Math.abs(net) < 0.001) continue;
-      await supabase.from("ledger_entries").insert({
-        account_id: accountId,
-        entry_date: input.billDate,
-        entry_type: "Manual Adjustment",
-        amount: -net,
-        related_bill_id: input.billId,
-        description: `Reversal — edit of ${input.billNumber ?? "bill"}`,
-      });
-    }
+    // 2. Remove the bill's own ledger effects (revenue, receivable and the
+    //    Sale Payment taken at the counter) so they can be re-applied cleanly.
+    //    Entries created by the Payments Received module carry a
+    //    related_payment_id and are left untouched.
+    await clearBillLedgerEntries(input.billId);
   }
+
 
   // 3. Replace line items and bill header.
   await supabase.from("bill_items").delete().eq("bill_id", input.billId);
