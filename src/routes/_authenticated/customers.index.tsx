@@ -266,6 +266,11 @@ function CustomersPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     Last purchase: {formatDate(c.last_purchase_at)}
                   </p>
+                  {(outstanding[c.id] ?? 0) > 0 && (
+                    <p className="mt-1 text-xs font-medium text-warning-foreground">
+                      Outstanding: {formatMoney(outstanding[c.id])}
+                    </p>
+                  )}
                 </Link>
               ))}
             </div>
