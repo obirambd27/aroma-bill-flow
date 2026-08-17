@@ -840,6 +840,8 @@ function BillsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
+
 
             {/* Mobile cards */}
             <div className="divide-y divide-border/60 lg:hidden">
