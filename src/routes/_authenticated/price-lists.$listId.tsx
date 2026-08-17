@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, FileSpreadsheet, Printer, Save, Search, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  FileSpreadsheet,
+  Printer,
+  ReceiptText,
+  Save,
+  Search,
+  Share2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -9,6 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InvoiceDocumentView } from "@/components/invoice-templates";
+import { buildOrderReceiptDoc } from "@/lib/invoice-doc";
 import {
   Select,
   SelectContent,
@@ -73,6 +85,8 @@ function PriceListBuilder() {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState(ALL_BRANDS);
   const [hydrated, setHydrated] = useState(false);
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   useEffect(() => {
     if (!list || hydrated) return;
@@ -125,6 +139,22 @@ function PriceListBuilder() {
         })),
     [products, selected, prices],
   );
+
+  const orderLines = useMemo(
+    () =>
+      products
+        .filter((p) => selected[p.id] && Number(quantities[p.id] ?? 0) > 0)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          quantity: Number(quantities[p.id]),
+          unitPrice: prices[p.id]?.trim() ? Number(prices[p.id]) : Number(p.price),
+        })),
+    [products, selected, quantities, prices],
+  );
+
+  const orderQty = orderLines.reduce((s, l) => s + l.quantity, 0);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -272,7 +302,7 @@ function PriceListBuilder() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[880px] text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="w-10 p-3" />
@@ -282,6 +312,7 @@ function PriceListBuilder() {
                 <th className="p-3 text-right">Stock</th>
                 <th className="p-3 text-right">Default price</th>
                 <th className="p-3 text-right">Custom price</th>
+                <th className="p-3 text-right">Order qty</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -323,12 +354,26 @@ function PriceListBuilder() {
                         }
                       />
                     </td>
+                    <td className="p-3 text-right">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="ml-auto h-10 w-24 text-right"
+                        placeholder="0"
+                        disabled={!selected[p.id]}
+                        value={quantities[p.id] ?? ""}
+                        onChange={(e) =>
+                          setQuantities((prev) => ({ ...prev, [p.id]: e.target.value }))
+                        }
+                      />
+                    </td>
                   </tr>
                 );
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
                     No products match your filters.
                   </td>
                 </tr>
@@ -430,8 +475,37 @@ function PriceListBuilder() {
             <FileSpreadsheet className="h-4 w-4" />
             Download XLSX
           </Button>
+          <Button disabled={orderLines.length === 0} onClick={() => setReceiptOpen(true)}>
+            <ReceiptText className="h-4 w-4" />
+            Order Receipt ({orderQty} pcs)
+          </Button>
         </div>
       </div>
+
+      <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
+        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
+          <DialogHeader className="no-print">
+            <DialogTitle>Order Receipt</DialogTitle>
+          </DialogHeader>
+          <div className="no-print flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+          </div>
+          <InvoiceDocumentView
+            doc={buildOrderReceiptDoc({
+              listName: name || list.name,
+              clientName: clientName || null,
+              settings: settings ?? null,
+              lines: orderLines,
+              minQuantity: minQty.trim() ? Number(minQty) : null,
+              increasePercent: increase.trim() ? Number(increase) : 0,
+            })}
+            templateId={settings?.active_invoice_template}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
