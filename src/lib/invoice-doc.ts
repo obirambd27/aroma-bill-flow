@@ -251,3 +251,71 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
 
 /** Convenience for templates that want a formatted issue date. */
 export const formatDocDate = formatDate;
+
+export type OrderReceiptLine = {
+  id: string;
+  name: string;
+  sku?: string | null;
+  quantity: number;
+  unitPrice: number;
+};
+
+/**
+ * Builds an "Order Receipt" document from price-list quantities.
+ * When the total ordered quantity is below the list minimum, every unit price
+ * is increased by the configured percentage.
+ */
+export function buildOrderReceiptDoc(input: {
+  listName: string;
+  clientName?: string | null;
+  settings: SettingsLike | null | undefined;
+  lines: OrderReceiptLine[];
+  minQuantity?: number | null;
+  increasePercent?: number | null;
+}): InvoiceDoc {
+  const totalQty = input.lines.reduce((s, l) => s + l.quantity, 0);
+  const increase =
+    input.minQuantity && totalQty > 0 && totalQty < input.minQuantity
+      ? Number(input.increasePercent ?? 0)
+      : 0;
+  const factor = 1 + increase / 100;
+  const items: InvoiceItem[] = input.lines.map((l) => {
+    const unitPrice = Math.round(l.unitPrice * factor * 100) / 100;
+    return {
+      key: l.id,
+      name: l.name,
+      subtitle: l.sku ?? null,
+      quantity: l.quantity,
+      unitPrice,
+      lineTotal: Math.round(unitPrice * l.quantity * 100) / 100,
+    };
+  });
+  const subtotal = Math.round(items.reduce((s, i) => s + i.lineTotal, 0) * 100) / 100;
+
+  return {
+    docLabel: "Order Receipt",
+    number: input.listName,
+    date: new Date().toISOString().slice(0, 10),
+    business: businessFromSettings(input.settings, "—"),
+    customer: {
+      name: input.clientName?.trim() || "Customer",
+      lines: [
+        increase > 0
+          ? `Below minimum order of ${input.minQuantity} pcs — prices increased ${increase}%`
+          : null,
+      ],
+    },
+    items,
+    isTaxed: false,
+    taxRate: 0,
+    subtotal,
+    taxAmount: 0,
+    discountAmount: 0,
+    total: subtotal,
+    paid: 0,
+    balanceDue: subtotal,
+    paymentLines: [],
+    status: "Unpaid",
+    amountInWordsLabel: null,
+  };
+}
