@@ -471,7 +471,10 @@ function ProductImport() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={confirm} disabled={busy || !warehouseId || preview.rows.length === 0}>
+        <Button
+          onClick={confirm}
+          disabled={busy || !warehouseId || !stockMode || preview.rows.length === 0}
+        >
           {busy
             ? "Importing…"
             : `Confirm Import (${preview.creates} new, ${preview.updates} updates)`}
