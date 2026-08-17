@@ -185,12 +185,14 @@ function CustomersPage() {
           />
         ) : (
           <>
-            <table className="hidden w-full md:table">
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px]">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3 text-right">Total spend</th>
+                  <th className="px-4 py-3 text-right">Outstanding</th>
                   <th className="px-4 py-3 text-right">Last purchase</th>
                 </tr>
               </thead>
