@@ -100,11 +100,12 @@ function StatCard({
   tone?: "default" | "warning" | "success";
 }) {
   return (
-    <div className="surface-card p-5">
+    <div className="surface-card min-w-0 p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p
+        title={value}
         className={[
-          "numeric mt-2 truncate text-2xl font-bold xl:text-xl 2xl:text-2xl",
+          "numeric mt-2 text-2xl font-bold leading-tight [overflow-wrap:anywhere] xl:text-[1.375rem] 2xl:text-2xl",
           tone === "warning" ? "text-warning-foreground" : "",
           tone === "success" ? "text-success" : "",
         ].join(" ")}
@@ -115,6 +116,7 @@ function StatCard({
     </div>
   );
 }
+
 
 function Panel({
   title,
