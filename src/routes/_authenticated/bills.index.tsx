@@ -349,6 +349,8 @@ function RelatedDetail({ row }: { row: BillHistoryRow }) {
 function BillsPage() {
   const navigate = useNavigate();
   const { data: bills = [], isLoading } = useBillHistory();
+  const { data: payments = [] } = usePaymentsReceived();
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const { data: customers = [] } = useCustomers();
   const { data: warehouses = [] } = useAllWarehouses();
 
