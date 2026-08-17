@@ -17,6 +17,7 @@ import {
 import { useCustomers } from "@/lib/data";
 import { PAYMENT_METHODS, usePaymentsReceived } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
+import { todayISO } from "@/lib/reports";
 
 export const Route = createFileRoute("/_authenticated/payments/")({
   head: () => ({
@@ -40,8 +41,8 @@ function PaymentsPage() {
   const { data: payments = [], isLoading } = usePaymentsReceived();
   const { data: customers = [] } = useCustomers();
   const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(todayISO());
+  const [to, setTo] = useState(todayISO());
   const [customerId, setCustomerId] = useState("all");
   const [method, setMethod] = useState("all");
 

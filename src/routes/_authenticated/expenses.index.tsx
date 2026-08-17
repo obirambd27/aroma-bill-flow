@@ -49,8 +49,8 @@ function ExpensesPage() {
   const { data: categories = [] } = useExpenseCategories();
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(todayISO());
+  const [to, setTo] = useState(todayISO());
   const ranRecurring = useRef(false);
 
   // Any recurring expense that has come due is generated once per page load.

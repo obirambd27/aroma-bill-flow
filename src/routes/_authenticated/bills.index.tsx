@@ -356,7 +356,7 @@ function BillsPage() {
   const { data: warehouses = [] } = useAllWarehouses();
 
   const [query, setQuery] = useState("");
-  const [preset, setPreset] = useState("all");
+  const [preset, setPreset] = useState("today");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [customerId, setCustomerId] = useState("all");
