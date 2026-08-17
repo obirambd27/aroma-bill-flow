@@ -230,22 +230,15 @@ export function useDayBook(date: string) {
       const cashId = cashAccount ? String(cashAccount["id"]) : null;
 
       let openingCalc = cashAccount ? num(cashAccount["opening_balance"]) : 0;
-      let cashDayMovement = 0;
       if (cashId) {
-        const [before, sameDay] = await Promise.all([
+        const [before] = await Promise.all([
           supabase
             .from("ledger_entries")
             .select("amount")
             .eq("account_id", cashId)
             .lt("entry_date", date),
-          supabase
-            .from("ledger_entries")
-            .select("amount")
-            .eq("account_id", cashId)
-            .eq("entry_date", date),
         ]);
         for (const e of before.data ?? []) openingCalc += num((e as Row)["amount"]);
-        for (const e of sameDay.data ?? []) cashDayMovement += num((e as Row)["amount"]);
       }
 
       const override = (overrideRes.data as { opening_cash: number } | null) ?? null;
