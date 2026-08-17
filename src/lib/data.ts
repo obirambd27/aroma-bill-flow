@@ -458,3 +458,31 @@ export function useBillHistory() {
     },
   });
 }
+
+/** Outstanding (unpaid) balance per customer id, across finalized bills. */
+export function useCustomerOutstanding() {
+  return useQuery({
+    queryKey: ["customer-outstanding"],
+    queryFn: async () => {
+      const rows = await fetchAll<{
+        customer_id: string | null;
+        total_amount: number | string;
+        amount_paid: number | string | null;
+        status: string;
+      }>((f, t) =>
+        supabase
+          .from("bills")
+          .select("customer_id, total_amount, amount_paid, status")
+          .neq("status", "Voided")
+          .range(f, t) as never,
+      );
+      const map: Record<string, number> = {};
+      for (const b of rows) {
+        if (!b.customer_id) continue;
+        const due = Number(b.total_amount ?? 0) - Number(b.amount_paid ?? 0);
+        if (due > 0.001) map[b.customer_id] = (map[b.customer_id] ?? 0) + due;
+      }
+      return map;
+    },
+  });
+}
