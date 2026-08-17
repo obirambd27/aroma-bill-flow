@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
-import { accountIdByName } from "@/lib/payments";
+import { accountIdByName, postSalePaymentEntry } from "@/lib/payments";
 
 export type EditLine = {
   productId: string;
@@ -142,7 +142,23 @@ async function addStock(productId: string, warehouseId: string, delta: number) {
   }
 }
 
+/**
+ * Deletes every ledger entry this bill created itself (sale, receivable and the
+ * counter payment), leaving entries owned by the Payments Received module.
+ * Account balances self-correct through the delete trigger, so re-applying the
+ * corrected figures afterwards can never leave a duplicate behind.
+ */
+export async function clearBillLedgerEntries(billId: string) {
+  const { error } = await supabase
+    .from("ledger_entries")
+    .delete()
+    .eq("related_bill_id", billId)
+    .is("related_payment_id", null);
+  if (error) throw error;
+}
+
 export type ApplyEditInput = {
+
   billId: string;
   billNumber: string | null;
   originalStatus: string;
@@ -184,27 +200,13 @@ export async function applyBillEdit(input: ApplyEditInput) {
       });
     }
 
-    // 2. Reverse the net ledger effect per account (append-only).
-    const { data: entries } = await supabase
-      .from("ledger_entries")
-      .select("account_id, amount")
-      .eq("related_bill_id", input.billId);
-    const netByAccount: Record<string, number> = {};
-    for (const e of entries ?? []) {
-      netByAccount[e.account_id] = (netByAccount[e.account_id] ?? 0) + Number(e.amount);
-    }
-    for (const [accountId, net] of Object.entries(netByAccount)) {
-      if (Math.abs(net) < 0.001) continue;
-      await supabase.from("ledger_entries").insert({
-        account_id: accountId,
-        entry_date: input.billDate,
-        entry_type: "Manual Adjustment",
-        amount: -net,
-        related_bill_id: input.billId,
-        description: `Reversal — edit of ${input.billNumber ?? "bill"}`,
-      });
-    }
+    // 2. Remove the bill's own ledger effects (revenue, receivable and the
+    //    Sale Payment taken at the counter) so they can be re-applied cleanly.
+    //    Entries created by the Payments Received module carry a
+    //    related_payment_id and are left untouched.
+    await clearBillLedgerEntries(input.billId);
   }
+
 
   // 3. Replace line items and bill header.
   await supabase.from("bill_items").delete().eq("bill_id", input.billId);
@@ -256,13 +258,12 @@ export async function applyBillEdit(input: ApplyEditInput) {
       });
     }
 
-    if (input.amountPaid > 0.001 && input.paymentAccountId) {
-      await supabase.from("ledger_entries").insert({
-        account_id: input.paymentAccountId,
-        entry_date: input.billDate,
-        entry_type: "Sale Payment",
+    if (input.paymentAccountId) {
+      await postSalePaymentEntry({
+        billId: input.billId,
+        accountId: input.paymentAccountId,
+        entryDate: input.billDate,
         amount: input.amountPaid,
-        related_bill_id: input.billId,
         description: `Payment for ${input.billNumber ?? "bill"} · ${input.customerName}`,
       });
     }

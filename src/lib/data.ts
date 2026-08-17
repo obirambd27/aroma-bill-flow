@@ -459,10 +459,13 @@ export function useBillHistory() {
   });
 }
 
-/** Outstanding (unpaid) balance per customer id, across finalized bills. */
-export function useCustomerOutstanding() {
+/**
+ * Live per-customer money figures derived from finalized bills:
+ * `paid` = lifetime spend (money actually collected), `outstanding` = balance due.
+ */
+export function useCustomerTotals() {
   return useQuery({
-    queryKey: ["customer-outstanding"],
+    queryKey: ["customer-totals"],
     queryFn: async () => {
       const rows = await fetchAll<{
         customer_id: string | null;
@@ -473,16 +476,31 @@ export function useCustomerOutstanding() {
         supabase
           .from("bills")
           .select("customer_id, total_amount, amount_paid, status")
-          .neq("status", "Voided")
+          .eq("status", "Finalized")
           .range(f, t) as never,
       );
-      const map: Record<string, number> = {};
+      const map: Record<string, { paid: number; outstanding: number }> = {};
       for (const b of rows) {
         if (!b.customer_id) continue;
-        const due = Number(b.total_amount ?? 0) - Number(b.amount_paid ?? 0);
-        if (due > 0.001) map[b.customer_id] = (map[b.customer_id] ?? 0) + due;
+        const entry = (map[b.customer_id] ??= { paid: 0, outstanding: 0 });
+        const paid = Number(b.amount_paid ?? 0);
+        const due = Number(b.total_amount ?? 0) - paid;
+        entry.paid += paid;
+        if (due > 0.001) entry.outstanding += due;
       }
       return map;
     },
   });
 }
+
+/** Outstanding (unpaid) balance per customer id, across finalized bills. */
+export function useCustomerOutstanding() {
+  const totals = useCustomerTotals();
+  const data = totals.data
+    ? (Object.fromEntries(
+        Object.entries(totals.data).map(([id, v]) => [id, v.outstanding]),
+      ) as Record<string, number>)
+    : undefined;
+  return { data, isLoading: totals.isLoading };
+}
+

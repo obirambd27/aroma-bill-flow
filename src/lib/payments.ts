@@ -46,6 +46,38 @@ export async function accountIdByName(name: string) {
   return data?.id ?? null;
 }
 
+/**
+ * Guard rail: a bill may only ever hold ONE counter Sale Payment ledger entry.
+ * Any existing bill-owned Sale Payment row is removed first (its balance effect
+ * unwinds through the delete trigger), so editing a bill corrects the payment
+ * instead of stacking a second one on top of it.
+ */
+export async function postSalePaymentEntry(entry: {
+  billId: string;
+  accountId: string;
+  entryDate: string;
+  amount: number;
+  description: string;
+}) {
+  const { error: delError } = await supabase
+    .from("ledger_entries")
+    .delete()
+    .eq("related_bill_id", entry.billId)
+    .eq("entry_type", "Sale Payment")
+    .is("related_payment_id", null);
+  if (delError) throw delError;
+  if (entry.amount <= 0.001) return;
+  const { error } = await supabase.from("ledger_entries").insert({
+    account_id: entry.accountId,
+    entry_date: entry.entryDate,
+    entry_type: "Sale Payment",
+    amount: entry.amount,
+    related_bill_id: entry.billId,
+    description: entry.description,
+  });
+  if (error) throw error;
+}
+
 export type PaymentRow = PaymentReceived & {
   customers: { name: string } | null;
   accounts: { name: string } | null;
@@ -208,6 +240,7 @@ export async function recordPayment(input: RecordPaymentInput) {
       entry_type: "Sale Payment",
       amount: input.amount,
       related_bill_id: allocations[0]?.billId ?? null,
+      related_payment_id: payment.id,
       description: `Payment from ${input.customerName}${billLabel ? ` · ${billLabel}` : ""}`,
     });
     const arId = await accountIdByName("Accounts Receivable");
@@ -218,6 +251,7 @@ export async function recordPayment(input: RecordPaymentInput) {
         entry_type: "Sale Payment",
         amount: -input.amount,
         related_bill_id: allocations[0]?.billId ?? null,
+        related_payment_id: payment.id,
         description: `Receivable settled by ${input.customerName}`,
       });
     }

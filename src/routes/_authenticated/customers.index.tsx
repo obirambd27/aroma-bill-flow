@@ -9,7 +9,7 @@ import { Pagination, usePaged } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCustomers, useCustomerOutstanding } from "@/lib/data";
+import { useCustomers, useCustomerTotals } from "@/lib/data";
 import { useCustomerTags, useDueReminders, useTagAssignments, tagClass } from "@/lib/crm";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/customers/")({
 
 function CustomersPage() {
   const { data: customers = [], isLoading } = useCustomers();
-  const { data: outstanding = {} } = useCustomerOutstanding();
+  const { data: totals = {} } = useCustomerTotals();
   const { data: tags = [] } = useCustomerTags();
   const { data: assignments = {} } = useTagAssignments();
   const { data: dueReminders = [] } = useDueReminders();
@@ -219,16 +219,16 @@ function CustomersPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{c.phone ?? "—"}</td>
                     <td className="numeric px-4 py-3 text-right text-sm font-semibold">
-                      {formatMoney(c.total_spend)}
+                      {formatMoney(totals[c.id]?.paid ?? 0)}
                     </td>
                     <td
                       className={`numeric px-4 py-3 text-right text-sm font-semibold ${
-                        (outstanding[c.id] ?? 0) > 0
+                        (totals[c.id]?.outstanding ?? 0) > 0
                           ? "text-warning-foreground"
                           : "text-muted-foreground"
                       }`}
                     >
-                      {(outstanding[c.id] ?? 0) > 0 ? formatMoney(outstanding[c.id]) : "—"}
+                      {(totals[c.id]?.outstanding ?? 0) > 0 ? formatMoney(totals[c.id]?.outstanding ?? 0) : "—"}
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                       {formatDate(c.last_purchase_at)}
@@ -259,16 +259,16 @@ function CustomersPage() {
                       <p className="truncate text-xs text-muted-foreground">{c.phone ?? "—"}</p>
                     </div>
                     <p className="numeric shrink-0 text-base font-bold">
-                      {formatMoney(c.total_spend)}
+                      {formatMoney(totals[c.id]?.paid ?? 0)}
                     </p>
                   </div>
                   <CustomerTagChips assignments={assignments[c.id] ?? []} className="mt-2" />
                   <p className="mt-2 text-xs text-muted-foreground">
                     Last purchase: {formatDate(c.last_purchase_at)}
                   </p>
-                  {(outstanding[c.id] ?? 0) > 0 && (
+                  {(totals[c.id]?.outstanding ?? 0) > 0 && (
                     <p className="mt-1 text-xs font-medium text-warning-foreground">
-                      Outstanding: {formatMoney(outstanding[c.id])}
+                      Outstanding: {formatMoney(totals[c.id]?.outstanding ?? 0)}
                     </p>
                   )}
                 </Link>
