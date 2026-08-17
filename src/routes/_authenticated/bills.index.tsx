@@ -47,6 +47,7 @@ import {
 } from "@/components/PaymentMethodBreakdown";
 import { formatDate, formatMoney } from "@/lib/format";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { usePaymentsReceived } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bills/")({
