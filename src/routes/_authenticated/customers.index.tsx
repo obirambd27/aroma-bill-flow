@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/customers/")({
 
 function CustomersPage() {
   const { data: customers = [], isLoading } = useCustomers();
+  const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: tags = [] } = useCustomerTags();
   const { data: assignments = {} } = useTagAssignments();
   const { data: dueReminders = [] } = useDueReminders();
