@@ -496,15 +496,11 @@ export function useCustomerTotals() {
 /** Outstanding (unpaid) balance per customer id, across finalized bills. */
 export function useCustomerOutstanding() {
   const totals = useCustomerTotals();
-  return {
-    ...totals,
-    data: totals.data
-      ? Object.fromEntries(Object.entries(totals.data).map(([id, v]) => [id, v.outstanding]))
-      : undefined,
-  } as ReturnType<typeof useCustomerTotals> extends never ? never : {
-    data: Record<string, number> | undefined;
-    isLoading: boolean;
-  };
+  const data = totals.data
+    ? (Object.fromEntries(
+        Object.entries(totals.data).map(([id, v]) => [id, v.outstanding]),
+      ) as Record<string, number>)
+    : undefined;
+  return { data, isLoading: totals.isLoading };
 }
 
-}
