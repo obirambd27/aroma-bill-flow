@@ -450,12 +450,20 @@ function BillsPage() {
         title="Bill History"
         description="Every bill with payments, warehouses, returns and credits."
         actions={
-          <Button asChild>
-            <Link to="/new-bill" search={{}}>
-              <Plus />
-              New Bill
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link to="/bills/deleted">
+                <Trash2 />
+                Deleted Bills
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/new-bill" search={{}}>
+                <Plus />
+                New Bill
+              </Link>
+            </Button>
+          </>
         }
       />
 
