@@ -34,6 +34,15 @@ export function ThermalReceipt({
   return (
     <article className="thermal-sheet mx-auto w-[302px] bg-card p-4 font-mono text-[11px] leading-snug text-foreground shadow-lg print:shadow-none">
       <div className="text-center">
+        {settings?.business_logo_url && (
+          <div className="mb-2 flex justify-center">
+            <img
+              src={settings.business_logo_url}
+              alt={settings?.business_name ?? "Logo"}
+              className="max-h-12 max-w-[120px] object-contain"
+            />
+          </div>
+        )}
         <p className="text-[13px] font-bold uppercase tracking-wide">
           {settings?.business_name ?? "—"}
         </p>
