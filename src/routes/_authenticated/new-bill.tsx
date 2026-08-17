@@ -633,7 +633,8 @@ function NewBillPage() {
         await supabase
           .from("customers")
           .update({
-            total_spend: Number(c.total_spend) + total,
+            // Lifetime spend tracks money actually collected, not billed.
+            total_spend: Number(c.total_spend) + paidNow,
             last_purchase_at: new Date().toISOString(),
           })
           .eq("id", c.id);
