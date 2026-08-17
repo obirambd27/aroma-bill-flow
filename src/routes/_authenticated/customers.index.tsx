@@ -9,7 +9,7 @@ import { Pagination, usePaged } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCustomers } from "@/lib/data";
+import { useCustomers, useCustomerOutstanding } from "@/lib/data";
 import { useCustomerTags, useDueReminders, useTagAssignments, tagClass } from "@/lib/crm";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
