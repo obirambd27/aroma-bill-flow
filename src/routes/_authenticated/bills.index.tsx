@@ -412,6 +412,39 @@ function BillsPage() {
     methodFilter,
   ]);
 
+  const todaysCollection = useMemo(() => {
+    const today = toISO(new Date());
+    const lines: {
+      key: string;
+      customer: string;
+      billNumber: string;
+      billDate: string;
+      method: string | null;
+      amount: number;
+    }[] = [];
+    let total = 0;
+    for (const p of payments) {
+      if ((p.payment_date ?? "").slice(0, 10) !== today) continue;
+      for (const a of p.payment_allocations ?? []) {
+        const bill = bills.find((b) => b.id === a.bill_id);
+        if (!bill || (bill.bill_date ?? "").slice(0, 10) >= today) continue;
+        const amount = Number(a.amount_allocated ?? 0);
+        if (amount <= 0) continue;
+        total += amount;
+        lines.push({
+          key: a.id,
+          customer: p.customers?.name ?? bill.customers?.name ?? "Walk-in Customer",
+          billNumber: bill.bill_number ?? "—",
+          billDate: bill.bill_date,
+          method: p.payment_method ?? null,
+          amount,
+        });
+      }
+    }
+    lines.sort((a, b) => b.amount - a.amount);
+    return { total, lines };
+  }, [payments, bills]);
+
   const summary = useMemo(() => {
     let revenue = 0;
     let outstanding = 0;
