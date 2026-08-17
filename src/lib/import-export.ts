@@ -737,8 +737,12 @@ export function useImportLogs() {
 
 export async function exportProductsZoho() {
   const [{ data: products, error }, { data: stock, error: stockErr }] = await Promise.all([
-    fetchAll<{ id: string; name: string; sku: string | null; brand: string | null; price: number; is_active: boolean }>((f, t) =>
-      supabase.from("products").select("id, name, sku, brand, price, is_active").order("name").range(f, t),
+    fetchAll<{ id: string; name: string; sku: string | null; brand: string | null; price: number; cost_price: number | null; is_active: boolean }>((f, t) =>
+      supabase
+        .from("products")
+        .select("id, name, sku, brand, price, cost_price, is_active")
+        .order("name")
+        .range(f, t),
     ).then((data) => ({ data, error: null })),
     supabase.from("product_stock").select("product_id, stock_on_hand"),
   ]);
@@ -750,12 +754,13 @@ export async function exportProductsZoho() {
   downloadXLSX(
     "products-zoho-format",
     "Items",
-    ["Item Name", "SKU", "Brand", "Rate", "Stock On Hand", "Item Type", "Status"],
+    ["Item Name", "SKU", "Brand", "Rate", "Cost Price", "Stock On Hand", "Item Type", "Status"],
     (products ?? []).map((p) => [
       p.name,
       p.sku ?? "",
       p.brand ?? "",
       Number(p.price),
+      p.cost_price === null ? "" : Number(p.cost_price),
       totals[p.id] ?? 0,
       "Inventory",
       p.is_active ? "Active" : "Inactive",

@@ -102,7 +102,20 @@ function CustomerDetailPage() {
     });
   }, [bills, payments]);
 
-  const outstanding = statement.length > 0 ? statement[statement.length - 1]!.balance : 0;
+  // Live money figures: derived from each finalized bill's own total vs amount paid,
+  // matching the "Balance due" shown on the bill detail page.
+  const { lifetimeSpend, outstanding } = useMemo(() => {
+    let paid = 0;
+    let due = 0;
+    for (const b of bills) {
+      if (b.status !== "Finalized") continue;
+      const billPaid = Number(b.amount_paid ?? 0);
+      paid += billPaid;
+      const balance = Number(b.total_amount ?? 0) - billPaid;
+      if (balance > 0.001) due += balance;
+    }
+    return { lifetimeSpend: paid, outstanding: due };
+  }, [bills]);
 
   if (isLoading) {
     return <p className="p-8 text-center text-sm text-muted-foreground">Loading customer…</p>;
@@ -178,7 +191,7 @@ function CustomerDetailPage() {
 
         <TabsContent value="overview" className="mt-4 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard label="Lifetime spend" value={formatMoney(customer.total_spend)} big />
+            <SummaryCard label="Lifetime spend" value={formatMoney(lifetimeSpend)} big />
             <SummaryCard label="Bills issued" value={String(bills.length)} big />
             <SummaryCard label="Last purchase" value={formatDate(customer.last_purchase_at)} />
             <SummaryCard
