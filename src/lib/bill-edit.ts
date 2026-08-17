@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
-import { accountIdByName } from "@/lib/payments";
+import { accountIdByName, postSalePaymentEntry } from "@/lib/payments";
 
 export type EditLine = {
   productId: string;
@@ -258,13 +258,12 @@ export async function applyBillEdit(input: ApplyEditInput) {
       });
     }
 
-    if (input.amountPaid > 0.001 && input.paymentAccountId) {
-      await supabase.from("ledger_entries").insert({
-        account_id: input.paymentAccountId,
-        entry_date: input.billDate,
-        entry_type: "Sale Payment",
+    if (input.paymentAccountId) {
+      await postSalePaymentEntry({
+        billId: input.billId,
+        accountId: input.paymentAccountId,
+        entryDate: input.billDate,
         amount: input.amountPaid,
-        related_bill_id: input.billId,
         description: `Payment for ${input.billNumber ?? "bill"} · ${input.customerName}`,
       });
     }

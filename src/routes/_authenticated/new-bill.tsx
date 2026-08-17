@@ -54,6 +54,7 @@ import {
   accountsForMethod,
   derivePaymentStatus,
   syncCounterPayment,
+  postSalePaymentEntry,
   useCustomerLastPrices,
   type PaymentMethod,
 } from "@/lib/payments";
@@ -575,12 +576,11 @@ function NewBillPage() {
 
     // Payment taken at the counter.
     if (paidNow > 0 && accountId) {
-      await supabase.from("ledger_entries").insert({
-        account_id: accountId,
-        entry_date: billDate,
-        entry_type: "Sale Payment",
+      await postSalePaymentEntry({
+        billId: bill.id,
+        accountId,
+        entryDate: billDate,
         amount: paidNow,
-        related_bill_id: bill.id,
         description: `Payment for ${bill.bill_number ?? "bill"} · ${customerName}`,
       });
     }
