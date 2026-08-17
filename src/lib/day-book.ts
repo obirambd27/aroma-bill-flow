@@ -485,7 +485,11 @@ export function useDayBook(date: string) {
         openingCashCalculated: round2(openingCalc),
         openingCash: round2(openingCash),
         openingOverridden: Boolean(override),
-        closingCash: round2(openingCash + cashDayMovement),
+        // Closing Cash = Opening Cash + today's cash collections (cash sales and
+        // cash payments received only) − today's expenses − today's purchase bills.
+        closingCash: round2(
+          openingCash + (collection["Cash"] ?? 0) - totalExpenses - totalPurchaseBills,
+        ),
         collection,
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
