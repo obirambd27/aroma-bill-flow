@@ -699,7 +699,8 @@ function BillsPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <table className="hidden w-full lg:table">
+            <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full min-w-[1080px]">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="w-8 px-2 py-3" />
