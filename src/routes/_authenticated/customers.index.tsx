@@ -221,6 +221,15 @@ function CustomersPage() {
                     <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                       {formatMoney(c.total_spend)}
                     </td>
+                    <td
+                      className={`numeric px-4 py-3 text-right text-sm font-semibold ${
+                        (outstanding[c.id] ?? 0) > 0
+                          ? "text-warning-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {(outstanding[c.id] ?? 0) > 0 ? formatMoney(outstanding[c.id]) : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                       {formatDate(c.last_purchase_at)}
                     </td>
@@ -228,6 +237,8 @@ function CustomersPage() {
                 ))}
               </tbody>
             </table>
+            </div>
+
 
             <div className="divide-y divide-border/60 md:hidden">
               {paged.map((c) => (
