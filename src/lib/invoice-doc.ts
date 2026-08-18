@@ -75,6 +75,8 @@ export type InvoiceDoc = {
   status: "Paid" | "Partial" | "Unpaid";
   /** Extra note rendered above the footer (e.g. amount in words). */
   amountInWordsLabel?: string | null;
+  /** Customer's outstanding balance on other bills (GST Classic template). */
+  previousBalance?: number | null;
 };
 
 export type SettingsLike = {
