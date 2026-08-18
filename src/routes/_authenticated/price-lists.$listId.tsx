@@ -157,6 +157,53 @@ function PriceListBuilder() {
 
   const orderQty = orderLines.reduce((s, l) => s + l.quantity, 0);
 
+  const exportDisabled = catalogRows.length === 0 || stockLoading;
+
+  const runExport = async (format: ExportFormat) => {
+    if (exportDisabled || !list) return;
+    setExporting(true);
+    setExportError(null);
+    const listName = name || list.name;
+    try {
+      if (format === "csv") downloadCatalogCSV(listName, catalogRows);
+      else if (format === "xlsx") downloadCatalogXLSX(listName, catalogRows);
+      else
+        await printCatalog({
+          listName,
+          business: {
+            name: settings?.business_name,
+            tagline: settings?.business_tagline,
+            phone: settings?.business_phone,
+            email: settings?.business_email,
+            address: settings?.business_address,
+            logo: settings?.business_logo_url,
+          },
+          rows: catalogRows,
+          orderUrl:
+            list.is_share_enabled && list.share_token ? shareUrl(list.share_token) : null,
+          note: settings?.share_message_footer,
+        });
+    } catch (e) {
+      const err = e as Error;
+      console.error("[price-list-export] failed", {
+        listId,
+        listName,
+        format,
+        message: err.message,
+      });
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      const message = offline
+        ? "Export failed — check your connection and try again."
+        : format === "pdf"
+          ? "Couldn't generate the PDF — please try again. If this continues, check that your logo image in Settings is valid."
+          : "Export failed — please try again.";
+      setExportError({ format, message });
+      toast.error(message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error("Name is required");
