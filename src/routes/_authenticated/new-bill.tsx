@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -131,6 +131,8 @@ function NewBillPage() {
   const [customerDialog, setCustomerDialog] = useState(false);
   const [productDialog, setProductDialog] = useState(false);
   const [bulkDialog, setBulkDialog] = useState(false);
+  const [quantityToFocus, setQuantityToFocus] = useState<string | null>(null);
+  const quantityInputs = useRef(new Map<string, HTMLInputElement>());
 
   const [warehousePickerFor, setWarehousePickerFor] = useState<string | null>(null);
 
@@ -280,6 +282,15 @@ function NewBillPage() {
     (l) => l.quantity > stockFor(l.productId, l.warehouseId).available,
   );
 
+  useEffect(() => {
+    if (!quantityToFocus) return;
+    const input = quantityInputs.current.get(quantityToFocus);
+    if (!input) return;
+    input.focus();
+    input.select();
+    setQuantityToFocus(null);
+  }, [lines, quantityToFocus]);
+
   const addLine = (productId: string) => {
     const p = products.find((x) => x.id === productId);
     if (!p) return;
@@ -299,11 +310,12 @@ function NewBillPage() {
           productId: p.id,
           name: p.name,
           unitPrice: Number(p.price),
-          quantity: 1,
+          quantity: 0,
           warehouseId: activeWarehouseId,
         },
       ];
     });
+    setQuantityToFocus(productId);
     setProductSearch("");
   };
 
@@ -347,6 +359,10 @@ function NewBillPage() {
   const save = async (status: "Draft" | "Finalized") => {
     if (lines.length === 0) {
       toast.error("Add at least one product to the bill");
+      return;
+    }
+    if (lines.some((line) => line.quantity < 1)) {
+      toast.error("Enter a quantity of at least 1 for every product");
       return;
     }
     if (status === "Finalized" && overselling.length > 0) {
@@ -923,8 +939,12 @@ function NewBillPage() {
                           </div>
                         </div>
                         <Input
+                          ref={(node) => {
+                            if (node) quantityInputs.current.set(l.productId, node);
+                            else quantityInputs.current.delete(l.productId);
+                          }}
                           type="number"
-                          min={1}
+                          min={0}
                           max={Math.max(available, 1)}
                           aria-label={`Quantity for ${l.name}`}
                           className={cn("numeric h-10 text-center", over && "border-destructive")}
@@ -932,8 +952,8 @@ function NewBillPage() {
                           onChange={(e) =>
                             patchLine(l.productId, {
                               quantity: Math.max(
-                                1,
-                                Math.min(Number(e.target.value) || 1, Math.max(available, 1)),
+                                0,
+                                Math.min(Number(e.target.value) || 0, Math.max(available, 1)),
                               ),
                             })
                           }
