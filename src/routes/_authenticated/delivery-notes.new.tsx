@@ -333,15 +333,18 @@ function DeliveryNoteBuilder() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New Delivery Note"
+        title={isEditing ? "Edit Delivery Note" : "New Delivery Note"}
         description={
-          order
-            ? `Dispatching against ${order.order_number} — quantities are capped at what's still pending.`
-            : bill
-              ? `Converted from bill ${bill.bill_number ?? ""} — stock was already deducted, this is paperwork only.`
-              : "Record a dispatch. Stock on hand is not deducted by a delivery note."
+          isEditing
+            ? `Editing ${existing?.delivery_number ?? "delivery note"} — stock is not affected by these changes.`
+            : order
+              ? `Dispatching against ${order.order_number} — quantities are capped at what's still pending.`
+              : bill
+                ? `Converted from bill ${bill.bill_number ?? ""} — stock was already deducted, this is paperwork only.`
+                : "Record a dispatch. Stock on hand is not deducted by a delivery note."
         }
       />
+
 
       <div className="surface-card grid gap-4 p-5 sm:grid-cols-2">
         <div className="space-y-2">
@@ -601,7 +604,8 @@ function DeliveryNoteBuilder() {
 
       <Button className="w-full sm:w-auto" disabled={saving} onClick={save}>
         <Truck />
-        {saving ? "Saving…" : "Create Delivery Note"}
+        {saving ? "Saving…" : isEditing ? "Save Changes" : "Create Delivery Note"}
+
       </Button>
     </div>
   );
