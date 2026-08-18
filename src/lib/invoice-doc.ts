@@ -98,7 +98,29 @@ export type SettingsLike = {
   invoice_prefix?: string | null;
   default_tax_rate?: number | string | null;
   active_invoice_template?: string | null;
+  whatsapp_qr_link?: string | null;
+  whatsapp_qr_name?: string | null;
+  google_review_qr_link?: string | null;
+  google_review_qr_name?: string | null;
 };
+
+export const DEFAULT_GOOGLE_REVIEW_LINK = "https://g.page/r/CS_TpEm4RwOjEAE/review";
+
+function qrCodesFromSettings(settings: SettingsLike | null | undefined): InvoiceQr[] {
+  const phoneDigits = (settings?.business_phone ?? "").replace(/\D/g, "");
+  const whatsapp =
+    settings?.whatsapp_qr_link?.trim() || (phoneDigits ? `https://wa.me/${phoneDigits}` : "");
+  const google = settings?.google_review_qr_link?.trim() || DEFAULT_GOOGLE_REVIEW_LINK;
+  const codes: InvoiceQr[] = [];
+  if (whatsapp)
+    codes.push({ value: whatsapp, label: settings?.whatsapp_qr_name?.trim() || "Chat on WhatsApp" });
+  if (google)
+    codes.push({
+      value: google,
+      label: settings?.google_review_qr_name?.trim() || "Review us on Google",
+    });
+  return codes;
+}
 
 export function businessFromSettings(
   settings: SettingsLike | null | undefined,
@@ -117,6 +139,7 @@ export function businessFromSettings(
     footerNote: settings?.invoice_footer_note ?? null,
     signatureUrl: settings?.signature_url ?? null,
     signatoryLabel: "Authorized Signatory",
+    qrCodes: qrCodesFromSettings(settings),
   };
 }
 
