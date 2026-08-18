@@ -365,22 +365,43 @@ function PriceListBuilder() {
               ))}
             </SelectContent>
           </Select>
-          {brand !== ALL_BRANDS && (
-            <Button
-              variant="outline"
-              className="h-11"
-              onClick={() =>
-                setSelected((prev) => {
-                  const next = { ...prev };
-                  for (const p of visible) next[p.id] = true;
-                  return next;
-                })
-              }
-            >
-              Select all in {brand}
+          <Select value={stockOp} onValueChange={(v) => setStockOp(v as StockOp)}>
+            <SelectTrigger className="h-11 w-[180px]">
+              <SelectValue placeholder="Stock filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any stock</SelectItem>
+              <SelectItem value="in">In stock only</SelectItem>
+              <SelectItem value="out">Out of stock</SelectItem>
+              <SelectItem value="gte">Stock ≥ quantity</SelectItem>
+              <SelectItem value="lte">Stock ≤ quantity</SelectItem>
+            </SelectContent>
+          </Select>
+          {(stockOp === "gte" || stockOp === "lte") && (
+            <Input
+              type="number"
+              min="0"
+              className="h-11 w-28"
+              placeholder="Qty"
+              value={stockValue}
+              onChange={(e) => setStockValue(e.target.value)}
+            />
+          )}
+          <Button
+            variant="outline"
+            className="h-11"
+            disabled={visible.length === 0}
+            onClick={() => selectAllVisible(!allVisibleSelected)}
+          >
+            {allVisibleSelected ? "Deselect all" : `Select all (${visible.length})`}
+          </Button>
+          {selectedCount > 0 && (
+            <Button variant="ghost" className="h-11" onClick={() => setSelected({})}>
+              Clear selection
             </Button>
           )}
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] text-sm">
