@@ -164,7 +164,7 @@ export function buildInvoiceDoc(
     items: bill.bill_items.map((item) => ({
       key: item.id,
       name: item.product_name_snapshot,
-      subtitle: options.itemSubtitle?.(item) ?? null,
+      subtitle: null,
       quantity: Number(item.quantity),
       unitPrice: Number(item.unit_price),
       lineTotal: Number(item.line_total),
