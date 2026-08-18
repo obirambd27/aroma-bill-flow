@@ -71,7 +71,7 @@ function PriceListBuilder() {
   const { data: list, isLoading } = usePriceList(listId);
   const { data: items = [] } = usePriceListItems(listId);
   const { data: products = [] } = useAllProducts();
-  const { data: stockTotals = {} } = useStockTotals();
+  const { data: stockTotals = {}, isLoading: stockLoading } = useStockTotals();
   const { data: settings } = useSettings();
   const save = useSavePriceList(listId);
   const toggleShare = useToggleSharing(listId);
