@@ -110,6 +110,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {showGroup && collapsed && <div className="my-2 border-t border-sidebar-border" />}
                 <Link
                   to={item.to}
+                  aria-label={item.label}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     active
@@ -129,6 +130,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="space-y-1 border-t border-sidebar-border p-2">
           <button
             onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             {collapsed ? (
@@ -140,6 +142,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <button
             onClick={signOut}
+            aria-label="Sign out"
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4 shrink-0" />
