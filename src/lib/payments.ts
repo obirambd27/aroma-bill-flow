@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Bill } from "@/lib/data";
-import { derivePaymentStatus, recalcBillBalance } from "@/lib/payment-math";
+import { derivePaymentStatus, recalcBillBalance, round2 } from "@/lib/payment-math";
 
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
@@ -320,7 +320,7 @@ export async function syncCounterPayment(input: CounterPaymentInput) {
     .insert({
       customer_id: input.customerId,
       payment_date: input.paymentDate,
-      amount: input.amount,
+      amount: counterAmount,
       payment_method: input.method,
       account_id: input.accountId,
       reference_number: input.referenceNumber,
@@ -333,7 +333,7 @@ export async function syncCounterPayment(input: CounterPaymentInput) {
   await supabase.from("payment_allocations").insert({
     payment_id: payment.id,
     bill_id: input.billId,
-    amount_allocated: input.amount,
+    amount_allocated: counterAmount,
   });
 
   return payment;
