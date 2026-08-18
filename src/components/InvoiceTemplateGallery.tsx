@@ -28,7 +28,7 @@ export function InvoiceTemplateGallery({
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {INVOICE_TEMPLATES.map((template) => {
           const selected = template.id === active;
           return (
