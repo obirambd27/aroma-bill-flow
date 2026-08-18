@@ -284,22 +284,36 @@ export type CounterPaymentInput = {
 export async function syncCounterPayment(input: CounterPaymentInput) {
   const { data: existing } = await supabase
     .from("payment_allocations")
-    .select("payment_id, payments_received(notes)")
+    .select("payment_id, amount_allocated, payments_received(notes)")
     .eq("bill_id", input.billId);
 
-  const staleIds = ((existing ?? []) as unknown as {
+  const rows = (existing ?? []) as unknown as {
     payment_id: string;
+    amount_allocated: number;
     payments_received: { notes: string | null } | null;
-  }[])
+  }[];
+
+  const staleIds = rows
     .filter((r) => r.payments_received?.notes === COUNTER_PAYMENT_NOTE)
     .map((r) => r.payment_id);
+
+  // Money already collected through the Payments Received screen for this bill.
+  // It is part of `bills.amount_paid`, so the counter mirror must not repeat it,
+  // otherwise editing a bill shows the same money twice on the Payments page.
+  const alreadyRecorded = round2(
+    rows
+      .filter((r) => r.payments_received?.notes !== COUNTER_PAYMENT_NOTE)
+      .reduce((s, r) => s + (Number(r.amount_allocated) || 0), 0),
+  );
 
   if (staleIds.length > 0) {
     await supabase.from("payment_allocations").delete().in("payment_id", staleIds);
     await supabase.from("payments_received").delete().in("id", staleIds);
   }
 
-  if (input.amount <= 0.001) return null;
+  const counterAmount = round2(Math.max((Number(input.amount) || 0) - alreadyRecorded, 0));
+  if (counterAmount <= 0.001) return null;
+
 
   const { data: payment, error } = await supabase
     .from("payments_received")
