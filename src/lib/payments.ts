@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Bill } from "@/lib/data";
-import { derivePaymentStatus, recalcBillBalance } from "@/lib/payment-math";
+import { derivePaymentStatus, recalcBillBalance, round2 } from "@/lib/payment-math";
 
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
@@ -201,7 +201,30 @@ export async function recordPayment(input: RecordPaymentInput) {
     .single();
   if (error || !payment) throw error ?? new Error("Could not save the payment");
 
-  const allocations = input.allocations.filter((a) => a.amount > 0);
+  // Clamp every allocation to the bill's live outstanding balance so a stale
+  // screen can never allocate more money to a bill than it still owes.
+  const allocations: { billId: string; billNumber: string | null; amount: number }[] = [];
+  for (const a of input.allocations.filter((x) => x.amount > 0)) {
+    const { data: bill } = await supabase
+      .from("bills")
+      .select("total_amount, amount_paid")
+      .eq("id", a.billId)
+      .maybeSingle();
+    if (!bill) continue;
+    const balance = round2(
+      Math.max(Number(bill.total_amount) - Number(bill.amount_paid), 0),
+    );
+    const amount = round2(Math.min(a.amount, balance));
+    if (amount <= 0.005) continue;
+    allocations.push({ ...a, amount });
+
+    const next = recalcBillBalance(bill, amount);
+    await supabase
+      .from("bills")
+      .update({ amount_paid: next.amountPaid, payment_status: next.status })
+      .eq("id", a.billId);
+  }
+
   if (allocations.length > 0) {
     const { error: allocError } = await supabase.from("payment_allocations").insert(
       allocations.map((a) => ({
@@ -213,20 +236,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     if (allocError) throw allocError;
   }
 
-  for (const a of allocations) {
-    const { data: bill } = await supabase
-      .from("bills")
-      .select("total_amount, amount_paid")
-      .eq("id", a.billId)
-      .maybeSingle();
-    if (!bill) continue;
-    // Guard: recompute from the freshly-read row and clamp into [0, total].
-    const next = recalcBillBalance(bill, a.amount);
-    await supabase
-      .from("bills")
-      .update({ amount_paid: next.amountPaid, payment_status: next.status })
-      .eq("id", a.billId);
-  }
+
 
   const billLabel = allocations
     .map((a) => a.billNumber)
@@ -284,29 +294,43 @@ export type CounterPaymentInput = {
 export async function syncCounterPayment(input: CounterPaymentInput) {
   const { data: existing } = await supabase
     .from("payment_allocations")
-    .select("payment_id, payments_received(notes)")
+    .select("payment_id, amount_allocated, payments_received(notes)")
     .eq("bill_id", input.billId);
 
-  const staleIds = ((existing ?? []) as unknown as {
+  const rows = (existing ?? []) as unknown as {
     payment_id: string;
+    amount_allocated: number;
     payments_received: { notes: string | null } | null;
-  }[])
+  }[];
+
+  const staleIds = rows
     .filter((r) => r.payments_received?.notes === COUNTER_PAYMENT_NOTE)
     .map((r) => r.payment_id);
+
+  // Money already collected through the Payments Received screen for this bill.
+  // It is part of `bills.amount_paid`, so the counter mirror must not repeat it,
+  // otherwise editing a bill shows the same money twice on the Payments page.
+  const alreadyRecorded = round2(
+    rows
+      .filter((r) => r.payments_received?.notes !== COUNTER_PAYMENT_NOTE)
+      .reduce((s, r) => s + (Number(r.amount_allocated) || 0), 0),
+  );
 
   if (staleIds.length > 0) {
     await supabase.from("payment_allocations").delete().in("payment_id", staleIds);
     await supabase.from("payments_received").delete().in("id", staleIds);
   }
 
-  if (input.amount <= 0.001) return null;
+  const counterAmount = round2(Math.max((Number(input.amount) || 0) - alreadyRecorded, 0));
+  if (counterAmount <= 0.001) return null;
+
 
   const { data: payment, error } = await supabase
     .from("payments_received")
     .insert({
       customer_id: input.customerId,
       payment_date: input.paymentDate,
-      amount: input.amount,
+      amount: counterAmount,
       payment_method: input.method,
       account_id: input.accountId,
       reference_number: input.referenceNumber,
@@ -319,7 +343,7 @@ export async function syncCounterPayment(input: CounterPaymentInput) {
   await supabase.from("payment_allocations").insert({
     payment_id: payment.id,
     bill_id: input.billId,
-    amount_allocated: input.amount,
+    amount_allocated: counterAmount,
   });
 
   return payment;
