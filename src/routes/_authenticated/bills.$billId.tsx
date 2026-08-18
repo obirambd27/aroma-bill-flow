@@ -25,7 +25,7 @@ import { buildInvoiceDoc } from "@/lib/invoice-doc";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAllWarehouses, useBill, useCustomerOutstanding, useSettings } from "@/lib/data";
+import { useBill, useCustomerOutstanding, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -62,7 +62,6 @@ function BillDetailPage() {
   const queryClient = useQueryClient();
   const { data: bill, isLoading } = useBill(billId);
   const { data: settings } = useSettings();
-  useAllWarehouses();
   const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: editHistory = [] } = useBillEditHistory(billId);
   const { data: allocations = [] } = useBillAllocations(billId);
