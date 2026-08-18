@@ -87,6 +87,11 @@ function PriceListBuilder() {
   const [hydrated, setHydrated] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<{
+    format: ExportFormat;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!list || hydrated) return;
