@@ -201,7 +201,30 @@ export async function recordPayment(input: RecordPaymentInput) {
     .single();
   if (error || !payment) throw error ?? new Error("Could not save the payment");
 
-  const allocations = input.allocations.filter((a) => a.amount > 0);
+  // Clamp every allocation to the bill's live outstanding balance so a stale
+  // screen can never allocate more money to a bill than it still owes.
+  const allocations: { billId: string; billNumber: string | null; amount: number }[] = [];
+  for (const a of input.allocations.filter((x) => x.amount > 0)) {
+    const { data: bill } = await supabase
+      .from("bills")
+      .select("total_amount, amount_paid")
+      .eq("id", a.billId)
+      .maybeSingle();
+    if (!bill) continue;
+    const balance = round2(
+      Math.max(Number(bill.total_amount) - Number(bill.amount_paid), 0),
+    );
+    const amount = round2(Math.min(a.amount, balance));
+    if (amount <= 0.005) continue;
+    allocations.push({ ...a, amount });
+
+    const next = recalcBillBalance(bill, amount);
+    await supabase
+      .from("bills")
+      .update({ amount_paid: next.amountPaid, payment_status: next.status })
+      .eq("id", a.billId);
+  }
+
   if (allocations.length > 0) {
     const { error: allocError } = await supabase.from("payment_allocations").insert(
       allocations.map((a) => ({
@@ -213,20 +236,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     if (allocError) throw allocError;
   }
 
-  for (const a of allocations) {
-    const { data: bill } = await supabase
-      .from("bills")
-      .select("total_amount, amount_paid")
-      .eq("id", a.billId)
-      .maybeSingle();
-    if (!bill) continue;
-    // Guard: recompute from the freshly-read row and clamp into [0, total].
-    const next = recalcBillBalance(bill, a.amount);
-    await supabase
-      .from("bills")
-      .update({ amount_paid: next.amountPaid, payment_status: next.status })
-      .eq("id", a.billId);
-  }
+
 
   const billLabel = allocations
     .map((a) => a.billNumber)
