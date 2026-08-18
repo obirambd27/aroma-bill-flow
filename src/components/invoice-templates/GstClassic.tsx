@@ -1,5 +1,5 @@
 import { DocumentSheet } from "@/components/DocumentSheet";
-import { WhatsAppQr } from "@/components/WhatsAppQr";
+import { DocQrCodes } from "@/components/WhatsAppQr";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { InvoiceDoc } from "@/lib/invoice-doc";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,6 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
   const b = doc.business;
   const title = doc.isTaxed ? "TAX INVOICE" : "INVOICE";
   const fillers = Math.max(0, MIN_ROWS - doc.items.length);
-  const whatsappDigits = (b.phone ?? "").replace(/\D/g, "");
-  const previous = doc.previousBalance ?? 0;
 
   const head = (
     <div className="border-b border-doc-line">
@@ -234,11 +232,3 @@ function Line({ label, value, bold }: { label: string; value: string; bold?: boo
   );
 }
 
-function Balance({ label, value, last }: { label: string; value: string; last?: boolean }) {
-  return (
-    <div className={cn("min-w-0 flex-1 p-2", !last && "border-r border-doc-line")}>
-      <p className="text-[10px] uppercase tracking-[0.12em] text-doc-muted">{label}</p>
-      <p className="numeric mt-0.5 font-bold">{value}</p>
-    </div>
-  );
-}

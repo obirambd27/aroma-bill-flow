@@ -1,5 +1,5 @@
 import { DocumentSheet } from "@/components/DocumentSheet";
-import { WhatsAppQr } from "@/components/WhatsAppQr";
+import { DocQrCodes } from "@/components/WhatsAppQr";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { InvoiceDoc } from "@/lib/invoice-doc";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,7 @@ export function OrangeBulkTemplate({ doc }: { doc: InvoiceDoc }) {
         </p>
       </div>
       <div className="flex items-center gap-3 text-right">
-        <WhatsAppQr />
+        <DocQrCodes codes={b.qrCodes} size={68} />
         <div>
           <p className="font-display text-sm font-bold text-doc-ink">
             <span className="text-doc-accent">{first}</span>
