@@ -130,9 +130,6 @@ export function OrangeBulkTemplate({ doc }: { doc: InvoiceDoc }) {
                   <span className="break-words font-semibold [overflow-wrap:anywhere]">
                     {item.name}
                   </span>
-                  {item.subtitle && (
-                    <span className="block text-xs text-doc-muted">{item.subtitle}</span>
-                  )}
                 </Td>
                 <Td className="numeric text-right text-doc-muted">
                   {formatMoney(item.unitPrice)}

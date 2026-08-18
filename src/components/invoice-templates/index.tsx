@@ -1,5 +1,6 @@
 import { VelvetOudTemplate } from "@/components/invoice-templates/VelvetOud";
 import { OrangeBulkTemplate } from "@/components/invoice-templates/OrangeBulk";
+import { GstClassicTemplate } from "@/components/invoice-templates/GstClassic";
 import {
   resolveTemplateId,
   type InvoiceDoc,
@@ -24,6 +25,11 @@ export const INVOICE_TEMPLATES: TemplateMeta[] = [
     name: "Orange Bulk",
     description: "Bold wordmark, amber table header and a wide grand-total bar.",
   },
+  {
+    id: "gst_classic",
+    name: "GST Classic",
+    description: "Plain black-and-white bordered tax invoice with declaration and balance row.",
+  },
 ];
 
 /** Renders a prepared invoice document in whichever template is active. */
@@ -35,9 +41,7 @@ export function InvoiceDocumentView({
   templateId?: string | null | undefined;
 }) {
   const id = resolveTemplateId(templateId);
-  return id === "orange_bulk" ? (
-    <OrangeBulkTemplate doc={doc} />
-  ) : (
-    <VelvetOudTemplate doc={doc} />
-  );
+  if (id === "orange_bulk") return <OrangeBulkTemplate doc={doc} />;
+  if (id === "gst_classic") return <GstClassicTemplate doc={doc} />;
+  return <VelvetOudTemplate doc={doc} />;
 }

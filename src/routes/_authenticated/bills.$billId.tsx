@@ -25,7 +25,7 @@ import { buildInvoiceDoc } from "@/lib/invoice-doc";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
+import { useBill, useCustomerOutstanding, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -62,8 +62,7 @@ function BillDetailPage() {
   const queryClient = useQueryClient();
   const { data: bill, isLoading } = useBill(billId);
   const { data: settings } = useSettings();
-  const { data: warehouses = [] } = useAllWarehouses();
-  const { data: products = [] } = useAllProducts();
+  const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: editHistory = [] } = useBillEditHistory(billId);
   const { data: allocations = [] } = useBillAllocations(billId);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -128,8 +127,10 @@ function BillDetailPage() {
   const breakdown = buildPaymentBreakdown(bill, allocations);
   const paid = breakdown.totalPaid;
   const balanceDue = breakdown.balanceDue;
-  const warehouseName = (id: string | null) =>
-    warehouses.find((w) => w.id === id)?.name ?? bill.warehouses?.name ?? "—";
+  /** Customer's outstanding on their *other* finalized bills. */
+  const previousBalance = bill.customer_id
+    ? Math.max(0, (outstanding[bill.customer_id] ?? 0) - balanceDue)
+    : 0;
 
   const voidBill = async () => {
     setVoiding(true);
@@ -357,9 +358,7 @@ function BillDetailPage() {
           doc={buildInvoiceDoc(bill, settings, {
             allocations,
             amountInWords: amountInWords(total),
-            itemSubtitle: (item) =>
-              products.find((p) => p.id === item.product_id)?.sku ??
-              warehouseName(item.warehouse_id),
+            previousBalance: previousBalance,
           })}
         />
       )}

@@ -8,7 +8,7 @@
 import { formatDate } from "@/lib/format";
 import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
 
-export const INVOICE_TEMPLATE_IDS = ["velvet_oud", "orange_bulk"] as const;
+export const INVOICE_TEMPLATE_IDS = ["velvet_oud", "orange_bulk", "gst_classic"] as const;
 export type InvoiceTemplateId = (typeof INVOICE_TEMPLATE_IDS)[number];
 export const DEFAULT_INVOICE_TEMPLATE: InvoiceTemplateId = "velvet_oud";
 
@@ -75,6 +75,8 @@ export type InvoiceDoc = {
   status: "Paid" | "Partial" | "Unpaid";
   /** Extra note rendered above the footer (e.g. amount in words). */
   amountInWordsLabel?: string | null;
+  /** Customer's outstanding balance on other bills (GST Classic template). */
+  previousBalance?: number | null;
 };
 
 export type SettingsLike = {
@@ -143,8 +145,8 @@ export function buildInvoiceDoc(
   settings: SettingsLike | null | undefined,
   options: {
     allocations?: AllocationInput[];
-    itemSubtitle?: (item: BillLike["bill_items"][number]) => string | null;
     amountInWords?: string | null;
+    previousBalance?: number | null;
   } = {},
 ): InvoiceDoc {
   const breakdown = buildPaymentBreakdown(bill, options.allocations ?? []);
@@ -162,7 +164,7 @@ export function buildInvoiceDoc(
     items: bill.bill_items.map((item) => ({
       key: item.id,
       name: item.product_name_snapshot,
-      subtitle: options.itemSubtitle?.(item) ?? null,
+      subtitle: null,
       quantity: Number(item.quantity),
       unitPrice: Number(item.unit_price),
       lineTotal: Number(item.line_total),
@@ -188,6 +190,7 @@ export function buildInvoiceDoc(
           ? "Partial"
           : "Unpaid",
     amountInWordsLabel: options.amountInWords ?? null,
+    previousBalance: options.previousBalance ?? 0,
   };
 }
 
@@ -213,7 +216,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "1",
         name: "OUD ROYALE INTENSE EDP 100ML",
-        subtitle: "AAP0021",
         quantity: 2,
         unitPrice: 145,
         lineTotal: 290,
@@ -221,7 +223,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "2",
         name: "RAYHAAN NOCTURNO ELIXIR EDP 100ML",
-        subtitle: "AAP0043",
         quantity: 1,
         unitPrice: 96,
         lineTotal: 96,
@@ -229,7 +230,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "3",
         name: "AMBER MUSK ATTAR CONCENTRATED OIL 12ML",
-        subtitle: "AAP0009",
         quantity: 3,
         unitPrice: 38,
         lineTotal: 114,
@@ -284,7 +284,7 @@ export function buildOrderReceiptDoc(input: {
     return {
       key: l.id,
       name: l.name,
-      subtitle: l.sku ?? null,
+      subtitle: null,
       quantity: l.quantity,
       unitPrice,
       lineTotal: Math.round(unitPrice * l.quantity * 100) / 100,

@@ -186,6 +186,21 @@
   --doc-line: oklch(0.9 0.02 65);
 }
 
+/* "GST Classic" — grayscale, fully bordered, no accent colour. */
+.doc-gst {
+  --doc-accent: oklch(0 0 0);
+  --doc-accent-foreground: oklch(1 0 0);
+  --doc-tint: oklch(0.93 0 0);
+  --doc-label: oklch(0.2 0 0);
+  --doc-ink: oklch(0 0 0);
+  --doc-muted: oklch(0.35 0 0);
+  --doc-line: oklch(0.25 0 0);
+
+  border: 1px solid var(--doc-line);
+  border-radius: 0 !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 /* Print tables carry the repeating header / footer on every page. */
 .doc-print-table > thead {
   display: table-header-group;
@@ -290,6 +305,30 @@
 
   .invoice-sheet .whitespace-pre-line {
     white-space: pre-line !important;
+  }
+
+  /* A4 fit: ~18-25 line items per page at readable print sizes. */
+  .invoice-sheet.doc-gst {
+    border-radius: 0 !important;
+    font-size: 9.5pt !important;
+    line-height: 1.25 !important;
+  }
+
+  .invoice-sheet.doc-gst td,
+  .invoice-sheet.doc-gst th {
+    padding-top: 1.1mm !important;
+    padding-bottom: 1.1mm !important;
+  }
+
+  /* Blank filler rows exist only to square off a short on-screen grid. */
+  .invoice-sheet.doc-gst .gst-filler {
+    break-inside: avoid;
+  }
+
+  /* Signature / declaration must never be orphaned from the totals. */
+  .invoice-sheet .gst-declaration {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .invoice-sheet .doc-blob {
