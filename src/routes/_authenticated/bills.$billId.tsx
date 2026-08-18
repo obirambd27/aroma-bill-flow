@@ -357,9 +357,7 @@ function BillDetailPage() {
           doc={buildInvoiceDoc(bill, settings, {
             allocations,
             amountInWords: amountInWords(total),
-            itemSubtitle: (item) =>
-              products.find((p) => p.id === item.product_id)?.sku ??
-              warehouseName(item.warehouse_id),
+            previousBalance: previousBalance,
           })}
         />
       )}
