@@ -190,6 +190,7 @@ export function buildInvoiceDoc(
           ? "Partial"
           : "Unpaid",
     amountInWordsLabel: options.amountInWords ?? null,
+    previousBalance: options.previousBalance ?? 0,
   };
 }
 
