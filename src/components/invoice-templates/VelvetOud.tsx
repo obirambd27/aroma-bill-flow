@@ -64,7 +64,7 @@ export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
         items={doc.items.map((item) => ({
           key: item.key,
           name: item.name,
-          subtitle: item.subtitle ?? null,
+          subtitle: null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           lineTotal: item.lineTotal,

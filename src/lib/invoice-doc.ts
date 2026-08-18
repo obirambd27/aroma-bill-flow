@@ -216,7 +216,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "1",
         name: "OUD ROYALE INTENSE EDP 100ML",
-        subtitle: "AAP0021",
         quantity: 2,
         unitPrice: 145,
         lineTotal: 290,
@@ -224,7 +223,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "2",
         name: "RAYHAAN NOCTURNO ELIXIR EDP 100ML",
-        subtitle: "AAP0043",
         quantity: 1,
         unitPrice: 96,
         lineTotal: 96,
@@ -232,7 +230,6 @@ export function sampleInvoiceDoc(settings: SettingsLike | null | undefined): Inv
       {
         key: "3",
         name: "AMBER MUSK ATTAR CONCENTRATED OIL 12ML",
-        subtitle: "AAP0009",
         quantity: 3,
         unitPrice: 38,
         lineTotal: 114,
@@ -287,7 +284,7 @@ export function buildOrderReceiptDoc(input: {
     return {
       key: l.id,
       name: l.name,
-      subtitle: l.sku ?? null,
+      subtitle: null,
       quantity: l.quantity,
       unitPrice,
       lineTotal: Math.round(unitPrice * l.quantity * 100) / 100,
