@@ -201,6 +201,23 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+
+
+/* Delivery Note — warm paper, deep green accent, its own document design. */
+.doc-dn {
+  --doc-sheet: oklch(0.985 0.008 95);
+  --doc-accent: oklch(0.42 0.09 158);
+  --doc-accent-foreground: oklch(1 0 0);
+  --doc-tint: oklch(0.955 0.015 150);
+  --doc-label: oklch(0.42 0.09 158);
+  --doc-ink: oklch(0.18 0.01 150);
+  --doc-muted: oklch(0.48 0.01 150);
+  --doc-line: oklch(0.84 0.012 150);
+
+  border-radius: 12px !important;
+}
+
+
 /* Print tables carry the repeating header / footer on every page. */
 .doc-print-table > thead {
   display: table-header-group;

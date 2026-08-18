@@ -697,6 +697,7 @@ export type Database = {
       }
       delivery_note_items: {
         Row: {
+          carton_bag_count: string | null
           delivery_note_id: string
           id: string
           product_id: string | null
@@ -704,6 +705,7 @@ export type Database = {
           quantity: number
         }
         Insert: {
+          carton_bag_count?: string | null
           delivery_note_id: string
           id?: string
           product_id?: string | null
@@ -711,6 +713,7 @@ export type Database = {
           quantity?: number
         }
         Update: {
+          carton_bag_count?: string | null
           delivery_note_id?: string
           id?: string
           product_id?: string | null
@@ -736,42 +739,79 @@ export type Database = {
       }
       delivery_notes: {
         Row: {
+          advance_amount: number | null
+          balance_amount: number | null
+          bill_id: string | null
+          buyer_address: string | null
+          buyer_name: string | null
+          buyer_tel: string | null
+          cargo_phone: string | null
+          cargo_transport: string | null
           created_at: string
           customer_id: string | null
           delivery_date: string
           delivery_number: string | null
           id: string
+          marka: string | null
           notes: string | null
           sales_order_id: string | null
           status: string
+          total_amount: number | null
           updated_at: string
           warehouse_id: string | null
         }
         Insert: {
+          advance_amount?: number | null
+          balance_amount?: number | null
+          bill_id?: string | null
+          buyer_address?: string | null
+          buyer_name?: string | null
+          buyer_tel?: string | null
+          cargo_phone?: string | null
+          cargo_transport?: string | null
           created_at?: string
           customer_id?: string | null
           delivery_date?: string
           delivery_number?: string | null
           id?: string
+          marka?: string | null
           notes?: string | null
           sales_order_id?: string | null
           status?: string
+          total_amount?: number | null
           updated_at?: string
           warehouse_id?: string | null
         }
         Update: {
+          advance_amount?: number | null
+          balance_amount?: number | null
+          bill_id?: string | null
+          buyer_address?: string | null
+          buyer_name?: string | null
+          buyer_tel?: string | null
+          cargo_phone?: string | null
+          cargo_transport?: string | null
           created_at?: string
           customer_id?: string | null
           delivery_date?: string
           delivery_number?: string | null
           id?: string
+          marka?: string | null
           notes?: string | null
           sales_order_id?: string | null
           status?: string
+          total_amount?: number | null
           updated_at?: string
           warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "delivery_notes_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "delivery_notes_customer_id_fkey"
             columns: ["customer_id"]

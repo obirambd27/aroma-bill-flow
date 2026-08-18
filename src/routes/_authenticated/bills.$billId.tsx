@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Pencil, Printer, Share2, Trash2, Truck, Wallet } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,8 @@ import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
 import { useBillEditHistory } from "@/lib/bill-edit";
+import { useBillDeliveryNotes } from "@/lib/sales";
+
 import { ThermalReceipt } from "@/components/ThermalReceipt";
 import { InvoiceDocumentView } from "@/components/invoice-templates";
 import { buildInvoiceDoc } from "@/lib/invoice-doc";
@@ -65,6 +67,8 @@ function BillDetailPage() {
   const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: editHistory = [] } = useBillEditHistory(billId);
   const { data: allocations = [] } = useBillAllocations(billId);
+  const { data: linkedNotes = [] } = useBillDeliveryNotes(billId);
+
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -322,11 +326,24 @@ function BillDetailPage() {
               </Button>
             )}
             {bill.status === "Finalized" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigate({ to: "/delivery-notes/new", search: { billId: bill.id } })
+                }
+              >
+                <Truck className="h-4 w-4" />
+                Convert to Delivery Note
+              </Button>
+            )}
+            {bill.status === "Finalized" && (
               <Button variant="ghost" size="sm" onClick={() => setVoidOpen(true)}>
                 <Ban className="h-4 w-4" />
                 Void Bill
               </Button>
             )}
+
             {bill.status === "Voided" && (
               <Button
                 variant="ghost"
@@ -341,7 +358,26 @@ function BillDetailPage() {
 
           </div>
         </div>
+
+        {linkedNotes.length > 0 && (
+          <div className="surface-card px-4 py-3 text-sm text-muted-foreground">
+            {linkedNotes.map((n) => (
+              <p key={n.id}>
+                Delivery Note{" "}
+                <Link
+                  to="/delivery-notes/$deliveryId"
+                  params={{ deliveryId: n.id }}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  {n.delivery_number ?? "—"}
+                </Link>{" "}
+                created from this bill
+              </p>
+            ))}
+          </div>
+        )}
       </div>
+
 
       {/* Invoice document */}
       {printView === "thermal" ? (

@@ -114,6 +114,7 @@ function DeliveryNotesPage() {
                   <th className="px-4 py-3">Delivery #</th>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Sales Order</th>
                   <th className="px-4 py-3">Warehouse</th>
                   <th className="px-4 py-3">Status</th>
@@ -136,6 +137,20 @@ function DeliveryNotesPage() {
                       {n.customers?.name ?? "Walk-in"}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {n.bills ? (
+                        <Link
+                          to="/bills/$billId"
+                          params={{ billId: n.bills.id }}
+                          className="font-medium text-foreground underline underline-offset-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          From Bill {n.bills.bill_number ?? "—"}
+                        </Link>
+                      ) : (
+                        "Standalone"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
                       {n.sales_orders?.order_number ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -148,6 +163,7 @@ function DeliveryNotesPage() {
                 ))}
               </tbody>
             </table>
+
 
             <div className="divide-y divide-border/60 md:hidden">
               {visible.map((n) => (
@@ -167,7 +183,11 @@ function DeliveryNotesPage() {
                     <StatusBadge tone={deliveryTone(n.status)}>{n.status}</StatusBadge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {n.sales_orders?.order_number ?? "Standalone"} · {n.warehouses?.name ?? "—"}
+                    {n.bills
+                      ? `From Bill ${n.bills.bill_number ?? "—"}`
+                      : (n.sales_orders?.order_number ?? "Standalone")}{" "}
+                    · {n.warehouses?.name ?? "—"}
+
                   </p>
                 </Link>
               ))}
