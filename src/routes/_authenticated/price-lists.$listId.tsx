@@ -407,7 +407,14 @@ function PriceListBuilder() {
           <table className="w-full min-w-[880px] text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-10 p-3" />
+                <th className="w-10 p-3">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={(v) => selectAllVisible(Boolean(v))}
+                    aria-label="Select all filtered products"
+                  />
+                </th>
+
                 <th className="p-3 text-left">Brand</th>
                 <th className="p-3 text-left">Product</th>
                 <th className="p-3 text-left">SKU</th>
