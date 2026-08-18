@@ -142,6 +142,7 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
             <WhatsAppQr value={`https://wa.me/${whatsappDigits}`} size={72} caption="Chat on WhatsApp" />
           </div>
         )}
+        <div className="min-w-0 flex-1 border-r border-doc-line" />
         <div className="w-56 shrink-0">
           <Line label="Sub Total" value={formatMoney(doc.subtotal)} />
           {doc.isTaxed && (
