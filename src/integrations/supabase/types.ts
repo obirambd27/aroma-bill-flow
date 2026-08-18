@@ -135,7 +135,10 @@ export type Database = {
           bill_id: string
           cost_price_snapshot: number | null
           id: string
+          item_note: string | null
           line_total: number
+          pending_quantity: number
+          pending_resolved_at: string | null
           product_id: string | null
           product_name_snapshot: string
           quantity: number
@@ -146,7 +149,10 @@ export type Database = {
           bill_id: string
           cost_price_snapshot?: number | null
           id?: string
+          item_note?: string | null
           line_total?: number
+          pending_quantity?: number
+          pending_resolved_at?: string | null
           product_id?: string | null
           product_name_snapshot: string
           quantity?: number
@@ -157,7 +163,10 @@ export type Database = {
           bill_id?: string
           cost_price_snapshot?: number | null
           id?: string
+          item_note?: string | null
           line_total?: number
+          pending_quantity?: number
+          pending_resolved_at?: string | null
           product_id?: string | null
           product_name_snapshot?: string
           quantity?: number
@@ -201,6 +210,7 @@ export type Database = {
           id: string
           is_taxed: boolean
           is_walk_in: boolean
+          notes: string | null
           payment_method: string | null
           payment_status: string
           sales_order_id: string | null
@@ -223,6 +233,7 @@ export type Database = {
           id?: string
           is_taxed?: boolean
           is_walk_in?: boolean
+          notes?: string | null
           payment_method?: string | null
           payment_status?: string
           sales_order_id?: string | null
@@ -245,6 +256,7 @@ export type Database = {
           id?: string
           is_taxed?: boolean
           is_walk_in?: boolean
+          notes?: string | null
           payment_method?: string | null
           payment_status?: string
           sales_order_id?: string | null
@@ -752,6 +764,7 @@ export type Database = {
           delivery_date: string
           delivery_number: string | null
           id: string
+          last_edited_at: string | null
           marka: string | null
           notes: string | null
           sales_order_id: string | null
@@ -774,6 +787,7 @@ export type Database = {
           delivery_date?: string
           delivery_number?: string | null
           id?: string
+          last_edited_at?: string | null
           marka?: string | null
           notes?: string | null
           sales_order_id?: string | null
@@ -796,6 +810,7 @@ export type Database = {
           delivery_date?: string
           delivery_number?: string | null
           id?: string
+          last_edited_at?: string | null
           marka?: string | null
           notes?: string | null
           sales_order_id?: string | null

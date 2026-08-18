@@ -14,6 +14,8 @@ import {
   Check,
   Trash2,
   CalendarClock,
+  PackageOpen,
+
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -51,6 +53,10 @@ import { usePaymentsReceived } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bills/")({
+  validateSearch: (search: Record<string, unknown>): { pending?: boolean } =>
+    search['pending'] === true || search['pending'] === "true" ? { pending: true } : {},
+
+
   head: () => ({
     meta: [
       { title: "Bill History — Fragrance Billing" },
@@ -349,14 +355,18 @@ function RelatedDetail({ row }: { row: BillHistoryRow }) {
 
 function BillsPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { data: bills = [], isLoading } = useBillHistory();
+
   const { data: payments = [] } = usePaymentsReceived();
   const [collectionOpen, setCollectionOpen] = useState(false);
   const { data: customers = [] } = useCustomers();
   const { data: warehouses = [] } = useAllWarehouses();
 
   const [query, setQuery] = useState("");
-  const [preset, setPreset] = useState("today");
+  const [preset, setPreset] = useState(search.pending ? "all" : "today");
+  const [pendingOnly, setPendingOnly] = useState(Boolean(search.pending));
+
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [customerId, setCustomerId] = useState("all");
@@ -399,6 +409,7 @@ function BillsPage() {
       if (tax === "taxed" && !b.is_taxed) return false;
       if (tax === "untaxed" && b.is_taxed) return false;
       if (methodFilter && !b.methods.includes(methodFilter)) return false;
+      if (pendingOnly && !b.hasPendingPickup) return false;
       return true;
     });
   }, [
@@ -413,7 +424,9 @@ function BillsPage() {
     billStatuses,
     tax,
     methodFilter,
+    pendingOnly,
   ]);
+
 
   const todaysCollection = useMemo(() => {
     const today = toISO(new Date());
@@ -767,6 +780,26 @@ function BillsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Pickup</Label>
+            <Select
+              value={pendingOnly ? "pending" : "all"}
+              onValueChange={(v) => {
+                setPendingOnly(v === "pending");
+                resetPage();
+              }}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All bills</SelectItem>
+                <SelectItem value="pending">Pending pickup only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
         </div>
 
         {isLoading ? (
@@ -833,15 +866,24 @@ function BillsPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            b.status === "Voided" && "text-muted-foreground line-through",
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              b.status === "Voided" && "text-muted-foreground line-through",
+                            )}
+                          >
+                            {b.bill_number}
+                          </span>
+                          {b.hasPendingPickup && (
+                            <PackageOpen
+                              className="h-4 w-4 text-warning-foreground"
+                              aria-label="Pending pickup"
+                            />
                           )}
-                        >
-                          {b.bill_number}
                         </span>
                       </td>
+
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(b.bill_date)}
                       </td>
@@ -972,6 +1014,10 @@ function BillsPage() {
                       </StatusBadge>
                       <StatusBadge tone={billStatusTone(b.status)}>{b.status}</StatusBadge>
                       <ReturnBadge row={b} />
+                      {b.hasPendingPickup && (
+                        <StatusBadge tone="warning">Pending pickup</StatusBadge>
+                      )}
+
                       <MethodCell row={b} />
                       <button
                         className="ml-auto text-xs font-medium text-primary"

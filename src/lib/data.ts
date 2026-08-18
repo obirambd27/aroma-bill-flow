@@ -328,7 +328,7 @@ export function useProductSales(productId: string) {
 
 export type BillHistoryRow = Bill & {
   customers: { id: string; name: string } | null;
-  bill_items: { warehouse_id: string | null }[];
+  bill_items: { warehouse_id: string | null; pending_quantity?: number | string | null }[];
   warehouseNames: string[];
   returns: { id: string; return_number: string | null; total_amount: number; status: string }[];
   returnedAmount: number;
@@ -336,10 +336,13 @@ export type BillHistoryRow = Bill & {
   salesOrder: { id: string; order_number: string | null } | null;
   deliveryNotes: { id: string; delivery_number: string | null; status: string }[];
   balanceDue: number;
+  /** True when at least one line item still has stock awaiting physical pickup. */
+  hasPendingPickup: boolean;
   /** Money actually received on this bill, split by payment method. */
   paidByMethod: Record<string, number>;
   methods: string[];
 };
+
 
 export function useBillHistory() {
   return useQuery({
@@ -349,7 +352,10 @@ export function useBillHistory() {
         fetchAll<Record<string, unknown>>((f, t) =>
           supabase
             .from("bills")
-            .select("*, customers(id, name), bill_items(warehouse_id), sales_orders(id, order_number)")
+            .select(
+              "*, customers(id, name), bill_items(warehouse_id, pending_quantity), sales_orders(id, order_number)",
+            )
+
             .order("bill_date", { ascending: false })
             .order("created_at", { ascending: false })
             .range(f, t) as never,
@@ -453,7 +459,11 @@ export function useBillHistory() {
           salesOrder: b.sales_orders ?? null,
           deliveryNotes,
           balanceDue: breakdown.balanceDue,
+          hasPendingPickup: (b.bill_items ?? []).some(
+            (it) => Number((it as { pending_quantity?: number | null }).pending_quantity ?? 0) > 0,
+          ),
         } as BillHistoryRow;
+
       });
     },
   });
@@ -504,3 +514,34 @@ export function useCustomerOutstanding() {
   return { data, isLoading: totals.isLoading };
 }
 
+
+/** Bill line items still awaiting physical pickup by the customer. */
+export function usePendingPickups() {
+  return useQuery({
+    queryKey: ["pending-pickups"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bill_items")
+        .select(
+          "id, product_name_snapshot, pending_quantity, item_note, bills(id, bill_number, bill_date, status, customers(name))",
+        )
+        .gt("pending_quantity", 0);
+      if (error) throw error;
+      return ((data ?? []) as unknown as {
+        id: string;
+        product_name_snapshot: string;
+        pending_quantity: number | string;
+        item_note: string | null;
+        bills: {
+          id: string;
+          bill_number: string | null;
+          bill_date: string;
+          status: string;
+          customers: { name: string } | null;
+        } | null;
+      }[])
+        .filter((r) => r.bills && r.bills.status !== "Voided")
+        .sort((a, b) => (b.bills?.bill_date ?? "").localeCompare(a.bills?.bill_date ?? ""));
+    },
+  });
+}

@@ -17,13 +17,17 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useBill, useCustomers, useProducts, useWarehouses } from "@/lib/data";
-import { useSalesOrder } from "@/lib/sales";
+import { useDeliveryNote, useSalesOrder } from "@/lib/sales";
 
 export const Route = createFileRoute("/_authenticated/delivery-notes/new")({
-  validateSearch: (search: Record<string, unknown>): { orderId?: string; billId?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { orderId?: string; billId?: string; editId?: string } => ({
     ...(typeof search["orderId"] === "string" ? { orderId: search["orderId"] as string } : {}),
     ...(typeof search["billId"] === "string" ? { billId: search["billId"] as string } : {}),
+    ...(typeof search["editId"] === "string" ? { editId: search["editId"] as string } : {}),
   }),
+
   head: () => ({
     meta: [
       { title: "New Delivery Note — Fragrance Billing" },
@@ -58,6 +62,8 @@ function DeliveryNoteBuilder() {
   const search = Route.useSearch();
   const { data: order } = useSalesOrder(search.orderId ?? "");
   const { data: bill } = useBill(search.billId ?? "");
+  const { data: existing } = useDeliveryNote(search.editId ?? "");
+
   const { data: products = [] } = useProducts();
   const { data: customers = [] } = useCustomers();
   const { data: warehouses = [] } = useWarehouses();
@@ -83,7 +89,42 @@ function DeliveryNoteBuilder() {
   const [balanceAmount, setBalanceAmount] = useState("");
   const [balanceTouched, setBalanceTouched] = useState(false);
 
-  const locked = Boolean(order || bill);
+  const isEditing = Boolean(search.editId);
+  const locked = Boolean(order || bill) && !isEditing;
+
+  useEffect(() => {
+    if (!existing || hydrated) return;
+    setCustomerId(existing.customer_id ?? "walk-in");
+    setDeliveryDate(existing.delivery_date);
+    if (existing.warehouse_id) setWarehouseId(existing.warehouse_id);
+    setStatus(existing.status);
+    setNotes(existing.notes ?? "");
+    setBuyerName(existing.buyer_name ?? existing.customers?.name ?? "");
+    setBuyerAddress(existing.buyer_address ?? "");
+    setBuyerTel(existing.buyer_tel ?? "");
+    setMarka(existing.marka ?? "");
+    setCargoTransport(existing.cargo_transport ?? "");
+    setCargoPhone(existing.cargo_phone ?? "");
+    setTotalAmount(existing.total_amount === null ? "" : String(Number(existing.total_amount)));
+    setAdvanceAmount(
+      existing.advance_amount === null ? "" : String(Number(existing.advance_amount)),
+    );
+    setBalanceAmount(
+      existing.balance_amount === null ? "" : String(Number(existing.balance_amount)),
+    );
+    setBalanceTouched(true);
+    setLines(
+      existing.delivery_note_items.map((i) => ({
+        productId: i.product_id ?? "",
+        name: i.product_name_snapshot,
+        quantity: Number(i.quantity),
+        max: null,
+        cartonBag: i.carton_bag_count ?? "",
+      })),
+    );
+    setHydrated(true);
+  }, [existing, hydrated]);
+
 
   useEffect(() => {
     if (!order || hydrated) return;
@@ -172,29 +213,64 @@ function DeliveryNoteBuilder() {
     }
     setSaving(true);
     try {
+      const fields = {
+        customer_id: customerId === "walk-in" ? null : customerId,
+        delivery_date: deliveryDate,
+        warehouse_id: activeWarehouseId,
+        status,
+        notes: notes || null,
+        buyer_name: buyerName || null,
+        buyer_address: buyerAddress || null,
+        buyer_tel: buyerTel || null,
+        marka: marka || null,
+        cargo_transport: cargoTransport || null,
+        cargo_phone: cargoPhone || null,
+        total_amount: numOrNull(totalAmount),
+        advance_amount: numOrNull(advanceAmount),
+        balance_amount: numOrNull(balanceAmount),
+      };
+
+      if (isEditing && existing) {
+        const { error: updateError } = await supabase
+          .from("delivery_notes")
+          .update({ ...fields, last_edited_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (updateError) throw updateError;
+
+        // Items are replaced wholesale — a delivery note never moves stock.
+        const { error: clearError } = await supabase
+          .from("delivery_note_items")
+          .delete()
+          .eq("delivery_note_id", existing.id);
+        if (clearError) throw clearError;
+        const { error: reinsertError } = await supabase.from("delivery_note_items").insert(
+          payload.map((l) => ({
+            delivery_note_id: existing.id,
+            product_id: l.productId,
+            product_name_snapshot: l.name,
+            quantity: l.quantity,
+            carton_bag_count: l.cartonBag || null,
+          })),
+        );
+        if (reinsertError) throw reinsertError;
+
+        queryClient.invalidateQueries();
+        toast.success("Delivery note updated");
+        navigate({ to: "/delivery-notes/$deliveryId", params: { deliveryId: existing.id } });
+        return;
+      }
+
       const { data: note, error } = await supabase
         .from("delivery_notes")
         .insert({
           sales_order_id: order?.id ?? null,
           bill_id: bill?.id ?? null,
-          customer_id: customerId === "walk-in" ? null : customerId,
-          delivery_date: deliveryDate,
-          warehouse_id: activeWarehouseId,
-          status,
-          notes: notes || null,
-          buyer_name: buyerName || null,
-          buyer_address: buyerAddress || null,
-          buyer_tel: buyerTel || null,
-          marka: marka || null,
-          cargo_transport: cargoTransport || null,
-          cargo_phone: cargoPhone || null,
-          total_amount: numOrNull(totalAmount),
-          advance_amount: numOrNull(advanceAmount),
-          balance_amount: numOrNull(balanceAmount),
+          ...fields,
         })
         .select()
         .single();
       if (error || !note) throw error ?? new Error("Could not save the delivery note");
+
 
       const { error: itemsError } = await supabase.from("delivery_note_items").insert(
         payload.map((l) => ({
@@ -257,15 +333,18 @@ function DeliveryNoteBuilder() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New Delivery Note"
+        title={isEditing ? "Edit Delivery Note" : "New Delivery Note"}
         description={
-          order
-            ? `Dispatching against ${order.order_number} — quantities are capped at what's still pending.`
-            : bill
-              ? `Converted from bill ${bill.bill_number ?? ""} — stock was already deducted, this is paperwork only.`
-              : "Record a dispatch. Stock on hand is not deducted by a delivery note."
+          isEditing
+            ? `Editing ${existing?.delivery_number ?? "delivery note"} — stock is not affected by these changes.`
+            : order
+              ? `Dispatching against ${order.order_number} — quantities are capped at what's still pending.`
+              : bill
+                ? `Converted from bill ${bill.bill_number ?? ""} — stock was already deducted, this is paperwork only.`
+                : "Record a dispatch. Stock on hand is not deducted by a delivery note."
         }
       />
+
 
       <div className="surface-card grid gap-4 p-5 sm:grid-cols-2">
         <div className="space-y-2">
@@ -525,7 +604,8 @@ function DeliveryNoteBuilder() {
 
       <Button className="w-full sm:w-auto" disabled={saving} onClick={save}>
         <Truck />
-        {saving ? "Saving…" : "Create Delivery Note"}
+        {saving ? "Saving…" : isEditing ? "Save Changes" : "Create Delivery Note"}
+
       </Button>
     </div>
   );

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Download, Printer } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, Pencil, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { DeliveryNoteSheet } from "@/components/DeliveryNoteSheet";
@@ -75,10 +75,21 @@ function DeliveryNoteDetail() {
           Delivery Notes
         </Button>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              navigate({ to: "/delivery-notes/new", search: { editId: note.id } })
+            }
+          >
+            <Pencil />
+            Edit
+          </Button>
           <Button variant="outline" size="sm" onClick={handlePdf}>
             <Download />
             Download PDF
           </Button>
+
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer />
             Print

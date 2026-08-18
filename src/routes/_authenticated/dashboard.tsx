@@ -37,7 +37,15 @@ import { Button } from "@/components/ui/button";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
-import { useAllProducts, useAllWarehouses, useCustomers, useSettings } from "@/lib/data";
+import {
+  useAllProducts,
+  useAllWarehouses,
+  useCustomers,
+  usePendingPickups,
+  useSettings,
+} from "@/lib/data";
+import { PackageOpen } from "lucide-react";
+
 import { useAccounts } from "@/lib/accounting";
 import { useDueReminders } from "@/lib/crm";
 import {
@@ -217,6 +225,8 @@ function DashboardPage() {
   const { data: warehouses = [] } = useAllWarehouses();
   const { data: stockRows = [] } = useDashboardStock();
   const { data: customers = [] } = useCustomers();
+  const { data: pendingPickups = [] } = usePendingPickups();
+
   const { data: accounts = [] } = useAccounts();
   const { data: dueReminders = [] } = useDueReminders();
   const { data: cheques } = usePendingCheques();
@@ -757,7 +767,7 @@ function DashboardPage() {
           title="Unpaid sales bills"
           icon={ReceiptText}
           action={
-            <Link to="/bills" className="text-xs font-medium text-primary hover:underline">
+            <Link to="/bills" search={{}} className="text-xs font-medium text-primary hover:underline">
               All bills
             </Link>
           }
@@ -933,6 +943,54 @@ function DashboardPage() {
           )}
         </Panel>
       </div>
+
+      <Panel
+        title="Pending pickups"
+        icon={PackageOpen}
+        action={
+          <Link
+            to="/bills"
+            search={{ pending: true }}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            View bills
+          </Link>
+        }
+      >
+        {pendingPickups.length === 0 ? (
+          <EmptyState
+            icon={PackageOpen}
+            title="Nothing pending"
+            description="Items billed but not yet collected will show up here."
+          />
+        ) : (
+          <ul className="max-h-72 divide-y divide-border/60 overflow-y-auto">
+            {pendingPickups.map((p) => (
+              <li key={p.id}>
+                <Link
+                  to="/bills/$billId"
+                  params={{ billId: p.bills!.id }}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{p.product_name_snapshot}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {p.bills?.bill_number ?? "—"} ·{" "}
+                      {p.bills?.customers?.name ?? "Walk-in Customer"} ·{" "}
+                      {formatDate(p.bills!.bill_date)}
+                      {p.item_note ? ` · ${p.item_note}` : ""}
+                    </p>
+                  </div>
+                  <StatusBadge tone="warning">
+                    {Number(p.pending_quantity)} pending
+                  </StatusBadge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
 
       <CustomerFormDialog
         open={customerOpen}
