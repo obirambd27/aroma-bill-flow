@@ -73,6 +73,7 @@ export type DeliveryNoteRow = DeliveryNote & {
   customers: { name: string } | null;
   warehouses: { name: string } | null;
   sales_orders: { order_number: string | null } | null;
+  bills: { id: string; bill_number: string | null } | null;
 };
 
 export function useDeliveryNotes() {
@@ -81,7 +82,9 @@ export function useDeliveryNotes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("delivery_notes")
-        .select("*, customers(name), warehouses(name), sales_orders(order_number)")
+        .select(
+          "*, customers(name), warehouses(name), sales_orders(order_number), bills(id, bill_number)",
+        )
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as DeliveryNoteRow[];
@@ -96,7 +99,7 @@ export function useDeliveryNote(deliveryId: string) {
       const { data, error } = await supabase
         .from("delivery_notes")
         .select(
-          "*, customers(*), warehouses(name), sales_orders(id, order_number), delivery_note_items(*)",
+          "*, customers(*), warehouses(name), sales_orders(id, order_number), bills(id, bill_number), delivery_note_items(*)",
         )
         .eq("id", deliveryId)
         .maybeSingle();
@@ -106,12 +109,32 @@ export function useDeliveryNote(deliveryId: string) {
             customers: Tables<"customers"> | null;
             warehouses: { name: string } | null;
             sales_orders: { id: string; order_number: string | null } | null;
+            bills: { id: string; bill_number: string | null } | null;
             delivery_note_items: DeliveryNoteItem[];
           })
         | null;
     },
+    enabled: Boolean(deliveryId),
   });
 }
+
+/** Delivery notes created from a specific bill. */
+export function useBillDeliveryNotes(billId: string) {
+  return useQuery({
+    queryKey: ["bill-delivery-notes", billId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delivery_notes")
+        .select("id, delivery_number")
+        .eq("bill_id", billId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as { id: string; delivery_number: string | null }[];
+    },
+    enabled: Boolean(billId),
+  });
+}
+
 
 /** Adjust committed_stock for a product in a warehouse, creating the row if needed. */
 export async function adjustCommitted(productId: string, warehouseId: string, delta: number) {

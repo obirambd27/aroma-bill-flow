@@ -16,12 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useCustomers, useProducts, useWarehouses } from "@/lib/data";
+import { useBill, useCustomers, useProducts, useWarehouses } from "@/lib/data";
 import { useSalesOrder } from "@/lib/sales";
 
 export const Route = createFileRoute("/_authenticated/delivery-notes/new")({
-  validateSearch: (search: Record<string, unknown>): { orderId?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { orderId?: string; billId?: string } => ({
     ...(typeof search["orderId"] === "string" ? { orderId: search["orderId"] as string } : {}),
+    ...(typeof search["billId"] === "string" ? { billId: search["billId"] as string } : {}),
   }),
   head: () => ({
     meta: [
@@ -39,7 +40,13 @@ export const Route = createFileRoute("/_authenticated/delivery-notes/new")({
   component: DeliveryNoteBuilder,
 });
 
-type Line = { productId: string; name: string; quantity: number; max: number | null };
+type Line = {
+  productId: string;
+  name: string;
+  quantity: number;
+  max: number | null;
+  cartonBag: string;
+};
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -50,6 +57,7 @@ function DeliveryNoteBuilder() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const { data: order } = useSalesOrder(search.orderId ?? "");
+  const { data: bill } = useBill(search.billId ?? "");
   const { data: products = [] } = useProducts();
   const { data: customers = [] } = useCustomers();
   const { data: warehouses = [] } = useWarehouses();
@@ -64,10 +72,26 @@ function DeliveryNoteBuilder() {
   const [saving, setSaving] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerAddress, setBuyerAddress] = useState("");
+  const [buyerTel, setBuyerTel] = useState("");
+  const [marka, setMarka] = useState("");
+  const [cargoTransport, setCargoTransport] = useState("");
+  const [cargoPhone, setCargoPhone] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
+  const [advanceAmount, setAdvanceAmount] = useState("");
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const [balanceTouched, setBalanceTouched] = useState(false);
+
+  const locked = Boolean(order || bill);
+
   useEffect(() => {
     if (!order || hydrated) return;
     setCustomerId(order.customer_id ?? "walk-in");
     if (order.warehouse_id) setWarehouseId(order.warehouse_id);
+    setBuyerName(order.customers?.name ?? "");
+    setBuyerAddress(order.customers?.address ?? "");
+    setBuyerTel(order.customers?.phone ?? "");
     setLines(
       order.sales_order_items
         .map((i) => {
@@ -77,6 +101,7 @@ function DeliveryNoteBuilder() {
             name: i.product_name_snapshot,
             quantity: Math.max(remaining, 0),
             max: remaining,
+            cartonBag: "",
           };
         })
         .filter((l) => l.productId && (l.max ?? 0) > 0),
@@ -84,17 +109,43 @@ function DeliveryNoteBuilder() {
     setHydrated(true);
   }, [order, hydrated]);
 
+  useEffect(() => {
+    if (!bill || hydrated) return;
+    setCustomerId(bill.customer_id ?? "walk-in");
+    if (bill.warehouse_id) setWarehouseId(bill.warehouse_id);
+    setBuyerName(bill.customers?.name ?? "Walk-in Customer");
+    setBuyerAddress(bill.customers?.address ?? "");
+    setBuyerTel(bill.customers?.phone ?? "");
+    setTotalAmount(String(Number(bill.total_amount)));
+    setAdvanceAmount(String(Number(bill.amount_paid)));
+    setBalanceAmount(String(Number(bill.total_amount) - Number(bill.amount_paid)));
+    setLines(
+      bill.bill_items.map((i) => ({
+        productId: i.product_id ?? "",
+        name: i.product_name_snapshot,
+        quantity: Number(i.quantity),
+        max: null,
+        cartonBag: "",
+      })),
+    );
+    setHydrated(true);
+  }, [bill, hydrated]);
+
+  useEffect(() => {
+    if (balanceTouched) return;
+    if (totalAmount === "" && advanceAmount === "") return;
+    setBalanceAmount(String((Number(totalAmount) || 0) - (Number(advanceAmount) || 0)));
+  }, [totalAmount, advanceAmount, balanceTouched]);
+
   const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
 
   const results = useMemo(() => {
     const q = productSearch.trim().toLowerCase();
-    if (!q || order) return [];
+    if (!q || locked) return [];
     return products
-      .filter(
-        (p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q),
-      )
+      .filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q))
       .slice(0, 6);
-  }, [products, productSearch, order]);
+  }, [products, productSearch, locked]);
 
   const addLine = (productId: string) => {
     const p = products.find((x) => x.id === productId);
@@ -102,10 +153,12 @@ function DeliveryNoteBuilder() {
     setLines((prev) =>
       prev.some((l) => l.productId === productId)
         ? prev.map((l) => (l.productId === productId ? { ...l, quantity: l.quantity + 1 } : l))
-        : [...prev, { productId: p.id, name: p.name, quantity: 1, max: null }],
+        : [...prev, { productId: p.id, name: p.name, quantity: 1, max: null, cartonBag: "" }],
     );
     setProductSearch("");
   };
+
+  const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
 
   const save = async () => {
     const payload = lines.filter((l) => l.quantity > 0);
@@ -123,11 +176,21 @@ function DeliveryNoteBuilder() {
         .from("delivery_notes")
         .insert({
           sales_order_id: order?.id ?? null,
+          bill_id: bill?.id ?? null,
           customer_id: customerId === "walk-in" ? null : customerId,
           delivery_date: deliveryDate,
           warehouse_id: activeWarehouseId,
           status,
           notes: notes || null,
+          buyer_name: buyerName || null,
+          buyer_address: buyerAddress || null,
+          buyer_tel: buyerTel || null,
+          marka: marka || null,
+          cargo_transport: cargoTransport || null,
+          cargo_phone: cargoPhone || null,
+          total_amount: numOrNull(totalAmount),
+          advance_amount: numOrNull(advanceAmount),
+          balance_amount: numOrNull(balanceAmount),
         })
         .select()
         .single();
@@ -139,6 +202,7 @@ function DeliveryNoteBuilder() {
           product_id: l.productId,
           product_name_snapshot: l.name,
           quantity: l.quantity,
+          carton_bag_count: l.cartonBag || null,
         })),
       );
       if (itemsError) throw itemsError;
@@ -197,14 +261,16 @@ function DeliveryNoteBuilder() {
         description={
           order
             ? `Dispatching against ${order.order_number} — quantities are capped at what's still pending.`
-            : "Record a dispatch. Stock on hand is not deducted by a delivery note."
+            : bill
+              ? `Converted from bill ${bill.bill_number ?? ""} — stock was already deducted, this is paperwork only.`
+              : "Record a dispatch. Stock on hand is not deducted by a delivery note."
         }
       />
 
       <div className="surface-card grid gap-4 p-5 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="dn-customer">Customer</Label>
-          <Select value={customerId} onValueChange={setCustomerId} disabled={!!order}>
+          <Select value={customerId} onValueChange={setCustomerId} disabled={locked}>
             <SelectTrigger id="dn-customer" className="h-11">
               <SelectValue />
             </SelectTrigger>
@@ -257,9 +323,104 @@ function DeliveryNoteBuilder() {
         </div>
       </div>
 
+      <div className="surface-card grid gap-4 p-5 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="dn-buyer">Buyer Name</Label>
+          <Input
+            id="dn-buyer"
+            className="h-11"
+            placeholder="Name printed on the delivery note"
+            value={buyerName}
+            onChange={(e) => setBuyerName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-buyer-address">Buyer Address</Label>
+          <Input
+            id="dn-buyer-address"
+            className="h-11"
+            value={buyerAddress}
+            onChange={(e) => setBuyerAddress(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-buyer-tel">Buyer Tel</Label>
+          <Input
+            id="dn-buyer-tel"
+            className="h-11"
+            value={buyerTel}
+            onChange={(e) => setBuyerTel(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="dn-marka">Marka (shipping mark)</Label>
+          <Input
+            id="dn-marka"
+            className="h-11"
+            placeholder="e.g. NINA BELGIUM"
+            value={marka}
+            onChange={(e) => setMarka(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-cargo">Cargo / Transport</Label>
+          <Input
+            id="dn-cargo"
+            className="h-11"
+            value={cargoTransport}
+            onChange={(e) => setCargoTransport(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-cargo-phone">Cargo Phone</Label>
+          <Input
+            id="dn-cargo-phone"
+            className="h-11"
+            value={cargoPhone}
+            onChange={(e) => setCargoPhone(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="surface-card grid gap-4 p-5 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="dn-total">Total</Label>
+          <Input
+            id="dn-total"
+            type="number"
+            className="numeric h-11"
+            value={totalAmount}
+            onChange={(e) => setTotalAmount(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-advance">Advance</Label>
+          <Input
+            id="dn-advance"
+            type="number"
+            className="numeric h-11"
+            value={advanceAmount}
+            onChange={(e) => setAdvanceAmount(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dn-balance">Balance</Label>
+          <Input
+            id="dn-balance"
+            type="number"
+            className="numeric h-11"
+            value={balanceAmount}
+            onChange={(e) => {
+              setBalanceTouched(true);
+              setBalanceAmount(e.target.value);
+            }}
+          />
+        </div>
+      </div>
+
       <div className="surface-card p-5">
         <Label htmlFor="dn-product">Items</Label>
-        {!order && (
+        {!locked && (
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -295,7 +456,7 @@ function DeliveryNoteBuilder() {
         ) : (
           <div className="mt-2 divide-y divide-border/60">
             {lines.map((l) => (
-              <div key={l.productId} className="flex items-center gap-3 py-3">
+              <div key={l.productId} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{l.name}</p>
                   {l.max !== null && (
@@ -304,6 +465,19 @@ function DeliveryNoteBuilder() {
                     </p>
                   )}
                 </div>
+                <Input
+                  aria-label={`Carton or bag count for ${l.name}`}
+                  placeholder="Ctn/Bag"
+                  className="h-10 w-28"
+                  value={l.cartonBag}
+                  onChange={(e) =>
+                    setLines((prev) =>
+                      prev.map((x) =>
+                        x.productId === l.productId ? { ...x, cartonBag: e.target.value } : x,
+                      ),
+                    )
+                  }
+                />
                 <Input
                   type="number"
                   min={0}
