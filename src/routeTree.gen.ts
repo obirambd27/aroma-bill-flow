@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedImportExportRouteImport } from './routes/_authenticated/import-export'
 import { Route as AuthenticatedNewBillRouteImport } from './routes/_authenticated/new-bill'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as OrderTokenRouteImport } from './routes/order.$token'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsAccountIdRouteImport } from './routes/_authenticated/accounts.$accountId'
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills.index'
@@ -110,6 +111,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const OrderTokenRoute = OrderTokenRouteImport.update({
+  id: '/order/$token',
+  path: '/order/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAccountsIndexRoute =
   AuthenticatedAccountsIndexRouteImport.update({
@@ -402,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/order/$token': typeof OrderTokenRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/bills/deleted': typeof AuthenticatedBillsDeletedRoute
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/order/$token': typeof OrderTokenRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/bills/deleted': typeof AuthenticatedBillsDeletedRoute
@@ -518,6 +526,7 @@ export interface FileRoutesById {
   '/_authenticated/import-export': typeof AuthenticatedImportExportRoute
   '/_authenticated/new-bill': typeof AuthenticatedNewBillRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/order/$token': typeof OrderTokenRoute
   '/_authenticated/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
   '/_authenticated/bills/deleted': typeof AuthenticatedBillsDeletedRoute
@@ -577,6 +586,7 @@ export interface FileRouteTypes {
     | '/import-export'
     | '/new-bill'
     | '/settings'
+    | '/order/$token'
     | '/accounts/$accountId'
     | '/bills/$billId'
     | '/bills/deleted'
@@ -634,6 +644,7 @@ export interface FileRouteTypes {
     | '/import-export'
     | '/new-bill'
     | '/settings'
+    | '/order/$token'
     | '/accounts/$accountId'
     | '/bills/$billId'
     | '/bills/deleted'
@@ -692,6 +703,7 @@ export interface FileRouteTypes {
     | '/_authenticated/import-export'
     | '/_authenticated/new-bill'
     | '/_authenticated/settings'
+    | '/order/$token'
     | '/_authenticated/accounts/$accountId'
     | '/_authenticated/bills/$billId'
     | '/_authenticated/bills/deleted'
@@ -746,6 +758,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  OrderTokenRoute: typeof OrderTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -812,6 +825,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/order/$token': {
+      id: '/order/$token'
+      path: '/order/$token'
+      fullPath: '/order/$token'
+      preLoaderRoute: typeof OrderTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/accounts/': {
       id: '/_authenticated/accounts/'
@@ -1271,6 +1291,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  OrderTokenRoute: OrderTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
