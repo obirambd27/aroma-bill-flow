@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
-import { WhatsAppQr } from "@/components/WhatsAppQr";
+import { DocQrCodes, type DocQr } from "@/components/WhatsAppQr";
 
 /**
  * "Velvet & Oud" document template — shared visual language for every
@@ -313,6 +313,7 @@ export function DocFooter({
   note,
   signatureUrl,
   businessName,
+  qrCodes,
   children,
 }: {
   paymentDetails?: string | null | undefined;
@@ -320,6 +321,7 @@ export function DocFooter({
   note?: string | null | undefined;
   signatureUrl?: string | null | undefined;
   businessName: string;
+  qrCodes?: DocQr[] | undefined;
   children?: ReactNode | undefined;
 }) {
   return (
@@ -327,7 +329,7 @@ export function DocFooter({
       {children}
       <div className="flex flex-col gap-6 sm:flex-row sm:justify-between">
         <div className="flex items-start gap-5">
-          <WhatsAppQr />
+          <DocQrCodes codes={qrCodes ?? []} size={80} />
           {paymentDetails ? (
           <div className="max-w-xs">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-doc-label">

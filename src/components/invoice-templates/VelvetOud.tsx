@@ -35,6 +35,7 @@ export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
       note={b.footerNote}
       signatureUrl={b.signatureUrl}
       businessName={b.name}
+      qrCodes={b.qrCodes}
     >
       {doc.amountInWordsLabel && (
         <p className="mb-5 text-xs text-doc-muted">

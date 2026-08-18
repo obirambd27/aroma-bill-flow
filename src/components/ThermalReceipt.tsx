@@ -1,4 +1,4 @@
-import { WhatsAppQr } from "@/components/WhatsAppQr";
+import { DocQrCodes } from "@/components/WhatsAppQr";
 import type { Tables } from "@/integrations/supabase/types";
 import type { PaymentLine } from "@/lib/bill-payments";
 import { formatDate, formatMoney } from "@/lib/format";
