@@ -145,8 +145,8 @@ export function buildInvoiceDoc(
   settings: SettingsLike | null | undefined,
   options: {
     allocations?: AllocationInput[];
-    itemSubtitle?: (item: BillLike["bill_items"][number]) => string | null;
     amountInWords?: string | null;
+    previousBalance?: number | null;
   } = {},
 ): InvoiceDoc {
   const breakdown = buildPaymentBreakdown(bill, options.allocations ?? []);
