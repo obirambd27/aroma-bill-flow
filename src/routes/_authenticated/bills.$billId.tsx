@@ -62,8 +62,8 @@ function BillDetailPage() {
   const queryClient = useQueryClient();
   const { data: bill, isLoading } = useBill(billId);
   const { data: settings } = useSettings();
-  const { data: warehouses = [] } = useAllWarehouses();
-  const { data: products = [] } = useAllProducts();
+  useAllWarehouses();
+  const { data: outstanding = {} } = useCustomerOutstanding();
   const { data: editHistory = [] } = useBillEditHistory(billId);
   const { data: allocations = [] } = useBillAllocations(billId);
   const [paymentOpen, setPaymentOpen] = useState(false);
