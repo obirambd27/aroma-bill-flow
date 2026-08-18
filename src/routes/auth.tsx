@@ -78,7 +78,7 @@ function AuthPage() {
           <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary text-base font-bold text-primary-foreground">
             F
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Fragrance Billing</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Sign in to Fragrance Billing</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login" ? "Sign in to your store account" : "Reset your password"}
           </p>
