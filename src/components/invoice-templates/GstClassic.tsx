@@ -164,15 +164,6 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
         </div>
       )}
 
-      <div className="flex border-t border-doc-line text-[11px]">
-        <Balance label="Customer's Previous Balance" value={`${formatMoney(previous)} Dr`} />
-        <Balance label="Bill Amount" value={`${formatMoney(doc.total)} Dr`} />
-        <Balance
-          label="Total Balance Amount"
-          value={`${formatMoney(previous + doc.balanceDue)} Dr`}
-          last
-        />
-      </div>
 
       <div className="gst-declaration flex items-stretch border-t border-doc-line text-[11px]">
         <div className="min-w-0 flex-1 border-r border-doc-line p-2">
