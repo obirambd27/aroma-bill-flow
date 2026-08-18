@@ -2162,6 +2162,8 @@ export type Database = {
           created_at: string
           default_payment_terms: string
           default_tax_rate: number
+          google_review_qr_link: string | null
+          google_review_qr_name: string | null
           id: string
           invoice_footer_note: string | null
           invoice_prefix: string
@@ -2170,6 +2172,8 @@ export type Database = {
           signature_url: string | null
           tax_id: string | null
           terms_and_conditions: string | null
+          whatsapp_qr_link: string | null
+          whatsapp_qr_name: string | null
         }
         Insert: {
           active_invoice_template?: string
@@ -2183,6 +2187,8 @@ export type Database = {
           created_at?: string
           default_payment_terms?: string
           default_tax_rate?: number
+          google_review_qr_link?: string | null
+          google_review_qr_name?: string | null
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
@@ -2191,6 +2197,8 @@ export type Database = {
           signature_url?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
+          whatsapp_qr_link?: string | null
+          whatsapp_qr_name?: string | null
         }
         Update: {
           active_invoice_template?: string
@@ -2204,6 +2212,8 @@ export type Database = {
           created_at?: string
           default_payment_terms?: string
           default_tax_rate?: number
+          google_review_qr_link?: string | null
+          google_review_qr_name?: string | null
           id?: string
           invoice_footer_note?: string | null
           invoice_prefix?: string
@@ -2212,6 +2222,8 @@ export type Database = {
           signature_url?: string | null
           tax_id?: string | null
           terms_and_conditions?: string | null
+          whatsapp_qr_link?: string | null
+          whatsapp_qr_name?: string | null
         }
         Relationships: []
       }

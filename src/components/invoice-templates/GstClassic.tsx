@@ -1,5 +1,5 @@
 import { DocumentSheet } from "@/components/DocumentSheet";
-import { WhatsAppQr } from "@/components/WhatsAppQr";
+import { DocQrCodes } from "@/components/WhatsAppQr";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { InvoiceDoc } from "@/lib/invoice-doc";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,6 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
   const b = doc.business;
   const title = doc.isTaxed ? "TAX INVOICE" : "INVOICE";
   const fillers = Math.max(0, MIN_ROWS - doc.items.length);
-  const whatsappDigits = (b.phone ?? "").replace(/\D/g, "");
-  const previous = doc.previousBalance ?? 0;
 
   const head = (
     <div className="border-b border-doc-line">
@@ -137,9 +135,9 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
             </p>
           </div>
         )}
-        {whatsappDigits && (
-          <div className="w-32 shrink-0 border-r border-doc-line p-2 text-center">
-            <WhatsAppQr value={`https://wa.me/${whatsappDigits}`} size={72} caption="Chat on WhatsApp" />
+        {b.qrCodes.length > 0 && (
+          <div className="shrink-0 border-r border-doc-line p-2 text-center">
+            <DocQrCodes codes={b.qrCodes} size={68} />
           </div>
         )}
         <div className="min-w-0 flex-1 border-r border-doc-line" />
@@ -164,15 +162,6 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
         </div>
       )}
 
-      <div className="flex border-t border-doc-line text-[11px]">
-        <Balance label="Customer's Previous Balance" value={`${formatMoney(previous)} Dr`} />
-        <Balance label="Bill Amount" value={`${formatMoney(doc.total)} Dr`} />
-        <Balance
-          label="Total Balance Amount"
-          value={`${formatMoney(previous + doc.balanceDue)} Dr`}
-          last
-        />
-      </div>
 
       <div className="gst-declaration flex items-stretch border-t border-doc-line text-[11px]">
         <div className="min-w-0 flex-1 border-r border-doc-line p-2">
@@ -243,11 +232,3 @@ function Line({ label, value, bold }: { label: string; value: string; bold?: boo
   );
 }
 
-function Balance({ label, value, last }: { label: string; value: string; last?: boolean }) {
-  return (
-    <div className={cn("min-w-0 flex-1 p-2", !last && "border-r border-doc-line")}>
-      <p className="text-[10px] uppercase tracking-[0.12em] text-doc-muted">{label}</p>
-      <p className="numeric mt-0.5 font-bold">{value}</p>
-    </div>
-  );
-}

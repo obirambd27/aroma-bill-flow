@@ -53,3 +53,18 @@ export function WhatsAppQr({
     </div>
   );
 }
+
+export type DocQr = { value: string; label?: string | null };
+
+/** Renders the invoice QR codes (WhatsApp + Google review) side by side. */
+export function DocQrCodes({ codes, size = 72 }: { codes: DocQr[]; size?: number }) {
+  const list = codes.filter((c) => c.value?.trim());
+  if (!list.length) return null;
+  return (
+    <div className="flex items-start gap-3">
+      {list.map((c) => (
+        <WhatsAppQr key={c.value} value={c.value} size={size} caption={c.label ?? null} />
+      ))}
+    </div>
+  );
+}
