@@ -8,7 +8,7 @@
 import { formatDate } from "@/lib/format";
 import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
 
-export const INVOICE_TEMPLATE_IDS = ["velvet_oud", "orange_bulk"] as const;
+export const INVOICE_TEMPLATE_IDS = ["velvet_oud", "orange_bulk", "gst_classic"] as const;
 export type InvoiceTemplateId = (typeof INVOICE_TEMPLATE_IDS)[number];
 export const DEFAULT_INVOICE_TEMPLATE: InvoiceTemplateId = "velvet_oud";
 
