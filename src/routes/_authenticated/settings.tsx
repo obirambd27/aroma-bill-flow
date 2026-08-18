@@ -14,7 +14,7 @@ import { useSettings, type Settings } from "@/lib/data";
 import { DEFAULT_SHARE_FOOTER } from "@/lib/invoice-share";
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { InvoiceTemplateGallery } from "@/components/InvoiceTemplateGallery";
-import type { InvoiceTemplateId } from "@/lib/invoice-doc";
+import { DEFAULT_GOOGLE_REVIEW_LINK, type InvoiceTemplateId } from "@/lib/invoice-doc";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
