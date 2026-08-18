@@ -66,12 +66,14 @@ export const Route = createFileRoute("/_authenticated/price-lists/$listId")({
 
 const ALL_BRANDS = "__all__";
 
+type ExportFormat = "pdf" | "csv" | "xlsx";
+
 function PriceListBuilder() {
   const { listId } = Route.useParams();
   const { data: list, isLoading } = usePriceList(listId);
   const { data: items = [] } = usePriceListItems(listId);
   const { data: products = [] } = useAllProducts();
-  const { data: stockTotals = {} } = useStockTotals();
+  const { data: stockTotals = {}, isLoading: stockLoading } = useStockTotals();
   const { data: settings } = useSettings();
   const save = useSavePriceList(listId);
   const toggleShare = useToggleSharing(listId);
@@ -87,6 +89,11 @@ function PriceListBuilder() {
   const [hydrated, setHydrated] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<{
+    format: ExportFormat;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!list || hydrated) return;
@@ -136,8 +143,9 @@ function PriceListBuilder() {
           name: p.name,
           sku: p.sku,
           price: prices[p.id] ? Number(prices[p.id]) : Number(p.price),
+          stock: Number(stockTotals[p.id] ?? 0),
         })),
-    [products, selected, prices],
+    [products, selected, prices, stockTotals],
   );
 
   const orderLines = useMemo(
@@ -155,6 +163,53 @@ function PriceListBuilder() {
   );
 
   const orderQty = orderLines.reduce((s, l) => s + l.quantity, 0);
+
+  const exportDisabled = catalogRows.length === 0 || stockLoading;
+
+  const runExport = async (format: ExportFormat) => {
+    if (exportDisabled || !list) return;
+    setExporting(true);
+    setExportError(null);
+    const listName = name || list.name;
+    try {
+      if (format === "csv") downloadCatalogCSV(listName, catalogRows);
+      else if (format === "xlsx") downloadCatalogXLSX(listName, catalogRows);
+      else
+        await printCatalog({
+          listName,
+          business: {
+            name: settings?.business_name,
+            tagline: settings?.business_tagline,
+            phone: settings?.business_phone,
+            email: settings?.business_email,
+            address: settings?.business_address,
+            logo: settings?.business_logo_url,
+          },
+          rows: catalogRows,
+          orderUrl:
+            list.is_share_enabled && list.share_token ? shareUrl(list.share_token) : null,
+          note: settings?.share_message_footer,
+        });
+    } catch (e) {
+      const err = e as Error;
+      console.error("[price-list-export] failed", {
+        listId,
+        listName,
+        format,
+        message: err.message,
+      });
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      const message = offline
+        ? "Export failed — check your connection and try again."
+        : format === "pdf"
+          ? "Couldn't generate the PDF — please try again. If this continues, check that your logo image in Settings is valid."
+          : "Export failed — please try again.";
+      setExportError({ format, message });
+      toast.error(message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -443,34 +498,24 @@ function PriceListBuilder() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() =>
-              printCatalog({
-                listName: name || list.name,
-                clientName: clientName || null,
-                business: {
-                  name: settings?.business_name,
-                  tagline: settings?.business_tagline,
-                  phone: settings?.business_phone,
-                  logo: settings?.business_logo_url,
-                },
-                rows: catalogRows,
-                note: settings?.share_message_footer,
-              })
-            }
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("pdf")}
           >
             <Printer className="h-4 w-4" />
-            Download PDF
+            {exporting ? "Preparing export…" : "Download PDF"}
           </Button>
           <Button
             variant="outline"
-            onClick={() => downloadCatalogCSV(name || list.name, catalogRows)}
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("csv")}
           >
             <Download className="h-4 w-4" />
             Download CSV
           </Button>
           <Button
             variant="outline"
-            onClick={() => downloadCatalogXLSX(name || list.name, catalogRows)}
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("xlsx")}
           >
             <FileSpreadsheet className="h-4 w-4" />
             Download XLSX
@@ -480,6 +525,21 @@ function PriceListBuilder() {
             Order Receipt ({orderQty} pcs)
           </Button>
         </div>
+        {catalogRows.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Add at least one product to this list before exporting
+          </p>
+        ) : stockLoading ? (
+          <p className="text-xs text-muted-foreground">Preparing export — loading stock levels…</p>
+        ) : null}
+        {exportError && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+            <p className="text-xs text-destructive">{exportError.message}</p>
+            <Button size="sm" variant="outline" onClick={() => runExport(exportError.format)}>
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
 
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
