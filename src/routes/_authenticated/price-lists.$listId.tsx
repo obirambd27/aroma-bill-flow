@@ -67,6 +67,8 @@ export const Route = createFileRoute("/_authenticated/price-lists/$listId")({
 const ALL_BRANDS = "__all__";
 
 type ExportFormat = "pdf" | "csv" | "xlsx";
+type StockOp = "any" | "in" | "out" | "gte" | "lte";
+
 
 function PriceListBuilder() {
   const { listId } = Route.useParams();
@@ -86,6 +88,9 @@ function PriceListBuilder() {
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState(ALL_BRANDS);
+  const [stockOp, setStockOp] = useState<StockOp>("any");
+  const [stockValue, setStockValue] = useState("");
+
   const [hydrated, setHydrated] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -123,16 +128,37 @@ function PriceListBuilder() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const threshold = stockValue.trim() === "" ? null : Number(stockValue);
     return products.filter((p) => {
       if (brand !== ALL_BRANDS && (p.brand?.trim() || "") !== brand) return false;
+      const stock = Number(stockTotals[p.id] ?? 0);
+      if (stockOp === "in") {
+        if (stock <= 0) return false;
+      } else if (stockOp === "out") {
+        if (stock > 0) return false;
+      } else if (stockOp === "gte" && threshold != null) {
+        if (stock < threshold) return false;
+      } else if (stockOp === "lte" && threshold != null) {
+        if (stock > threshold) return false;
+      }
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q)
       );
     });
-  }, [products, query, brand]);
+  }, [products, query, brand, stockOp, stockValue, stockTotals]);
+
+  const selectAllVisible = (value: boolean) =>
+    setSelected((prev) => {
+      const next = { ...prev };
+      for (const p of visible) next[p.id] = value;
+      return next;
+    });
+
+  const allVisibleSelected = visible.length > 0 && visible.every((p) => selected[p.id]);
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
+
 
   const catalogRows: CatalogRow[] = useMemo(
     () =>
@@ -339,28 +365,56 @@ function PriceListBuilder() {
               ))}
             </SelectContent>
           </Select>
-          {brand !== ALL_BRANDS && (
-            <Button
-              variant="outline"
-              className="h-11"
-              onClick={() =>
-                setSelected((prev) => {
-                  const next = { ...prev };
-                  for (const p of visible) next[p.id] = true;
-                  return next;
-                })
-              }
-            >
-              Select all in {brand}
+          <Select value={stockOp} onValueChange={(v) => setStockOp(v as StockOp)}>
+            <SelectTrigger className="h-11 w-[180px]">
+              <SelectValue placeholder="Stock filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any stock</SelectItem>
+              <SelectItem value="in">In stock only</SelectItem>
+              <SelectItem value="out">Out of stock</SelectItem>
+              <SelectItem value="gte">Stock ≥ quantity</SelectItem>
+              <SelectItem value="lte">Stock ≤ quantity</SelectItem>
+            </SelectContent>
+          </Select>
+          {(stockOp === "gte" || stockOp === "lte") && (
+            <Input
+              type="number"
+              min="0"
+              className="h-11 w-28"
+              placeholder="Qty"
+              value={stockValue}
+              onChange={(e) => setStockValue(e.target.value)}
+            />
+          )}
+          <Button
+            variant="outline"
+            className="h-11"
+            disabled={visible.length === 0}
+            onClick={() => selectAllVisible(!allVisibleSelected)}
+          >
+            {allVisibleSelected ? "Deselect all" : `Select all (${visible.length})`}
+          </Button>
+          {selectedCount > 0 && (
+            <Button variant="ghost" className="h-11" onClick={() => setSelected({})}>
+              Clear selection
             </Button>
           )}
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-10 p-3" />
+                <th className="w-10 p-3">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={(v) => selectAllVisible(Boolean(v))}
+                    aria-label="Select all filtered products"
+                  />
+                </th>
+
                 <th className="p-3 text-left">Brand</th>
                 <th className="p-3 text-left">Product</th>
                 <th className="p-3 text-left">SKU</th>
