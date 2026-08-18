@@ -352,6 +352,58 @@ function SettingsPage() {
             />
           </div>
 
+          <div className="space-y-3 rounded-xl border border-border p-4 sm:col-span-2">
+            <p className="text-sm font-semibold">Invoice QR codes</p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp_qr_link">WhatsApp QR — link</Label>
+                <Input
+                  id="whatsapp_qr_link"
+                  className="h-11"
+                  placeholder="https://wa.me/9715XXXXXXXX"
+                  value={form.whatsapp_qr_link ?? ""}
+                  onChange={(e) => set("whatsapp_qr_link", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp_qr_name">WhatsApp QR — name</Label>
+                <Input
+                  id="whatsapp_qr_name"
+                  className="h-11"
+                  placeholder="Chat on WhatsApp"
+                  value={form.whatsapp_qr_name ?? ""}
+                  onChange={(e) => set("whatsapp_qr_name", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="google_review_qr_link">Google review QR — link</Label>
+                <Input
+                  id="google_review_qr_link"
+                  className="h-11"
+                  placeholder={DEFAULT_GOOGLE_REVIEW_LINK}
+                  value={form.google_review_qr_link ?? ""}
+                  onChange={(e) => set("google_review_qr_link", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="google_review_qr_name">Google review QR — name</Label>
+                <Input
+                  id="google_review_qr_name"
+                  className="h-11"
+                  placeholder="Review us on Google"
+                  value={form.google_review_qr_name ?? ""}
+                  onChange={(e) => set("google_review_qr_name", e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Both QR codes are printed on invoices and receipts. Leave blank to use the defaults.
+            </p>
+          </div>
+
+
+
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="signature">Signature image</Label>
             <div className="flex flex-wrap items-center gap-4">
