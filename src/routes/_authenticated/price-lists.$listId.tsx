@@ -444,34 +444,24 @@ function PriceListBuilder() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() =>
-              printCatalog({
-                listName: name || list.name,
-                clientName: clientName || null,
-                business: {
-                  name: settings?.business_name,
-                  tagline: settings?.business_tagline,
-                  phone: settings?.business_phone,
-                  logo: settings?.business_logo_url,
-                },
-                rows: catalogRows,
-                note: settings?.share_message_footer,
-              })
-            }
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("pdf")}
           >
             <Printer className="h-4 w-4" />
-            Download PDF
+            {exporting ? "Preparing export…" : "Download PDF"}
           </Button>
           <Button
             variant="outline"
-            onClick={() => downloadCatalogCSV(name || list.name, catalogRows)}
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("csv")}
           >
             <Download className="h-4 w-4" />
             Download CSV
           </Button>
           <Button
             variant="outline"
-            onClick={() => downloadCatalogXLSX(name || list.name, catalogRows)}
+            disabled={exportDisabled || exporting}
+            onClick={() => runExport("xlsx")}
           >
             <FileSpreadsheet className="h-4 w-4" />
             Download XLSX
@@ -481,6 +471,21 @@ function PriceListBuilder() {
             Order Receipt ({orderQty} pcs)
           </Button>
         </div>
+        {catalogRows.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Add at least one product to this list before exporting
+          </p>
+        ) : stockLoading ? (
+          <p className="text-xs text-muted-foreground">Preparing export — loading stock levels…</p>
+        ) : null}
+        {exportError && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+            <p className="text-xs text-destructive">{exportError.message}</p>
+            <Button size="sm" variant="outline" onClick={() => runExport(exportError.format)}>
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
 
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
