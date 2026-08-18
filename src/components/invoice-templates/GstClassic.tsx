@@ -137,9 +137,9 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
             </p>
           </div>
         )}
-        {whatsappDigits && (
-          <div className="w-32 shrink-0 border-r border-doc-line p-2 text-center">
-            <WhatsAppQr value={`https://wa.me/${whatsappDigits}`} size={72} caption="Chat on WhatsApp" />
+        {b.qrCodes.length > 0 && (
+          <div className="shrink-0 border-r border-doc-line p-2 text-center">
+            <DocQrCodes codes={b.qrCodes} size={68} />
           </div>
         )}
         <div className="min-w-0 flex-1 border-r border-doc-line" />
