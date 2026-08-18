@@ -68,27 +68,13 @@ export async function printCatalog(opts: {
     });
   }
 
-  const groups = new Map<string, CatalogRow[]>();
-  for (const r of opts.rows) {
-    const key = r.brand || "Other";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(r);
-  }
-
-  const sections = [...groups.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(
-      ([brand, items]) => `<section>
-  <h2>${esc(brand)}</h2>
-  <table><thead><tr><th>Product</th><th>SKU</th><th class="num">Stock</th><th class="num">Price</th></tr></thead><tbody>
-  ${items
-    .sort((a, b) => a.name.localeCompare(b.name))
+  const rows = [...opts.rows].sort((a, b) => a.name.localeCompare(b.name));
+  const body = rows
     .map(
       (i) =>
-        `<tr><td>${esc(i.name)}</td><td class="sku">${esc(i.sku ?? "—")}</td><td class="num">${i.stock}</td><td class="num price">${esc(formatMoney(i.price))}</td></tr>`,
-    )
-    .join("")}
-  </tbody></table></section>`,
+        `<tr><td class="nm">${esc(i.name)}</td><td class="num">${i.stock}</td><td class="num price">${esc(
+          formatMoney(i.price),
+        )}</td></tr>`,
     )
     .join("");
 
@@ -98,41 +84,40 @@ export async function printCatalog(opts: {
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.listName)}</title>
 <style>
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;
-       padding:104px 0 62px}
+  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10px;
+       padding:110px 0 58px}
   .runner{position:fixed;left:0;right:0;background:#fff}
   .page-head{top:0;padding-bottom:8px;border-bottom:2px solid #7c3aed}
   .page-foot{bottom:0;padding-top:6px;border-top:1px solid #ece7f5;display:flex;
-             align-items:center;justify-content:space-between;gap:12px;color:#6b6478;font-size:9px}
+             align-items:center;justify-content:space-between;gap:12px;color:#6b6478;font-size:8.5px}
   .brand-row{display:flex;gap:14px;align-items:center;justify-content:space-between}
   .idm{display:flex;gap:12px;align-items:center;min-width:0}
-  .idm img{max-height:52px;max-width:132px;object-fit:contain}
-  .biz strong{display:block;font-size:15px;line-height:1.2}
-  .biz span{display:block;color:#6b6478;font-size:8.5px;text-transform:uppercase;letter-spacing:.14em;margin-top:2px}
-  .contact{text-align:right;color:#4b445c;font-size:9px;line-height:1.5;white-space:nowrap}
-  .title{margin-top:10px}
-  .title h1{font-size:14px;margin:0;letter-spacing:.02em}
-  .title p{margin:1px 0 0;color:#6b6478;font-size:9px}
+  .idm img{max-height:48px;max-width:126px;object-fit:contain}
+  .biz strong{display:block;font-size:14px;line-height:1.2}
+  .biz span{display:block;color:#6b6478;font-size:8px;text-transform:uppercase;letter-spacing:.14em;margin-top:2px}
+  .contact{text-align:right;color:#4b445c;font-size:8.5px;line-height:1.5;white-space:nowrap}
+  .doc-title{margin-top:8px;text-align:center;border:1px solid #b3a3d8;background:#efeaf9;
+             padding:5px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#3f2d63}
+  .gen{text-align:center;color:#6b6478;font-size:8px;margin-top:2px}
   .page-foot .center{text-align:center;flex:1}
   .page-foot .addr{max-width:34%;white-space:pre-line}
-  .foot-qr{height:34px;width:34px}
+  .foot-qr{height:32px;width:32px}
   .pnum:after{content:counter(page) " of " counter(pages)}
-  section{margin:0 0 16px;page-break-inside:auto}
-  h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7c3aed;margin:0 0 5px;
-     padding-bottom:3px;border-bottom:1px solid #d9c9fb;page-break-after:avoid}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:4.5px 8px;text-align:left}
-  th{background:#f6f2fe;font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#4b445c}
-  tbody tr:nth-child(even){background:#faf8ff}
-  td.sku{color:#6b6478}
-  .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  th,td{border:1px solid #b3a3d8;padding:2.6px 6px}
+  thead th{background:#6d5aa8;color:#fff;font-size:9px;text-transform:none;font-weight:600;text-align:center}
+  td.nm{text-align:center}
+  .num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
   td.price{font-weight:600}
+  tbody tr:nth-child(even){background:#f7f4fd}
   tr{page-break-inside:avoid}
-  .final-qr{margin-top:22px;display:flex;gap:12px;align-items:center;page-break-inside:avoid}
-  .final-qr img{height:104px;width:104px}
-  .final-qr p{margin:0;color:#4b445c;font-size:10px}
-  .note{margin-top:16px;color:#6b6478;font-size:9.5px}
-  @page{size:A4 portrait;margin:12mm}
+  col.c-stock{width:16%}
+  col.c-price{width:18%}
+  .final-qr{margin-top:18px;display:flex;gap:12px;align-items:center;page-break-inside:avoid}
+  .final-qr img{height:96px;width:96px}
+  .final-qr p{margin:0;color:#4b445c;font-size:9.5px}
+  .note{margin-top:14px;color:#6b6478;font-size:9px}
+  @page{size:A4 portrait;margin:11mm}
 </style></head><body>
 <div class="runner page-head">
   <div class="brand-row">
@@ -143,7 +128,8 @@ export async function printCatalog(opts: {
     </div>
     ${contact.length ? `<div class="contact">${contact.join("<br/>")}</div>` : ""}
   </div>
-  <div class="title"><h1>${esc(opts.listName)}</h1><p>Generated on ${esc(dateStr)}</p></div>
+  <div class="doc-title">${esc(opts.listName)}${b.name ? ` — ${esc(String(b.name))}` : ""}</div>
+  <div class="gen">Generated on ${esc(dateStr)}</div>
 </div>
 <div class="runner page-foot">
   <div class="addr">${esc(b.address ?? "")}</div>
@@ -151,7 +137,14 @@ export async function printCatalog(opts: {
   ${qrDataUrl ? `<img class="foot-qr" src="${qrDataUrl}" alt="Order QR" />` : ""}
   <div>Page <span class="pnum"></span></div>
 </div>
-${sections || "<p>No products in this list.</p>"}
+${
+  rows.length
+    ? `<table><colgroup><col/><col class="c-stock"/><col class="c-price"/></colgroup>
+<thead><tr><th>Item Name</th><th>In Stock</th><th>Selling Price</th></tr></thead>
+<tbody>${body}</tbody></table>`
+    : "<p>No products in this list.</p>"
+}
+
 ${
   qrDataUrl
     ? `<div class="final-qr"><img src="${qrDataUrl}" alt="Order QR code" />
