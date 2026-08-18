@@ -18,6 +18,8 @@ export function resolveTemplateId(value?: string | null): InvoiceTemplateId {
     : DEFAULT_INVOICE_TEMPLATE;
 }
 
+export type InvoiceQr = { value: string; label: string | null };
+
 export type InvoiceBusiness = {
   name: string;
   tagline: string | null;
@@ -31,6 +33,8 @@ export type InvoiceBusiness = {
   footerNote: string | null;
   signatureUrl: string | null;
   signatoryLabel: string;
+  /** QR codes printed on documents (WhatsApp, Google review …). */
+  qrCodes: InvoiceQr[];
 };
 
 export type InvoiceParty = {
