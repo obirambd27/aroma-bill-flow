@@ -128,8 +128,10 @@ function BillDetailPage() {
   const breakdown = buildPaymentBreakdown(bill, allocations);
   const paid = breakdown.totalPaid;
   const balanceDue = breakdown.balanceDue;
-  const warehouseName = (id: string | null) =>
-    warehouses.find((w) => w.id === id)?.name ?? bill.warehouses?.name ?? "—";
+  /** Customer's outstanding on their *other* finalized bills. */
+  const previousBalance = bill.customer_id
+    ? Math.max(0, (outstanding[bill.customer_id] ?? 0) - balanceDue)
+    : 0;
 
   const voidBill = async () => {
     setVoiding(true);
