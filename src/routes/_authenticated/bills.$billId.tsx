@@ -18,6 +18,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import { JournalSection } from "@/components/JournalSection";
 import { EditHistorySection } from "@/components/EditHistorySection";
+import { BillNotesSection } from "@/components/BillNotesSection";
+
 import { useBillEditHistory } from "@/lib/bill-edit";
 import { useBillDeliveryNotes } from "@/lib/sales";
 
@@ -120,7 +122,7 @@ function BillDetailPage() {
       <div className="surface-card p-8 text-center">
         <p className="text-sm text-muted-foreground">This bill could not be found.</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/bills">Back to bills</Link>
+          <Link to="/bills" search={{}}>Back to bills</Link>
         </Button>
       </div>
     );
@@ -227,7 +229,7 @@ function BillDetailPage() {
 
       toast.success("Bill deleted — a snapshot is kept in the delete log");
       queryClient.invalidateQueries();
-      void navigate({ to: "/bills" });
+      void navigate({ to: "/bills", search: {} });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete this bill");
     } finally {
@@ -245,6 +247,7 @@ function BillDetailPage() {
       <div className="no-print space-y-4">
         <Link
           to="/bills"
+          search={{}}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -400,7 +403,14 @@ function BillDetailPage() {
       )}
 
 
+      <BillNotesSection
+        billId={bill.id}
+        notes={(bill as { notes?: string | null }).notes ?? null}
+        items={bill.bill_items}
+      />
+
       <EditHistorySection billId={bill.id} />
+
 
       <JournalSection
         linkColumn="related_bill_id"
