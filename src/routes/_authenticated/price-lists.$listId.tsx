@@ -67,6 +67,8 @@ export const Route = createFileRoute("/_authenticated/price-lists/$listId")({
 const ALL_BRANDS = "__all__";
 
 type ExportFormat = "pdf" | "csv" | "xlsx";
+type StockOp = "any" | "in" | "out" | "gte" | "lte";
+
 
 function PriceListBuilder() {
   const { listId } = Route.useParams();
@@ -86,6 +88,9 @@ function PriceListBuilder() {
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState(ALL_BRANDS);
+  const [stockOp, setStockOp] = useState<StockOp>("any");
+  const [stockValue, setStockValue] = useState("");
+
   const [hydrated, setHydrated] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -123,16 +128,37 @@ function PriceListBuilder() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const threshold = stockValue.trim() === "" ? null : Number(stockValue);
     return products.filter((p) => {
       if (brand !== ALL_BRANDS && (p.brand?.trim() || "") !== brand) return false;
+      const stock = Number(stockTotals[p.id] ?? 0);
+      if (stockOp === "in") {
+        if (stock <= 0) return false;
+      } else if (stockOp === "out") {
+        if (stock > 0) return false;
+      } else if (stockOp === "gte" && threshold != null) {
+        if (stock < threshold) return false;
+      } else if (stockOp === "lte" && threshold != null) {
+        if (stock > threshold) return false;
+      }
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q)
       );
     });
-  }, [products, query, brand]);
+  }, [products, query, brand, stockOp, stockValue, stockTotals]);
+
+  const selectAllVisible = (value: boolean) =>
+    setSelected((prev) => {
+      const next = { ...prev };
+      for (const p of visible) next[p.id] = value;
+      return next;
+    });
+
+  const allVisibleSelected = visible.length > 0 && visible.every((p) => selected[p.id]);
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
+
 
   const catalogRows: CatalogRow[] = useMemo(
     () =>
