@@ -66,6 +66,8 @@ export const Route = createFileRoute("/_authenticated/price-lists/$listId")({
 
 const ALL_BRANDS = "__all__";
 
+type ExportFormat = "pdf" | "csv" | "xlsx";
+
 function PriceListBuilder() {
   const { listId } = Route.useParams();
   const { data: list, isLoading } = usePriceList(listId);
