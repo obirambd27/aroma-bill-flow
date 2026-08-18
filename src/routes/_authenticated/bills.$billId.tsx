@@ -25,7 +25,7 @@ import { buildInvoiceDoc } from "@/lib/invoice-doc";
 import { ShareInvoiceDialog } from "@/components/ShareInvoiceDialog";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAllProducts, useAllWarehouses, useBill, useSettings } from "@/lib/data";
+import { useAllWarehouses, useBill, useCustomerOutstanding, useSettings } from "@/lib/data";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
