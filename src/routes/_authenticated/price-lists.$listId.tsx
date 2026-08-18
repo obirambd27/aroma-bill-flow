@@ -136,8 +136,9 @@ function PriceListBuilder() {
           name: p.name,
           sku: p.sku,
           price: prices[p.id] ? Number(prices[p.id]) : Number(p.price),
+          stock: Number(stockTotals[p.id] ?? 0),
         })),
-    [products, selected, prices],
+    [products, selected, prices, stockTotals],
   );
 
   const orderLines = useMemo(
