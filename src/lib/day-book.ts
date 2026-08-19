@@ -494,14 +494,14 @@ export function useDayBook(date: string) {
         openingOverridden: Boolean(override),
         // Closing Cash = Opening Cash + every cash ledger movement booked today
         // (cash collections, cash expenses/purchases and fund transfers).
-        closingCash: round2(openingCash + todaysCashMovement),
+        closingCash: override ? round2(openingCash + todaysCashMovement) : cashBalanceNow,
         collection,
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
         todaysSales: round2(netSalesInvoices),
         paymentsCollected: round2(receivedTotal),
-        inHandCash: round2(openingCash + todaysCashMovement),
+        inHandCash: override ? round2(openingCash + todaysCashMovement) : cashBalanceNow,
         collectedOtherInvoiceDate: round2(collectedOther),
 
         cashToBank: round2(cashToBank),
