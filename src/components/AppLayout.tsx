@@ -64,11 +64,27 @@ const NAV = [
 ] as const;
 
 import { PwaBanners } from "@/components/PwaBanners";
+import { useUnreadOrderCount } from "@/hooks/useUnreadOrders";
+
+function UnreadBadge({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "grid min-w-[1.15rem] place-items-center rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-destructive-foreground",
+        className,
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const unreadOrders = useUnreadOrderCount();
 
   const signOut = async () => {
     await supabase.auth.signOut();
