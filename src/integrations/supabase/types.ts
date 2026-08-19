@@ -1095,7 +1095,7 @@ export type Database = {
             foreignKeyName: "ledger_entries_related_payment_id_fkey"
             columns: ["related_payment_id"]
             isOneToOne: false
-            referencedRelation: "payments"
+            referencedRelation: "payments_received"
             referencedColumns: ["id"]
           },
         ]
