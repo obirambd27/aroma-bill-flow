@@ -9,6 +9,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
+import { fetchAll } from "@/lib/fetch-all";
 import { round2 } from "@/lib/payment-math";
 import { COUNTER_PAYMENT_NOTE } from "@/lib/payments";
 
@@ -168,7 +169,7 @@ export function useDayBook(date: string) {
         expensesRes,
         transfersRes,
       ] = await Promise.all([
-        supabase.from("accounts").select("id, name, account_type, opening_balance"),
+        supabase.from("accounts").select("id, name, account_type, opening_balance, current_balance"),
         supabase.from("day_book_overrides").select("opening_cash").eq("book_date", date).maybeSingle(),
         supabase
           .from("bills")
@@ -229,20 +230,30 @@ export function useDayBook(date: string) {
         ) ?? accounts.find((a) => a["account_type"] === "Cash");
       const cashId = cashAccount ? String(cashAccount["id"]) : null;
 
+      // Opening/closing are derived from the Cash in Hand account balance itself
+      // so the Day Book can never disagree with the Cash & Bank page.
+      let todaysCashMovement = 0;
       let openingCalc = cashAccount ? num(cashAccount["opening_balance"]) : 0;
       if (cashId) {
-        const [before] = await Promise.all([
+        const rows = await fetchAll<{ entry_date: string; amount: number }>((from, to) =>
           supabase
             .from("ledger_entries")
-            .select("amount")
+            .select("entry_date, amount")
             .eq("account_id", cashId)
-            .lt("entry_date", date),
-        ]);
-        for (const e of before.data ?? []) openingCalc += num((e as Row)["amount"]);
+            .gte("entry_date", date)
+            .range(from, to),
+        );
+        let fromDateOnward = 0;
+        for (const e of rows) {
+          fromDateOnward += num(e.amount);
+          if (e.entry_date === date) todaysCashMovement += num(e.amount);
+        }
+        openingCalc = num(cashAccount?.["current_balance"]) - fromDateOnward;
       }
 
       const override = (overrideRes.data as { opening_cash: number } | null) ?? null;
       const openingCash = override ? num(override.opening_cash) : openingCalc;
+
 
       /* ---------- collections by method ---------- */
       const collection: Record<string, number> = {
@@ -478,18 +489,16 @@ export function useDayBook(date: string) {
         openingCashCalculated: round2(openingCalc),
         openingCash: round2(openingCash),
         openingOverridden: Boolean(override),
-        // Closing Cash = Opening Cash + today's cash collections (cash sales and
-        // cash payments received only) − today's expenses − today's purchase bills.
-        closingCash: round2(
-          openingCash + (collection["Cash"] ?? 0) - totalExpenses - totalPurchaseBills,
-        ),
+        // Closing Cash = Opening Cash + every cash ledger movement booked today
+        // (cash collections, cash expenses/purchases and fund transfers).
+        closingCash: round2(openingCash + todaysCashMovement),
         collection,
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
         todaysSales: round2(netSalesInvoices),
         paymentsCollected: round2(receivedTotal),
-        inHandCash: round2(netSalesInvoices + receivedTotal - totalExpenses),
+        inHandCash: round2(openingCash + todaysCashMovement),
         collectedOtherInvoiceDate: round2(collectedOther),
 
         cashToBank: round2(cashToBank),
