@@ -2554,6 +2554,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      convert_price_list_order: {
+        Args: { p_bill_id: string; p_order_id: string }
+        Returns: Json
+      }
       reject_price_list_order: {
         Args: { p_order_id: string; p_reason: string }
         Returns: Json
