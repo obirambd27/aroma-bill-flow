@@ -230,29 +230,32 @@ export function useDayBook(date: string) {
         ) ?? accounts.find((a) => a["account_type"] === "Cash");
       const cashId = cashAccount ? String(cashAccount["id"]) : null;
 
-      // Opening/closing are derived from the Cash in Hand account balance itself
-      // so the Day Book can never disagree with the Cash & Bank page.
+      // Opening Cash mirrors the live "Total cash" shown on Cash & Bank:
+      // the sum of every Cash account's current balance (cash sales + collections
+      // − cash expenses/purchases − transfers to bank).
+      const cashBalanceNow = round2(
+        accounts
+          .filter((a) => a["account_type"] === "Cash")
+          .reduce((s, a) => s + num(a["current_balance"]), 0),
+      );
+
       let todaysCashMovement = 0;
-      let openingCalc = cashAccount ? num(cashAccount["opening_balance"]) : 0;
       if (cashId) {
         const rows = await fetchAll<{ entry_date: string; amount: number }>((from, to) =>
           supabase
             .from("ledger_entries")
             .select("entry_date, amount")
             .eq("account_id", cashId)
-            .gte("entry_date", date)
+            .eq("entry_date", date)
             .range(from, to),
         );
-        let fromDateOnward = 0;
-        for (const e of rows) {
-          fromDateOnward += num(e.amount);
-          if (e.entry_date === date) todaysCashMovement += num(e.amount);
-        }
-        openingCalc = num(cashAccount?.["current_balance"]) - fromDateOnward;
+        for (const e of rows) todaysCashMovement += num(e.amount);
       }
+      const openingCalc = cashBalanceNow;
 
       const override = (overrideRes.data as { opening_cash: number } | null) ?? null;
       const openingCash = override ? num(override.opening_cash) : openingCalc;
+
 
 
       /* ---------- collections by method ---------- */
