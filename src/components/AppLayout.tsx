@@ -64,11 +64,27 @@ const NAV = [
 ] as const;
 
 import { PwaBanners } from "@/components/PwaBanners";
+import { useUnreadOrderCount } from "@/hooks/useUnreadOrders";
+
+function UnreadBadge({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "grid min-w-[1.15rem] place-items-center rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-destructive-foreground",
+        className,
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const unreadOrders = useUnreadOrderCount();
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -112,9 +128,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {showGroup && collapsed && <div className="my-2 border-t border-sidebar-border" />}
                 <Link
                   to={item.to}
-                  aria-label={item.label}
+                  aria-label={
+                    item.to === "/price-list-orders" && unreadOrders > 0
+                      ? `${item.label} (${unreadOrders} unread)`
+                      : item.label
+                  }
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -122,6 +142,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   {!collapsed && <span className="truncate">{item.label}</span>}
+                  {item.to === "/price-list-orders" &&
+                    (collapsed ? (
+                      <UnreadBadge
+                        count={unreadOrders}
+                        className="absolute right-1 top-1"
+                      />
+                    ) : (
+                      <UnreadBadge count={unreadOrders} className="ml-auto" />
+                    ))}
                 </Link>
               </div>
             );
@@ -187,12 +216,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                "relative flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
               <item.icon className="h-4.5 w-4.5" />
               <span className="truncate px-0.5">{item.label.split(" ")[0]}</span>
+              {item.to === "/price-list-orders" && (
+                <UnreadBadge count={unreadOrders} className="absolute right-3 top-1" />
+              )}
             </Link>
           );
         })}

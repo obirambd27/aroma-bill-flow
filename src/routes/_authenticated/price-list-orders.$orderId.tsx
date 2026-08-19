@@ -28,6 +28,7 @@ import {
   usePriceListOrder,
   useUpdateOrderStatus,
 } from "@/lib/price-list-orders";
+import { useMarkOrderViewed } from "@/hooks/useUnreadOrders";
 
 export const Route = createFileRoute("/_authenticated/price-list-orders/$orderId")({
   head: () => ({
@@ -54,6 +55,7 @@ function OnlineOrderDetail() {
   const updateStatus = useUpdateOrderStatus(orderId);
   const adjustPrices = useAdjustOrderPrices(orderId);
   const rejectOrder = useServerFn(rejectPriceListOrderFn);
+  useMarkOrderViewed(orderId);
 
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState(false);
