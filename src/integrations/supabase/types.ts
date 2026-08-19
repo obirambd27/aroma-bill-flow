@@ -1373,6 +1373,142 @@ export type Database = {
           },
         ]
       }
+      price_list_order_items: {
+        Row: {
+          applied_price: number
+          base_price: number
+          id: string
+          line_total: number
+          price_list_order_id: string
+          product_id: string | null
+          product_name_snapshot: string
+          quantity: number
+          warehouse_id: string | null
+        }
+        Insert: {
+          applied_price: number
+          base_price: number
+          id?: string
+          line_total: number
+          price_list_order_id: string
+          product_id?: string | null
+          product_name_snapshot: string
+          quantity: number
+          warehouse_id?: string | null
+        }
+        Update: {
+          applied_price?: number
+          base_price?: number
+          id?: string
+          line_total?: number
+          price_list_order_id?: string
+          product_id?: string | null
+          product_name_snapshot?: string
+          quantity?: number
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_list_order_items_price_list_order_id_fkey"
+            columns: ["price_list_order_id"]
+            isOneToOne: false
+            referencedRelation: "price_list_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_order_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_list_orders: {
+        Row: {
+          admin_adjusted_total: number | null
+          converted_bill_id: string | null
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_note: string | null
+          customer_phone: string
+          id: string
+          increase_percent: number
+          order_number: string | null
+          price_list_id: string | null
+          rejection_reason: string | null
+          status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          was_price_increased: boolean
+        }
+        Insert: {
+          admin_adjusted_total?: number | null
+          converted_bill_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_note?: string | null
+          customer_phone: string
+          id?: string
+          increase_percent?: number
+          order_number?: string | null
+          price_list_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          was_price_increased?: boolean
+        }
+        Update: {
+          admin_adjusted_total?: number | null
+          converted_bill_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_note?: string | null
+          customer_phone?: string
+          id?: string
+          increase_percent?: number
+          order_number?: string | null
+          price_list_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          was_price_increased?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_list_orders_converted_bill_id_fkey"
+            columns: ["converted_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_orders_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_lists: {
         Row: {
           below_min_increase_percent: number
@@ -2418,7 +2554,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      convert_price_list_order: {
+        Args: { p_bill_id: string; p_order_id: string }
+        Returns: Json
+      }
+      reject_price_list_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: Json
+      }
+      submit_price_list_order: {
+        Args: {
+          p_address: string
+          p_email: string
+          p_items: Json
+          p_name: string
+          p_note: string
+          p_phone: string
+          p_token: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
