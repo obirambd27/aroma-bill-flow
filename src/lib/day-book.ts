@@ -169,7 +169,7 @@ export function useDayBook(date: string) {
         expensesRes,
         transfersRes,
       ] = await Promise.all([
-        supabase.from("accounts").select("id, name, account_type, opening_balance"),
+        supabase.from("accounts").select("id, name, account_type, opening_balance, current_balance"),
         supabase.from("day_book_overrides").select("opening_cash").eq("book_date", date).maybeSingle(),
         supabase
           .from("bills")
@@ -489,18 +489,16 @@ export function useDayBook(date: string) {
         openingCashCalculated: round2(openingCalc),
         openingCash: round2(openingCash),
         openingOverridden: Boolean(override),
-        // Closing Cash = Opening Cash + today's cash collections (cash sales and
-        // cash payments received only) − today's expenses − today's purchase bills.
-        closingCash: round2(
-          openingCash + (collection["Cash"] ?? 0) - totalExpenses - totalPurchaseBills,
-        ),
+        // Closing Cash = Opening Cash + every cash ledger movement booked today
+        // (cash collections, cash expenses/purchases and fund transfers).
+        closingCash: round2(openingCash + todaysCashMovement),
         collection,
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
         todaysSales: round2(netSalesInvoices),
         paymentsCollected: round2(receivedTotal),
-        inHandCash: round2(netSalesInvoices + receivedTotal - totalExpenses),
+        inHandCash: round2(openingCash + todaysCashMovement),
         collectedOtherInvoiceDate: round2(collectedOther),
 
         cashToBank: round2(cashToBank),
