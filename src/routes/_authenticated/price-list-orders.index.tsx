@@ -132,9 +132,23 @@ function OnlineOrdersPage() {
                     }}
                     className="cursor-pointer border-t border-border hover:bg-muted/40"
                   >
-                    <td className="px-4 py-3 font-medium">{o.order_number ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <span className="flex items-center gap-2">
+                        {!o.is_viewed && (
+                          <span
+                            aria-label="Unread"
+                            className="h-2 w-2 shrink-0 rounded-full bg-destructive"
+                          />
+                        )}
+                        <span className={o.is_viewed ? "" : "font-bold"}>
+                          {o.order_number ?? "—"}
+                        </span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
-                      <span className="block">{o.customer_name}</span>
+                      <span className={o.is_viewed ? "block" : "block font-bold"}>
+                        {o.customer_name}
+                      </span>
                       <span className="text-xs text-muted-foreground">{o.customer_phone}</span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
