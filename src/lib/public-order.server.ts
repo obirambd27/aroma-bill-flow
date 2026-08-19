@@ -170,9 +170,9 @@ export async function submitPublicOrder(input: {
   token: string;
   name: string;
   phone: string;
-  email?: string | null;
-  address?: string | null;
-  note?: string | null;
+  email?: string | null | undefined;
+  address?: string | null | undefined;
+  note?: string | null | undefined;
   items: { productId: string; quantity: number }[];
 }): Promise<SubmitOrderResult> {
   const { data, error } = await supabaseAdmin.rpc("submit_price_list_order", {
