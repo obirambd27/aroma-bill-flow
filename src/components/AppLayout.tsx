@@ -216,12 +216,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                "relative flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
               <item.icon className="h-4.5 w-4.5" />
               <span className="truncate px-0.5">{item.label.split(" ")[0]}</span>
+              {item.to === "/price-list-orders" && (
+                <UnreadBadge count={unreadOrders} className="absolute right-3 top-1" />
+              )}
             </Link>
           );
         })}
