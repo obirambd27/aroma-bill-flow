@@ -65,7 +65,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/new-bill")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { customerId?: string; fromOrder?: string; editBill?: string } => ({
+  ): {
+    customerId?: string;
+    fromOrder?: string;
+    editBill?: string;
+    fromPriceListOrder?: string;
+  } => ({
     ...(typeof search["customerId"] === "string"
       ? { customerId: search["customerId"] as string }
       : {}),
@@ -74,6 +79,9 @@ export const Route = createFileRoute("/_authenticated/new-bill")({
       : {}),
     ...(typeof search["editBill"] === "string"
       ? { editBill: search["editBill"] as string }
+      : {}),
+    ...(typeof search["fromPriceListOrder"] === "string"
+      ? { fromPriceListOrder: search["fromPriceListOrder"] as string }
       : {}),
   }),
   head: () => ({
