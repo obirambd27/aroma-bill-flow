@@ -529,6 +529,10 @@ function NewBillPage() {
           after,
         });
 
+        // Trim collections already recorded against this bill so they never
+        // exceed what the edited bill is actually worth (e.g. after a discount).
+        await reconcileBillPayments(editingBill.id, keptPaid);
+
         await syncCounterPayment({
           billId: editingBill.id,
           customerId: customerId === "walk-in" ? null : customerId,
