@@ -128,9 +128,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {showGroup && collapsed && <div className="my-2 border-t border-sidebar-border" />}
                 <Link
                   to={item.to}
-                  aria-label={item.label}
+                  aria-label={
+                    item.to === "/price-list-orders" && unreadOrders > 0
+                      ? `${item.label} (${unreadOrders} unread)`
+                      : item.label
+                  }
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -138,6 +142,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   {!collapsed && <span className="truncate">{item.label}</span>}
+                  {item.to === "/price-list-orders" &&
+                    (collapsed ? (
+                      <UnreadBadge
+                        count={unreadOrders}
+                        className="absolute right-1 top-1"
+                      />
+                    ) : (
+                      <UnreadBadge count={unreadOrders} className="ml-auto" />
+                    ))}
                 </Link>
               </div>
             );
