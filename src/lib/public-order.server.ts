@@ -113,3 +113,145 @@ export async function loadPublicPriceList(token: string): Promise<PublicOrderDat
     products,
   };
 }
+
+const DEFAULT_GOOGLE_REVIEW_LINK = "https://g.page/r/CS_TpEm4RwOjEAE/review";
+
+type SettingsRow = {
+  business_name?: string | null;
+  business_tagline?: string | null;
+  business_logo_url?: string | null;
+  business_phone?: string | null;
+  business_email?: string | null;
+  business_address?: string | null;
+  whatsapp_qr_link?: string | null;
+  google_review_qr_link?: string | null;
+} | null;
+
+function digitsOnly(phone: string | null | undefined) {
+  const d = (phone ?? "").replace(/[^\d]/g, "").replace(/^0+/, "");
+  return d.length >= 7 ? d : "";
+}
+
+/** Public-safe business block. Never exposes internal settings. */
+function toBusiness(s: SettingsRow) {
+  const fromLink = (s?.whatsapp_qr_link ?? "").match(/wa\.me\/(\d+)/)?.[1] ?? "";
+  const whatsapp = fromLink || digitsOnly(s?.business_phone);
+  return {
+    name: s?.business_name ?? "",
+    tagline: s?.business_tagline ?? null,
+    logo: s?.business_logo_url ?? null,
+    phone: s?.business_phone ?? null,
+    email: s?.business_email ?? null,
+    address: s?.business_address ?? null,
+    whatsapp: whatsapp || null,
+    googleReview: s?.google_review_qr_link?.trim() || DEFAULT_GOOGLE_REVIEW_LINK,
+  };
+}
+
+export type PublicOrderReceipt = {
+  orderNumber: string;
+  createdAt: string;
+  customer: { name: string; phone: string; email: string | null; address: string | null; note: string | null };
+  items: { name: string; quantity: number; appliedPrice: number; lineTotal: number }[];
+  subtotal: number;
+  total: number;
+  priceIncreased: boolean;
+  increasePercent: number;
+  business: PublicBusiness;
+};
+
+export type SubmitOrderResult =
+  | { ok: true; receipt: PublicOrderReceipt }
+  | { ok: false; error: "unavailable" | "empty" | "failed" }
+  | { ok: false; error: "stock"; productId: string; name: string; available: number };
+
+/** Places a public order atomically (stock check + order + deduction in one transaction). */
+export async function submitPublicOrder(input: {
+  token: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  note?: string | null;
+  items: { productId: string; quantity: number }[];
+}): Promise<SubmitOrderResult> {
+  const { data, error } = await supabaseAdmin.rpc("submit_price_list_order", {
+    p_token: input.token,
+    p_name: input.name,
+    p_phone: input.phone,
+    p_email: input.email ?? "",
+    p_address: input.address ?? "",
+    p_note: input.note ?? "",
+    p_items: input.items.map((i) => ({ product_id: i.productId, quantity: i.quantity })),
+  });
+  if (error) return { ok: false, error: "failed" };
+
+  const result = data as Record<string, unknown> | null;
+  if (!result?.["ok"]) {
+    const kind = String(result?.["error"] ?? "failed");
+    if (kind === "stock") {
+      return {
+        ok: false,
+        error: "stock",
+        productId: String(result?.["product_id"] ?? ""),
+        name: String(result?.["name"] ?? "This product"),
+        available: Number(result?.["available"] ?? 0),
+      };
+    }
+    if (kind === "unavailable" || kind === "empty") return { ok: false, error: kind };
+    return { ok: false, error: "failed" };
+  }
+
+  const receipt = await loadOrderReceipt(String(result["order_id"]));
+  if (!receipt) return { ok: false, error: "failed" };
+  return { ok: true, receipt };
+}
+
+/** Customer-facing receipt data. Never includes warehouse or cost information. */
+export async function loadOrderReceipt(orderId: string): Promise<PublicOrderReceipt | null> {
+  const [orderRes, itemsRes, settingsRes] = await Promise.all([
+    supabaseAdmin
+      .from("price_list_orders")
+      .select(
+        "id, order_number, created_at, customer_name, customer_phone, customer_email, customer_address, customer_note, subtotal, total_amount, was_price_increased, increase_percent",
+      )
+      .eq("id", orderId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("price_list_order_items")
+      .select("product_name_snapshot, quantity, applied_price, line_total")
+      .eq("price_list_order_id", orderId),
+    supabaseAdmin
+      .from("settings")
+      .select(
+        "business_name, business_tagline, business_logo_url, business_phone, business_email, business_address, whatsapp_qr_link, google_review_qr_link",
+      )
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const order = orderRes.data;
+  if (!order) return null;
+
+  return {
+    orderNumber: order.order_number ?? "",
+    createdAt: order.created_at,
+    customer: {
+      name: order.customer_name,
+      phone: order.customer_phone,
+      email: order.customer_email,
+      address: order.customer_address,
+      note: order.customer_note,
+    },
+    items: (itemsRes.data ?? []).map((i) => ({
+      name: i.product_name_snapshot,
+      quantity: Number(i.quantity),
+      appliedPrice: Number(i.applied_price),
+      lineTotal: Number(i.line_total),
+    })),
+    subtotal: Number(order.subtotal),
+    total: Number(order.total_amount),
+    priceIncreased: order.was_price_increased,
+    increasePercent: Number(order.increase_percent ?? 0),
+    business: toBusiness(settingsRes.data),
+  };
+}
