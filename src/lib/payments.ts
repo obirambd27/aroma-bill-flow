@@ -244,32 +244,138 @@ export async function recordPayment(input: RecordPaymentInput) {
     .filter(Boolean)
     .join(", ");
 
-  if (input.accountId) {
-    await supabase.from("ledger_entries").insert({
-      account_id: input.accountId,
-      entry_date: input.paymentDate,
+  await postPaymentLedger({
+    paymentId: payment.id,
+    accountId: input.accountId,
+    entryDate: input.paymentDate,
+    amount: input.amount,
+    billId: allocations[0]?.billId ?? null,
+    receivedDescription: `Payment from ${input.customerName}${billLabel ? ` · ${billLabel}` : ""}`,
+    receivableDescription: `Receivable settled by ${input.customerName}`,
+  });
+
+  return payment;
+}
+
+/**
+ * Writes the cash/bank + receivable ledger pair for a collection. Any existing
+ * pair for the same payment is removed first, so re-running it corrects the
+ * amounts instead of stacking a second effect on the account balance.
+ */
+export async function postPaymentLedger(input: {
+  paymentId: string;
+  accountId: string | null;
+  entryDate: string;
+  amount: number;
+  billId?: string | null;
+  receivedDescription: string;
+  receivableDescription: string;
+}) {
+  const { error: delError } = await supabase
+    .from("ledger_entries")
+    .delete()
+    .eq("related_payment_id", input.paymentId);
+  if (delError) throw delError;
+  if (!input.accountId || input.amount <= 0.001) return;
+
+  const { error } = await supabase.from("ledger_entries").insert({
+    account_id: input.accountId,
+    entry_date: input.entryDate,
+    entry_type: "Sale Payment",
+    amount: input.amount,
+    related_bill_id: input.billId ?? null,
+    related_payment_id: input.paymentId,
+    description: input.receivedDescription,
+  });
+  if (error) throw error;
+
+  const arId = await accountIdByName("Accounts Receivable");
+  if (arId) {
+    const { error: arError } = await supabase.from("ledger_entries").insert({
+      account_id: arId,
+      entry_date: input.entryDate,
       entry_type: "Sale Payment",
-      amount: input.amount,
-      related_bill_id: allocations[0]?.billId ?? null,
-      related_payment_id: payment.id,
-      description: `Payment from ${input.customerName}${billLabel ? ` · ${billLabel}` : ""}`,
+      amount: -input.amount,
+      related_bill_id: input.billId ?? null,
+      related_payment_id: input.paymentId,
+      description: input.receivableDescription,
     });
-    const arId = await accountIdByName("Accounts Receivable");
-    if (arId) {
-      await supabase.from("ledger_entries").insert({
-        account_id: arId,
-        entry_date: input.paymentDate,
-        entry_type: "Sale Payment",
-        amount: -input.amount,
-        related_bill_id: allocations[0]?.billId ?? null,
-        related_payment_id: payment.id,
-        description: `Receivable settled by ${input.customerName}`,
+    if (arError) throw arError;
+  }
+}
+
+/**
+ * Keeps money collected against a bill in step with the bill total after an
+ * edit (e.g. a discount lowers the invoice). Allocations are trimmed oldest
+ * first, and each affected payment — plus its ledger effect — is reduced or
+ * removed so a bill can never hold more money than it is worth.
+ *
+ * Returns the amount that remains allocated to the bill.
+ */
+export async function reconcileBillPayments(billId: string, billTotal: number) {
+  const { data } = await supabase
+    .from("payment_allocations")
+    .select("id, amount_allocated, payment_id, created_at, payments_received(*)")
+    .eq("bill_id", billId)
+    .order("created_at", { ascending: true });
+
+  const rows = (data ?? []) as unknown as {
+    id: string;
+    amount_allocated: number;
+    payment_id: string;
+    payments_received: PaymentReceived | null;
+  }[];
+
+  let running = 0;
+  for (const row of rows) {
+    const current = Number(row.amount_allocated) || 0;
+    const allowed = round2(Math.max(Math.min(current, round2(billTotal - running)), 0));
+    running = round2(running + allowed);
+    if (Math.abs(allowed - current) < 0.005) continue;
+
+    const payment = row.payments_received;
+    const delta = round2(allowed - current);
+    const nextPaymentAmount = payment ? round2(Number(payment.amount) + delta) : 0;
+
+    if (allowed <= 0.005) {
+      await supabase.from("payment_allocations").delete().eq("id", row.id);
+    } else {
+      await supabase
+        .from("payment_allocations")
+        .update({ amount_allocated: allowed })
+        .eq("id", row.id);
+    }
+
+    if (!payment) continue;
+
+    if (nextPaymentAmount <= 0.005) {
+      await supabase.from("ledger_entries").delete().eq("related_payment_id", payment.id);
+      await supabase.from("payment_allocations").delete().eq("payment_id", payment.id);
+      await supabase.from("payments_received").delete().eq("id", payment.id);
+      continue;
+    }
+
+    await supabase
+      .from("payments_received")
+      .update({ amount: nextPaymentAmount })
+      .eq("id", payment.id);
+
+    if (payment.notes !== COUNTER_PAYMENT_NOTE) {
+      await postPaymentLedger({
+        paymentId: payment.id,
+        accountId: payment.account_id,
+        entryDate: payment.payment_date,
+        amount: nextPaymentAmount,
+        billId,
+        receivedDescription: "Payment received (adjusted after bill edit)",
+        receivableDescription: "Receivable settled (adjusted after bill edit)",
       });
     }
   }
 
-  return payment;
+  return running;
 }
+
 
 /** Marker stored on payments created from the billing screen itself. */
 export const COUNTER_PAYMENT_NOTE = "Counter payment at billing";
