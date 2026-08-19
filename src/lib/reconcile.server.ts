@@ -270,7 +270,7 @@ export async function reconcileBill(supabase: Client, billId: string): Promise<R
  */
 export async function validateBillPayment(
   supabase: Client,
-  input: { billId?: string | null; totalAmount: number; amountPaid: number },
+  input: { billId?: string | null | undefined; totalAmount: number; amountPaid: number },
 ) {
   const total = round2(Number(input.totalAmount) || 0);
   const paid = round2(Number(input.amountPaid) || 0);
