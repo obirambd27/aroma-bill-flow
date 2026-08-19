@@ -501,7 +501,7 @@ function NewBillPage() {
         });
         if (!guard.ok) {
           setSaving(false);
-          toast.error(guard.message);
+          toast.error(guard.errors.join(" "));
           return;
         }
 
@@ -580,7 +580,7 @@ function NewBillPage() {
     });
     if (!newGuard.ok) {
       setSaving(false);
-      toast.error(newGuard.message);
+      toast.error(newGuard.errors.join(" "));
       return;
     }
     const { data: bill, error } = await supabase

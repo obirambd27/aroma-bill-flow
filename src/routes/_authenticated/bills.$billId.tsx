@@ -83,7 +83,7 @@ function BillDetailPage() {
       const result = await reconcile.mutateAsync(billId);
       toast.success(
         result.changed
-          ? `Payments corrected to ${result.amountPaid.toFixed(2)} — ledger links repaired.`
+          ? result.message
           : "Already in sync — nothing needed fixing.",
       );
     } catch (err) {
