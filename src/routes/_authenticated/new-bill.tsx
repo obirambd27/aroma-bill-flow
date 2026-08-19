@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useValidateBillPayment } from "@/lib/reconcile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   useBill,
@@ -117,6 +118,7 @@ function todayISO() {
 function NewBillPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const validateBillPayment = useValidateBillPayment();
   const search = Route.useSearch();
   const { data: products = [] } = useProducts();
   const { data: customers = [] } = useCustomers();
@@ -491,6 +493,18 @@ function NewBillPage() {
         const keptPaid =
           status === "Finalized" ? Math.min(Math.max(amountPaidNow, 0), total) : 0;
 
+        // Server-side guard: never let a paid invoice hold more money than it is worth.
+        const guard = await validateBillPayment({
+          billId: editingBill.id,
+          totalAmount: total,
+          amountPaid: keptPaid,
+        });
+        if (!guard.ok) {
+          setSaving(false);
+          toast.error(guard.errors.join(" "));
+          return;
+        }
+
         await applyBillEdit({
           billId: editingBill.id,
           billNumber: editingBill.bill_number,
@@ -559,6 +573,16 @@ function NewBillPage() {
 
     const isWalkIn = customerId === "walk-in";
     const paidNow = status === "Finalized" ? amountPaidNow : 0;
+    const newGuard = await validateBillPayment({
+      billId: null,
+      totalAmount: total,
+      amountPaid: paidNow,
+    });
+    if (!newGuard.ok) {
+      setSaving(false);
+      toast.error(newGuard.errors.join(" "));
+      return;
+    }
     const { data: bill, error } = await supabase
       .from("bills")
       .insert({

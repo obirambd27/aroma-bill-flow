@@ -4,6 +4,7 @@ import { Plus, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
+import { SyncIssuesBanner } from "@/components/SyncIssuesBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +73,8 @@ function PaymentsPage() {
           </Button>
         }
       />
+
+      <SyncIssuesBanner />
 
       <div className="surface-card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">

@@ -45,6 +45,12 @@ const GROUPS: { title: string; reports: Report[] }[] = [
         to: "/reports/day-book",
       },
       {
+        name: "Daily Reconciliation",
+        description: "Match cash, bank, card and collections against bills and payments.",
+        icon: ListChecks,
+        to: "/reports/reconciliation",
+      },
+      {
         name: "All Transactions",
         description: "Master log across every transaction type.",
         icon: ListChecks,
