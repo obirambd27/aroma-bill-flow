@@ -60,6 +60,9 @@ import {
 } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
 import { adjustCommitted, useSalesOrder } from "@/lib/sales";
+import { useServerFn } from "@tanstack/react-start";
+import { usePriceListOrder } from "@/lib/price-list-orders";
+import { convertPriceListOrderFn } from "@/lib/public-order.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/new-bill")({
@@ -718,6 +721,14 @@ function NewBillPage() {
 
     setSaving(false);
     queryClient.invalidateQueries();
+    if (priceListOrderId) {
+      try {
+        await convertOrder({ data: { orderId: priceListOrderId, billId: bill.id } });
+      } catch {
+        toast.error("Bill created, but the online order status couldn't be updated");
+      }
+    }
+
     toast.success(`Bill ${bill.bill_number} finalized`);
     navigate({ to: "/bills/$billId", params: { billId: bill.id } });
   };
