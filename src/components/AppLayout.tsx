@@ -28,6 +28,7 @@ import {
   Receipt,
   Tags,
 
+  ShoppingBag,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, group: "" },
   { to: "/new-bill", label: "New Bill", icon: Plus, group: "Sales" },
   { to: "/bills", label: "Bill History", icon: ReceiptText, group: "Sales" },
+  { to: "/price-list-orders", label: "Online Orders", icon: ShoppingBag, group: "Sales" },
   { to: "/sales-orders", label: "Sales Orders", icon: ClipboardList, group: "Sales" },
   { to: "/delivery-notes", label: "Delivery Notes", icon: Truck, group: "Sales" },
   { to: "/sales-returns", label: "Returns", icon: RotateCcw, group: "Sales" },
