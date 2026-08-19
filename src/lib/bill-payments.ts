@@ -7,7 +7,7 @@
  *  2. payments recorded afterwards → `payment_allocations` joined to
  *     `payments_received.payment_method`
  *
- * Every screen that shows "paid by Cash / Credit Card" must use this so the
+ * Every screen that shows "paid by Cash / Card Payment" must use this so the
  * same money is never counted twice or attributed to the wrong method.
  */
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +21,7 @@ export function normalizeMethod(method?: string | null): string | null {
   if (!t) return null;
   if (t === "cash" || t === "cash in hand") return "Cash";
   if (t === "card" || t === "credit card" || t === "creditcard" || t === "debit card") {
-    return "Credit Card";
+    return "Card Payment";
   }
   if (t === "bank" || t === "bank transfer" || t === "transfer" || t === "online") {
     return "Bank Transfer";
