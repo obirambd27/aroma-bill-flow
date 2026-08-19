@@ -189,6 +189,57 @@ function NewBillPage() {
     setOrderHydrated(true);
   }, [sourceOrder, orderHydrated]);
 
+  // Pre-fill from a public price list order ("Convert to Bill"), matching or creating the customer.
+  const priceListOrderId = search.fromPriceListOrder ?? "";
+  const { data: sourcePlOrder } = usePriceListOrder(priceListOrderId);
+  const convertOrder = useServerFn(convertPriceListOrderFn);
+  const [plHydrated, setPlHydrated] = useState(false);
+  useEffect(() => {
+    if (!sourcePlOrder || plHydrated || customers.length === 0) return;
+    const digits = (v: string) => v.replace(/\D/g, "").replace(/^0+/, "");
+    const phone = digits(sourcePlOrder.order.customer_phone);
+    const match =
+      customers.find((c) => c.phone && digits(c.phone) === phone && phone.length >= 7) ??
+      customers.find(
+        (c) => c.name.trim().toLowerCase() === sourcePlOrder.order.customer_name.trim().toLowerCase(),
+      );
+    setLines(
+      sourcePlOrder.items
+        .map((i) => ({
+          productId: i.product_id ?? "",
+          name: i.product_name_snapshot,
+          unitPrice: Number(i.applied_price),
+          quantity: Number(i.quantity),
+          warehouseId: i.warehouse_id ?? "",
+        }))
+        .filter((l) => l.productId && l.quantity > 0),
+    );
+    setPlHydrated(true);
+    if (match) {
+      setCustomerId(match.id);
+      return;
+    }
+    void (async () => {
+      const { data: created, error } = await supabase
+        .from("customers")
+        .insert({
+          name: sourcePlOrder.order.customer_name,
+          phone: sourcePlOrder.order.customer_phone,
+          email: sourcePlOrder.order.customer_email,
+          address: sourcePlOrder.order.customer_address,
+          notes: `Created from online order ${sourcePlOrder.order.order_number ?? ""}`.trim(),
+        })
+        .select("id")
+        .single();
+      if (error || !created) {
+        toast.error("Couldn't create the customer — please pick one manually");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["customers"] });
+      setCustomerId(created.id);
+    })();
+  }, [sourcePlOrder, plHydrated, customers, queryClient]);
+
 
   // Editing an existing bill: hydrate the builder with its current contents.
   const { data: editingBill } = useBill(search.editBill ?? "");
