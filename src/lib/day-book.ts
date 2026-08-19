@@ -247,7 +247,7 @@ export function useDayBook(date: string) {
       /* ---------- collections by method ---------- */
       const collection: Record<string, number> = {
         Cash: 0,
-        "Credit Card": 0,
+        "Card Payment": 0,
         "Bank Transfer": 0,
       };
       const addCollection = (method: string | null, amount: number) => {

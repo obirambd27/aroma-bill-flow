@@ -27,7 +27,7 @@ export function PaymentMethodTag({ method }: { method?: string | null | undefine
   );
 }
 
-/** Clickable Cash / Credit Card / Bank Transfer tiles with a total sales header. */
+/** Clickable Cash / Card Payment / Bank Transfer tiles with a total sales header. */
 export function PaymentMethodTiles({
   totals,
   totalSales,

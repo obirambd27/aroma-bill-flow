@@ -163,7 +163,7 @@ function DayBookPage() {
         { label: "Opening Cash", value: formatMoney(book.openingCash) },
         { label: "Closing Cash", value: formatMoney(book.closingCash) },
         { label: "Cash Collection", value: formatMoney(book.collection["Cash"] ?? 0) },
-        { label: "POS (Credit Card)", value: formatMoney(book.collection["Credit Card"] ?? 0) },
+        { label: "POS (Card Payment)", value: formatMoney(book.collection["Card Payment"] ?? 0) },
         { label: "Bank Transfer", value: formatMoney(book.collection["Bank Transfer"] ?? 0) },
         { label: "Total Purchase Bills", value: formatMoney(book.totalPurchaseBills) },
         { label: "Total Expenses", value: formatMoney(book.totalExpenses) },
@@ -342,8 +342,8 @@ function DayBookPage() {
               <StatCard label="Total Expenses" value={formatMoney(book.totalExpenses)} />
 
               <StatCard
-                label="POS Collection (Credit Card)"
-                value={formatMoney(book.collection["Credit Card"] ?? 0)}
+                label="POS Collection (Card Payment)"
+                value={formatMoney(book.collection["Card Payment"] ?? 0)}
               />
               <StatCard
                 label="Bank Transfer Collection"
