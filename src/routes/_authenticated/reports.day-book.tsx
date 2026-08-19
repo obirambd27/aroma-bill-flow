@@ -334,9 +334,10 @@ function DayBookPage() {
               <StatCard
                 label="In Hand Cash"
                 value={formatMoney(book.inHandCash)}
-                hint="Today's sales + collections − expenses"
+                hint="Matches Cash & Bank · Cash in Hand"
                 tone={book.inHandCash >= 0 ? "positive" : "negative"}
               />
+
               <StatCard label="Cash Collection" value={formatMoney(book.collection["Cash"] ?? 0)} />
               <StatCard label="Total Purchase Bills" value={formatMoney(book.totalPurchaseBills)} />
               <StatCard label="Total Expenses" value={formatMoney(book.totalExpenses)} />
