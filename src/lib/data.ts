@@ -482,23 +482,33 @@ export function useCustomerTotals() {
         total_amount: number | string;
         amount_paid: number | string | null;
         status: string;
+        bill_date: string | null;
       }>((f, t) =>
         supabase
           .from("bills")
-          .select("customer_id, total_amount, amount_paid, status")
+          .select("customer_id, total_amount, amount_paid, status, bill_date")
           .eq("status", "Finalized")
           .range(f, t) as never,
       );
-      const map: Record<string, { paid: number; outstanding: number }> = {};
+      const map: Record<
+        string,
+        { paid: number; outstanding: number; oldestDueDate: string | null }
+      > = {};
       for (const b of rows) {
         if (!b.customer_id) continue;
-        const entry = (map[b.customer_id] ??= { paid: 0, outstanding: 0 });
+        const entry = (map[b.customer_id] ??= { paid: 0, outstanding: 0, oldestDueDate: null });
         const paid = Number(b.amount_paid ?? 0);
         const due = Number(b.total_amount ?? 0) - paid;
         entry.paid += paid;
-        if (due > 0.001) entry.outstanding += due;
+        if (due > 0.001) {
+          entry.outstanding += due;
+          if (b.bill_date && (!entry.oldestDueDate || b.bill_date < entry.oldestDueDate)) {
+            entry.oldestDueDate = b.bill_date;
+          }
+        }
       }
       return map;
+
     },
   });
 }
