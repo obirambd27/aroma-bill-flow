@@ -1443,6 +1443,7 @@ export type Database = {
           customer_phone: string
           id: string
           increase_percent: number
+          is_viewed: boolean
           order_number: string | null
           price_list_id: string | null
           rejection_reason: string | null
@@ -1463,6 +1464,7 @@ export type Database = {
           customer_phone: string
           id?: string
           increase_percent?: number
+          is_viewed?: boolean
           order_number?: string | null
           price_list_id?: string | null
           rejection_reason?: string | null
@@ -1483,6 +1485,7 @@ export type Database = {
           customer_phone?: string
           id?: string
           increase_percent?: number
+          is_viewed?: boolean
           order_number?: string | null
           price_list_id?: string | null
           rejection_reason?: string | null
