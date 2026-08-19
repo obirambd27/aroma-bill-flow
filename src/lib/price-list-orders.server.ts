@@ -11,3 +11,15 @@ export async function rejectPriceListOrder(orderId: string, reason: string) {
   if (!result?.["ok"]) return { ok: false as const, error: String(result?.["error"] ?? "failed") };
   return { ok: true as const };
 }
+
+/** Releases the order's reserved stock and links it to the bill that replaced it. */
+export async function convertPriceListOrder(orderId: string, billId: string) {
+  const { data, error } = await supabaseAdmin.rpc("convert_price_list_order", {
+    p_order_id: orderId,
+    p_bill_id: billId,
+  });
+  if (error) return { ok: false as const, error: "failed" as const };
+  const result = data as Record<string, unknown> | null;
+  if (!result?.["ok"]) return { ok: false as const, error: String(result?.["error"] ?? "failed") };
+  return { ok: true as const };
+}

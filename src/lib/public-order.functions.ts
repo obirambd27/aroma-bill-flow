@@ -37,3 +37,13 @@ export const rejectPriceListOrderFn = createServerFn({ method: "POST" })
     const { rejectPriceListOrder } = await import("./price-list-orders.server");
     return rejectPriceListOrder(data.orderId, data.reason ?? "");
   });
+
+/** Marks an order converted and returns its reserved stock so the bill can deduct it. */
+export const convertPriceListOrderFn = createServerFn({ method: "POST" })
+  .inputValidator((data) =>
+    z.object({ orderId: z.string().uuid(), billId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { convertPriceListOrder } = await import("./price-list-orders.server");
+    return convertPriceListOrder(data.orderId, data.billId);
+  });
