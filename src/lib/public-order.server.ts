@@ -10,17 +10,28 @@ export type PublicOrderProduct = {
   stock: number;
 };
 
+export type PublicBusiness = {
+  name: string;
+  tagline: string | null;
+  logo: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  whatsapp: string | null;
+  googleReview: string | null;
+};
+
 export type PublicOrderData =
   | { available: false }
   | {
       available: true;
-      list: { id: string; name: string; minQuantity: number | null };
-      business: {
+      list: {
+        id: string;
         name: string;
-        tagline: string | null;
-        logo: string | null;
-        phone: string | null;
+        minQuantity: number | null;
+        increasePercent: number;
       };
+      business: PublicBusiness;
       products: PublicOrderProduct[];
     };
 
@@ -28,7 +39,7 @@ export type PublicOrderData =
 export async function loadPublicPriceList(token: string): Promise<PublicOrderData> {
   const { data: list, error } = await supabaseAdmin
     .from("price_lists")
-    .select("id, name, default_min_quantity, is_share_enabled")
+    .select("id, name, default_min_quantity, below_min_increase_percent, is_share_enabled")
     .eq("share_token", token)
     .maybeSingle();
   if (error) throw error;
@@ -42,7 +53,9 @@ export async function loadPublicPriceList(token: string): Promise<PublicOrderDat
       .eq("is_included", true),
     supabaseAdmin
       .from("settings")
-      .select("business_name, business_tagline, business_logo_url, business_phone")
+      .select(
+        "business_name, business_tagline, business_logo_url, business_phone, business_email, business_address, whatsapp_qr_link, google_review_qr_link",
+      )
       .limit(1)
       .maybeSingle(),
   ]);
@@ -88,16 +101,15 @@ export async function loadPublicPriceList(token: string): Promise<PublicOrderDat
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  const s = settingsRes.data;
   return {
     available: true,
-    list: { id: list.id, name: list.name, minQuantity: list.default_min_quantity },
-    business: {
-      name: s?.business_name ?? "",
-      tagline: s?.business_tagline ?? null,
-      logo: s?.business_logo_url ?? null,
-      phone: s?.business_phone ?? null,
+    list: {
+      id: list.id,
+      name: list.name,
+      minQuantity: list.default_min_quantity,
+      increasePercent: Number(list.below_min_increase_percent ?? 0),
     },
+    business: toBusiness(settingsRes.data),
     products,
   };
 }
