@@ -9,6 +9,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
+import { fetchAll } from "@/lib/fetch-all";
 import { round2 } from "@/lib/payment-math";
 import { COUNTER_PAYMENT_NOTE } from "@/lib/payments";
 
