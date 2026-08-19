@@ -20,7 +20,13 @@ export function normalizeMethod(method?: string | null): string | null {
   const t = String(method).trim().toLowerCase();
   if (!t) return null;
   if (t === "cash" || t === "cash in hand") return "Cash";
-  if (t === "card" || t === "credit card" || t === "creditcard" || t === "debit card") {
+  if (
+    t === "card" ||
+    t === "card payment" ||
+    t === "credit card" ||
+    t === "creditcard" ||
+    t === "debit card"
+  ) {
     return "Card Payment";
   }
   if (t === "bank" || t === "bank transfer" || t === "transfer" || t === "online") {
