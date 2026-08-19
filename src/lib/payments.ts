@@ -7,12 +7,13 @@ import { derivePaymentStatus, recalcBillBalance, round2 } from "@/lib/payment-ma
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
 
-export const PAYMENT_METHODS = ["Cash", "Credit Card", "Bank Transfer"] as const;
+export const PAYMENT_METHODS = ["Cash", "Card Payment", "Bank Transfer"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 /** Badge tone used wherever a payment method is displayed as a tag. */
 export const PAYMENT_METHOD_TONE: Record<string, "success" | "accent" | "warning" | "neutral"> = {
   Cash: "success",
+  "Card Payment": "accent",
   "Credit Card": "accent",
   "Bank Transfer": "warning",
 };
