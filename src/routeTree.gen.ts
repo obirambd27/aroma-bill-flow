@@ -55,6 +55,7 @@ import { Route as AuthenticatedPurchaseReturnsReturnIdRouteImport } from './rout
 import { Route as AuthenticatedPurchaseReturnsNewRouteImport } from './routes/_authenticated/purchase-returns.new'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsDayBookRouteImport } from './routes/_authenticated/reports.day-book'
+import { Route as AuthenticatedReportsOwnerRouteImport } from './routes/_authenticated/reports.owner'
 import { Route as AuthenticatedReportsPurchasesRouteImport } from './routes/_authenticated/reports.purchases'
 import { Route as AuthenticatedReportsReconciliationRouteImport } from './routes/_authenticated/reports.reconciliation'
 import { Route as AuthenticatedReportsSalesRouteImport } from './routes/_authenticated/reports.sales'
@@ -335,6 +336,12 @@ const AuthenticatedReportsDayBookRoute =
     path: '/reports/day-book',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsOwnerRoute =
+  AuthenticatedReportsOwnerRouteImport.update({
+    id: '/reports/owner',
+    path: '/reports/owner',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsPurchasesRoute =
   AuthenticatedReportsPurchasesRouteImport.update({
     id: '/reports/purchases',
@@ -450,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/purchase-returns/$returnId': typeof AuthenticatedPurchaseReturnsReturnIdRoute
   '/purchase-returns/new': typeof AuthenticatedPurchaseReturnsNewRoute
   '/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/reports/owner': typeof AuthenticatedReportsOwnerRoute
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/reconciliation': typeof AuthenticatedReportsReconciliationRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
@@ -511,6 +519,7 @@ export interface FileRoutesByTo {
   '/purchase-returns/$returnId': typeof AuthenticatedPurchaseReturnsReturnIdRoute
   '/purchase-returns/new': typeof AuthenticatedPurchaseReturnsNewRoute
   '/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/reports/owner': typeof AuthenticatedReportsOwnerRoute
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/reconciliation': typeof AuthenticatedReportsReconciliationRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
@@ -574,6 +583,7 @@ export interface FileRoutesById {
   '/_authenticated/purchase-returns/$returnId': typeof AuthenticatedPurchaseReturnsReturnIdRoute
   '/_authenticated/purchase-returns/new': typeof AuthenticatedPurchaseReturnsNewRoute
   '/_authenticated/reports/day-book': typeof AuthenticatedReportsDayBookRoute
+  '/_authenticated/reports/owner': typeof AuthenticatedReportsOwnerRoute
   '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/_authenticated/reports/reconciliation': typeof AuthenticatedReportsReconciliationRoute
   '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
@@ -637,6 +647,7 @@ export interface FileRouteTypes {
     | '/purchase-returns/$returnId'
     | '/purchase-returns/new'
     | '/reports/day-book'
+    | '/reports/owner'
     | '/reports/purchases'
     | '/reports/reconciliation'
     | '/reports/sales'
@@ -698,6 +709,7 @@ export interface FileRouteTypes {
     | '/purchase-returns/$returnId'
     | '/purchase-returns/new'
     | '/reports/day-book'
+    | '/reports/owner'
     | '/reports/purchases'
     | '/reports/reconciliation'
     | '/reports/sales'
@@ -760,6 +772,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchase-returns/$returnId'
     | '/_authenticated/purchase-returns/new'
     | '/_authenticated/reports/day-book'
+    | '/_authenticated/reports/owner'
     | '/_authenticated/reports/purchases'
     | '/_authenticated/reports/reconciliation'
     | '/_authenticated/reports/sales'
@@ -1124,6 +1137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsDayBookRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/owner': {
+      id: '/_authenticated/reports/owner'
+      path: '/reports/owner'
+      fullPath: '/reports/owner'
+      preLoaderRoute: typeof AuthenticatedReportsOwnerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/purchases': {
       id: '/_authenticated/reports/purchases'
       path: '/reports/purchases'
@@ -1251,6 +1271,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchaseReturnsReturnIdRoute: typeof AuthenticatedPurchaseReturnsReturnIdRoute
   AuthenticatedPurchaseReturnsNewRoute: typeof AuthenticatedPurchaseReturnsNewRoute
   AuthenticatedReportsDayBookRoute: typeof AuthenticatedReportsDayBookRoute
+  AuthenticatedReportsOwnerRoute: typeof AuthenticatedReportsOwnerRoute
   AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRoute
   AuthenticatedReportsReconciliationRoute: typeof AuthenticatedReportsReconciliationRoute
   AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
@@ -1315,6 +1336,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPurchaseReturnsReturnIdRoute,
   AuthenticatedPurchaseReturnsNewRoute: AuthenticatedPurchaseReturnsNewRoute,
   AuthenticatedReportsDayBookRoute: AuthenticatedReportsDayBookRoute,
+  AuthenticatedReportsOwnerRoute: AuthenticatedReportsOwnerRoute,
   AuthenticatedReportsPurchasesRoute: AuthenticatedReportsPurchasesRoute,
   AuthenticatedReportsReconciliationRoute:
     AuthenticatedReportsReconciliationRoute,
