@@ -234,23 +234,31 @@ async function outstandingSection() {
   return { rows, total: rows.reduce((s, r) => s + r.amount, 0) };
 }
 
-async function sumColumn(
-  table: "purchase_bills" | "expenses",
-  column: "total_amount" | "amount",
-  dateColumn: "bill_date" | "expense_date",
-  range: { from: string; to: string },
-) {
-  const rows = await fetchAll<Record<string, unknown>>((f, t) => {
-    const q = supabase
-      .from(table)
-      .select(column)
-      .gte(dateColumn, range.from)
-      .lte(dateColumn, range.to)
-      .range(f, t);
-    return (table === "purchase_bills" ? q.neq("status", "Cancelled") : q) as never;
-  });
-  return rows.reduce((s, r) => s + Number(r[column] ?? 0), 0);
+async function sumPurchases(range: { from: string; to: string }) {
+  const rows = await fetchAll<{ total_amount: number }>((f, t) =>
+    supabase
+      .from("purchase_bills")
+      .select("total_amount")
+      .neq("status", "Cancelled")
+      .gte("bill_date", range.from)
+      .lte("bill_date", range.to)
+      .range(f, t),
+  );
+  return rows.reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
 }
+
+async function sumExpenses(range: { from: string; to: string }) {
+  const rows = await fetchAll<{ amount: number }>((f, t) =>
+    supabase
+      .from("expenses")
+      .select("amount")
+      .gte("expense_date", range.from)
+      .lte("expense_date", range.to)
+      .range(f, t),
+  );
+  return rows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+}
+
 
 async function billItemsFor(billIds: string[]) {
   const out: {
