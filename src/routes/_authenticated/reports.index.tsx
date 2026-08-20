@@ -24,8 +24,20 @@ type Report = {
 
 const GROUPS: { title: string; reports: Report[] }[] = [
   {
+    title: "Overview",
+    reports: [
+      {
+        name: "Owner Report",
+        description: "Full daily/weekly/monthly business snapshot, ready to share.",
+        icon: PieChart,
+        to: "/reports/owner",
+      },
+    ],
+  },
+  {
     title: "Sales & Purchases",
     reports: [
+
       {
         name: "Sales Report",
         description: "Bill-level sales with tax, discount and payment status.",
