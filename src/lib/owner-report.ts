@@ -393,12 +393,12 @@ export function useOwnerReport(
           settle(() => salesSection(bills)),
           settle(() => finalizedBills(prev)),
           settle(() => outstandingSection()),
-          settle(() => sumColumn("purchase_bills", "total_amount", "bill_date", range)),
-          settle(() => sumColumn("expenses", "amount", "expense_date", range)),
+          settle(() => sumPurchases(range)),
+          settle(() => sumExpenses(range)),
           settle(() => accountsSection()),
           settle(() => customerActivity(range, bills)),
           settle(() => lowStockSection(defaultThreshold)),
-        ]);
+        ] as const);
 
       let prevSales: OwnerReportData["prevSales"] = null;
       let prevNetProfit: number | null = null;
@@ -411,9 +411,8 @@ export function useOwnerReport(
             hasData: prevBills.length > 0,
           };
           const prevItems = await settle(() => billItemsFor(prevBills.map((b) => b.id)));
-          const prevExp = await settle(() =>
-            sumColumn("expenses", "amount", "expense_date", prev),
-          );
+          const prevExp = await settle(() => sumExpenses(prev));
+
           if (prevItems && prevExp !== null && prevBills.length > 0) {
             const c = await settle(async () => cogsOf(prevItems));
             if (c !== null) prevNetProfit = s.totalPaid - c - prevExp;
