@@ -9,7 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetch-all";
-import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
+import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
 import { agingBucket, type AgingBucket } from "@/lib/collections";
 import { PAYMENT_METHODS } from "@/lib/payments";
 
@@ -85,12 +85,26 @@ export type OutstandingRow = {
   bucket: AgingBucket;
 };
 
-export type TopProductRow = { name: string; qty: number; revenue: number };
+export type ProductProfitRow = {
+  name: string;
+  qty: number;
+  revenue: number;
+  cost: number;
+  profit: number | null;
+  margin: number | null;
+  missingCost: boolean;
+};
 
-export type AccountRow = { name: string; type: string; balance: number };
+export type CollectedPrevious = {
+  total: number;
+  byMethod: Record<string, number>;
+  uncategorized: number;
+  orphaned: number;
+};
 
 export type OwnerReportData = {
   range: { from: string; to: string };
+  periodType: OwnerPeriod;
   generatedAt: string;
   sales: SalesSection | null;
   prevSales: { totalSell: number; totalPaid: number; hasData: boolean } | null;
@@ -100,11 +114,13 @@ export type OwnerReportData = {
   cogs: number | null;
   netProfit: number | null;
   prevNetProfit: number | null;
-  accounts: AccountRow[] | null;
+  collectedPrevious: CollectedPrevious | null;
   customerActivity: { newCustomers: number; returning: number } | null;
-  topProducts: TopProductRow[] | null;
+  productProfit: ProductProfitRow[] | null;
+  hasMissingCost: boolean;
   lowStock: { count: number; names: string[] } | null;
 };
+
 
 /* ---------- primitives ---------- */
 
@@ -280,10 +296,12 @@ async function billItemsFor(billIds: string[]) {
   return out;
 }
 
+/** Lines with no recorded cost snapshot are excluded rather than counted as zero. */
 function cogsOf(items: Awaited<ReturnType<typeof billItemsFor>>) {
   let total = 0;
   for (const i of items) {
-    const cost = Number(i.cost_price_snapshot ?? 0);
+    if (i.cost_price_snapshot === null || i.cost_price_snapshot === undefined) continue;
+    const cost = Number(i.cost_price_snapshot);
     const qty = Number(i.quantity ?? 0);
     if (!Number.isFinite(cost) || !Number.isFinite(qty)) throw new Error("Malformed cost price");
     total += cost * qty;
@@ -291,17 +309,43 @@ function cogsOf(items: Awaited<ReturnType<typeof billItemsFor>>) {
   return total;
 }
 
-function topProductsOf(items: Awaited<ReturnType<typeof billItemsFor>>): TopProductRow[] {
-  const map = new Map<string, TopProductRow>();
+function productProfitOf(items: Awaited<ReturnType<typeof billItemsFor>>): ProductProfitRow[] {
+  const map = new Map<string, ProductProfitRow>();
   for (const i of items) {
-    const key = i.product_name_snapshot;
-    const row = map.get(key) ?? { name: key, qty: 0, revenue: 0 };
-    row.qty += Number(i.quantity ?? 0);
+    const key = i.product_name_snapshot || "Unnamed product";
+    const row =
+      map.get(key) ??
+      ({
+        name: key,
+        qty: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+        margin: null,
+        missingCost: false,
+      } as ProductProfitRow);
+    const qty = Number(i.quantity ?? 0);
+    row.qty += qty;
     row.revenue += Number(i.line_total ?? 0);
+    if (i.cost_price_snapshot === null || i.cost_price_snapshot === undefined) {
+      row.missingCost = true;
+    } else {
+      row.cost += Number(i.cost_price_snapshot) * qty;
+    }
     map.set(key, row);
   }
-  return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const rows = [...map.values()].map((r) => {
+    const profit = r.revenue - r.cost;
+    return {
+      ...r,
+      profit,
+      margin: r.revenue > 0.009 ? (profit / r.revenue) * 100 : null,
+    };
+  });
+  rows.sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0));
+  return rows;
 }
+
 
 async function customerActivity(range: { from: string; to: string }, bills: BillLite[]) {
   const { count, error } = await supabase
@@ -348,20 +392,64 @@ async function lowStockSection(defaultThreshold: number) {
   return { count: names.length, names };
 }
 
-async function accountsSection(): Promise<AccountRow[]> {
-  const { data, error } = await supabase
-    .from("accounts")
-    .select("name, account_type, current_balance")
-    .eq("is_active", true)
-    .in("account_type", ["Cash", "Bank"])
-    .order("account_type")
-    .order("name");
-  if (error) throw error;
-  return (data ?? []).map((a) => ({
-    name: a.name,
-    type: a.account_type,
-    balance: Number(a.current_balance ?? 0),
-  }));
+/**
+ * Money received inside the period against bills raised BEFORE the period —
+ * i.e. collections clearing old outstanding, not payment on fresh sales.
+ * Payments whose bill can't be resolved are excluded (and counted separately).
+ */
+async function collectedPreviousSection(range: {
+  from: string;
+  to: string;
+}): Promise<CollectedPrevious> {
+  const rows = await fetchAll<{
+    bill_id: string | null;
+    amount_allocated: number;
+    payments_received: { payment_date: string; payment_method: string | null } | null;
+  }>(
+    (f, t) =>
+      supabase
+        .from("payment_allocations")
+        .select("bill_id, amount_allocated, payments_received!inner(payment_date, payment_method)")
+        .gte("payments_received.payment_date", range.from)
+        .lte("payments_received.payment_date", range.to)
+        .range(f, t) as never,
+  );
+
+  const billIds = [...new Set(rows.map((r) => r.bill_id).filter(Boolean))] as string[];
+  const billDate: Record<string, string> = {};
+  for (const ids of chunk(billIds)) {
+    const { data, error } = await supabase.from("bills").select("id, bill_date").in("id", ids);
+    if (error) throw error;
+    for (const b of data ?? []) billDate[b.id] = b.bill_date;
+  }
+
+  const byMethod: Record<string, number> = {};
+  for (const m of PAYMENT_METHODS) byMethod[m] = 0;
+  let total = 0;
+  let uncategorized = 0;
+  let orphaned = 0;
+
+  for (const r of rows) {
+    const amount = Number(r.amount_allocated ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const date = r.bill_id ? billDate[r.bill_id] : undefined;
+    if (!date) {
+      orphaned += amount;
+      continue;
+    }
+    if (date >= range.from) continue; // paid against a bill from this period → Group A
+    total += amount;
+    const method = normalizeMethod(r.payments_received?.payment_method);
+    if (method && method in byMethod) byMethod[method] = (byMethod[method] ?? 0) + amount;
+    else uncategorized += amount;
+  }
+
+  if (orphaned > 0) {
+    console.warn(
+      `[owner-report] Excluded ${orphaned.toFixed(2)} AED of payments with no matching bill.`,
+    );
+  }
+  return { total, byMethod, uncategorized, orphaned };
 }
 
 const settle = async <T,>(fn: () => Promise<T>): Promise<T | null> => {
@@ -378,9 +466,10 @@ export function useOwnerReport(
   range: { from: string; to: string },
   defaultThreshold = 5,
   enabled = true,
+  periodType: OwnerPeriod = "custom",
 ) {
   return useQuery<OwnerReportData>({
-    queryKey: ["owner-report", range.from, range.to],
+    queryKey: ["owner-report", range.from, range.to, periodType],
     enabled,
     staleTime: 60_000,
     queryFn: async () => {
@@ -388,14 +477,14 @@ export function useOwnerReport(
       const bills = await finalizedBills(range);
       const items = await settle(() => billItemsFor(bills.map((b) => b.id)));
 
-      const [sales, prevBills, outstanding, purchases, expenses, accounts, activity, lowStock] =
+      const [sales, prevBills, outstanding, purchases, expenses, collected, activity, lowStock] =
         await Promise.all([
           settle(() => salesSection(bills)),
           settle(() => finalizedBills(prev)),
           settle(() => outstandingSection()),
           settle(() => sumPurchases(range)),
           settle(() => sumExpenses(range)),
-          settle(() => accountsSection()),
+          settle(() => collectedPreviousSection(range)),
           settle(() => customerActivity(range, bills)),
           settle(() => lowStockSection(defaultThreshold)),
         ] as const);
@@ -423,9 +512,11 @@ export function useOwnerReport(
       const cogs = items ? await settle(async () => cogsOf(items)) : null;
       const netProfit =
         sales && cogs !== null && expenses !== null ? sales.totalSell - cogs - expenses : null;
+      const productProfit = items ? productProfitOf(items) : null;
 
       return {
         range,
+        periodType,
         generatedAt: new Date().toISOString(),
         sales,
         prevSales,
@@ -435,14 +526,59 @@ export function useOwnerReport(
         cogs,
         netProfit,
         prevNetProfit,
-        accounts,
+        collectedPrevious: collected,
         customerActivity: activity,
-        topProducts: items ? topProductsOf(items) : null,
+        productProfit,
+        hasMissingCost: (productProfit ?? []).some((p) => p.missingCost),
         lowStock,
       };
     },
   });
 }
+
+/** Big right-aligned headline on the report header, driven by the period type. */
+export function periodHeadline(
+  period: OwnerPeriod,
+  range: { from: string; to: string },
+): { title: string; sub: string } {
+  const d = (v: string) =>
+    new Date(`${v}T00:00:00`).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  if (period === "daily") return { title: "DAILY REPORT", sub: d(range.from) };
+  if (period === "weekly")
+    return {
+      title: "WEEKLY REPORT",
+      sub: `${new Date(`${range.from}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} – ${d(range.to)}`,
+    };
+  if (period === "monthly")
+    return {
+      title: "MONTHLY REPORT",
+      sub: new Date(`${range.from}T00:00:00`).toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+  return { title: "CUSTOM REPORT", sub: rangeLabel(range) };
+}
+
+/** "Today's Profit" / "This Week's Profit" / … */
+export function profitLabel(period: OwnerPeriod) {
+  if (period === "daily") return "Today's Profit";
+  if (period === "weekly") return "This Week's Profit";
+  if (period === "monthly") return "This Month's Profit";
+  return "Period Profit";
+}
+
+export function collectedLabel(period: OwnerPeriod) {
+  if (period === "daily") return "Collected Today (Previous Bills)";
+  if (period === "weekly") return "Collected This Week (Previous Bills)";
+  if (period === "monthly") return "Collected This Month (Previous Bills)";
+  return "Collected in Period (Previous Bills)";
+}
+
 
 /** null when the comparison would be meaningless (no prior data / zero base). */
 export function pctChange(current: number, previous: number | null | undefined): number | null {
