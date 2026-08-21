@@ -296,10 +296,12 @@ async function billItemsFor(billIds: string[]) {
   return out;
 }
 
+/** Lines with no recorded cost snapshot are excluded rather than counted as zero. */
 function cogsOf(items: Awaited<ReturnType<typeof billItemsFor>>) {
   let total = 0;
   for (const i of items) {
-    const cost = Number(i.cost_price_snapshot ?? 0);
+    if (i.cost_price_snapshot === null || i.cost_price_snapshot === undefined) continue;
+    const cost = Number(i.cost_price_snapshot);
     const qty = Number(i.quantity ?? 0);
     if (!Number.isFinite(cost) || !Number.isFinite(qty)) throw new Error("Malformed cost price");
     total += cost * qty;
@@ -307,17 +309,43 @@ function cogsOf(items: Awaited<ReturnType<typeof billItemsFor>>) {
   return total;
 }
 
-function topProductsOf(items: Awaited<ReturnType<typeof billItemsFor>>): TopProductRow[] {
-  const map = new Map<string, TopProductRow>();
+function productProfitOf(items: Awaited<ReturnType<typeof billItemsFor>>): ProductProfitRow[] {
+  const map = new Map<string, ProductProfitRow>();
   for (const i of items) {
-    const key = i.product_name_snapshot;
-    const row = map.get(key) ?? { name: key, qty: 0, revenue: 0 };
-    row.qty += Number(i.quantity ?? 0);
+    const key = i.product_name_snapshot || "Unnamed product";
+    const row =
+      map.get(key) ??
+      ({
+        name: key,
+        qty: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+        margin: null,
+        missingCost: false,
+      } as ProductProfitRow);
+    const qty = Number(i.quantity ?? 0);
+    row.qty += qty;
     row.revenue += Number(i.line_total ?? 0);
+    if (i.cost_price_snapshot === null || i.cost_price_snapshot === undefined) {
+      row.missingCost = true;
+    } else {
+      row.cost += Number(i.cost_price_snapshot) * qty;
+    }
     map.set(key, row);
   }
-  return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const rows = [...map.values()].map((r) => {
+    const profit = r.revenue - r.cost;
+    return {
+      ...r,
+      profit,
+      margin: r.revenue > 0.009 ? (profit / r.revenue) * 100 : null,
+    };
+  });
+  rows.sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0));
+  return rows;
 }
+
 
 async function customerActivity(range: { from: string; to: string }, bills: BillLite[]) {
   const { count, error } = await supabase
