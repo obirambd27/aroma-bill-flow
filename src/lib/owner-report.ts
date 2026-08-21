@@ -85,12 +85,26 @@ export type OutstandingRow = {
   bucket: AgingBucket;
 };
 
-export type TopProductRow = { name: string; qty: number; revenue: number };
+export type ProductProfitRow = {
+  name: string;
+  qty: number;
+  revenue: number;
+  cost: number;
+  profit: number | null;
+  margin: number | null;
+  missingCost: boolean;
+};
 
-export type AccountRow = { name: string; type: string; balance: number };
+export type CollectedPrevious = {
+  total: number;
+  byMethod: Record<string, number>;
+  uncategorized: number;
+  orphaned: number;
+};
 
 export type OwnerReportData = {
   range: { from: string; to: string };
+  periodType: OwnerPeriod;
   generatedAt: string;
   sales: SalesSection | null;
   prevSales: { totalSell: number; totalPaid: number; hasData: boolean } | null;
@@ -100,11 +114,13 @@ export type OwnerReportData = {
   cogs: number | null;
   netProfit: number | null;
   prevNetProfit: number | null;
-  accounts: AccountRow[] | null;
+  collectedPrevious: CollectedPrevious | null;
   customerActivity: { newCustomers: number; returning: number } | null;
-  topProducts: TopProductRow[] | null;
+  productProfit: ProductProfitRow[] | null;
+  hasMissingCost: boolean;
   lowStock: { count: number; names: string[] } | null;
 };
+
 
 /* ---------- primitives ---------- */
 
