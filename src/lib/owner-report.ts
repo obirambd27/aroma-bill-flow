@@ -536,6 +536,49 @@ export function useOwnerReport(
   });
 }
 
+/** Big right-aligned headline on the report header, driven by the period type. */
+export function periodHeadline(
+  period: OwnerPeriod,
+  range: { from: string; to: string },
+): { title: string; sub: string } {
+  const d = (v: string) =>
+    new Date(`${v}T00:00:00`).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  if (period === "daily") return { title: "DAILY REPORT", sub: d(range.from) };
+  if (period === "weekly")
+    return {
+      title: "WEEKLY REPORT",
+      sub: `${new Date(`${range.from}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} – ${d(range.to)}`,
+    };
+  if (period === "monthly")
+    return {
+      title: "MONTHLY REPORT",
+      sub: new Date(`${range.from}T00:00:00`).toLocaleDateString("en-GB", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+  return { title: "CUSTOM REPORT", sub: rangeLabel(range) };
+}
+
+/** "Today's Profit" / "This Week's Profit" / … */
+export function profitLabel(period: OwnerPeriod) {
+  if (period === "daily") return "Today's Profit";
+  if (period === "weekly") return "This Week's Profit";
+  if (period === "monthly") return "This Month's Profit";
+  return "Period Profit";
+}
+
+export function collectedLabel(period: OwnerPeriod) {
+  if (period === "daily") return "Collected Today (Previous Bills)";
+  if (period === "weekly") return "Collected This Week (Previous Bills)";
+  if (period === "monthly") return "Collected This Month (Previous Bills)";
+  return "Collected in Period (Previous Bills)";
+}
+
 
 /** null when the comparison would be meaningless (no prior data / zero base). */
 export function pctChange(current: number, previous: number | null | undefined): number | null {
