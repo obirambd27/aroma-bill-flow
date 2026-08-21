@@ -374,7 +374,7 @@ function OwnerReportPage() {
               </Stat>
             </div>
             <p className="text-xs text-muted-foreground">
-              Estimate — based on paid sales, recorded cost prices, and logged expenses for this
+              Estimate — based on total sell, recorded cost prices, and logged expenses for this
               period.
             </p>
           </Section>

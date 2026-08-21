@@ -89,7 +89,7 @@ ${
 ${stat("Net Profit (Estimate)", money(data.netProfit), true, data.netProfit !== null ? deltaHtml(data.netProfit, data.prevNetProfit) : "")}
 ${stat("Cost of Goods Sold", money(data.cogs))}
 ${stat("Total Expenses", money(data.expenses))}
-</div><p class="foot">Based on paid sales, recorded cost prices, and logged expenses for this period.</p>`;
+</div><p class="foot">Based on total sell, recorded cost prices, and logged expenses for this period.</p>`;
 
   const accountsBlock = data.accounts
     ? `<table><thead><tr><th>Account</th><th>Type</th><th class="num">Balance</th></tr></thead><tbody>
