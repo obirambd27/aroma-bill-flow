@@ -392,20 +392,64 @@ async function lowStockSection(defaultThreshold: number) {
   return { count: names.length, names };
 }
 
-async function accountsSection(): Promise<AccountRow[]> {
-  const { data, error } = await supabase
-    .from("accounts")
-    .select("name, account_type, current_balance")
-    .eq("is_active", true)
-    .in("account_type", ["Cash", "Bank"])
-    .order("account_type")
-    .order("name");
-  if (error) throw error;
-  return (data ?? []).map((a) => ({
-    name: a.name,
-    type: a.account_type,
-    balance: Number(a.current_balance ?? 0),
-  }));
+/**
+ * Money received inside the period against bills raised BEFORE the period —
+ * i.e. collections clearing old outstanding, not payment on fresh sales.
+ * Payments whose bill can't be resolved are excluded (and counted separately).
+ */
+async function collectedPreviousSection(range: {
+  from: string;
+  to: string;
+}): Promise<CollectedPrevious> {
+  const rows = await fetchAll<{
+    bill_id: string | null;
+    amount_allocated: number;
+    payments_received: { payment_date: string; payment_method: string | null } | null;
+  }>(
+    (f, t) =>
+      supabase
+        .from("payment_allocations")
+        .select("bill_id, amount_allocated, payments_received!inner(payment_date, payment_method)")
+        .gte("payments_received.payment_date", range.from)
+        .lte("payments_received.payment_date", range.to)
+        .range(f, t) as never,
+  );
+
+  const billIds = [...new Set(rows.map((r) => r.bill_id).filter(Boolean))] as string[];
+  const billDate: Record<string, string> = {};
+  for (const ids of chunk(billIds)) {
+    const { data, error } = await supabase.from("bills").select("id, bill_date").in("id", ids);
+    if (error) throw error;
+    for (const b of data ?? []) billDate[b.id] = b.bill_date;
+  }
+
+  const byMethod: Record<string, number> = {};
+  for (const m of PAYMENT_METHODS) byMethod[m] = 0;
+  let total = 0;
+  let uncategorized = 0;
+  let orphaned = 0;
+
+  for (const r of rows) {
+    const amount = Number(r.amount_allocated ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const date = r.bill_id ? billDate[r.bill_id] : undefined;
+    if (!date) {
+      orphaned += amount;
+      continue;
+    }
+    if (date >= range.from) continue; // paid against a bill from this period → Group A
+    total += amount;
+    const method = normalizeMethod(r.payments_received?.payment_method);
+    if (method && method in byMethod) byMethod[method] = (byMethod[method] ?? 0) + amount;
+    else uncategorized += amount;
+  }
+
+  if (orphaned > 0) {
+    console.warn(
+      `[owner-report] Excluded ${orphaned.toFixed(2)} AED of payments with no matching bill.`,
+    );
+  }
+  return { total, byMethod, uncategorized, orphaned };
 }
 
 const settle = async <T,>(fn: () => Promise<T>): Promise<T | null> => {
@@ -422,9 +466,10 @@ export function useOwnerReport(
   range: { from: string; to: string },
   defaultThreshold = 5,
   enabled = true,
+  periodType: OwnerPeriod = "custom",
 ) {
   return useQuery<OwnerReportData>({
-    queryKey: ["owner-report", range.from, range.to],
+    queryKey: ["owner-report", range.from, range.to, periodType],
     enabled,
     staleTime: 60_000,
     queryFn: async () => {
@@ -432,14 +477,14 @@ export function useOwnerReport(
       const bills = await finalizedBills(range);
       const items = await settle(() => billItemsFor(bills.map((b) => b.id)));
 
-      const [sales, prevBills, outstanding, purchases, expenses, accounts, activity, lowStock] =
+      const [sales, prevBills, outstanding, purchases, expenses, collected, activity, lowStock] =
         await Promise.all([
           settle(() => salesSection(bills)),
           settle(() => finalizedBills(prev)),
           settle(() => outstandingSection()),
           settle(() => sumPurchases(range)),
           settle(() => sumExpenses(range)),
-          settle(() => accountsSection()),
+          settle(() => collectedPreviousSection(range)),
           settle(() => customerActivity(range, bills)),
           settle(() => lowStockSection(defaultThreshold)),
         ] as const);
@@ -467,9 +512,11 @@ export function useOwnerReport(
       const cogs = items ? await settle(async () => cogsOf(items)) : null;
       const netProfit =
         sales && cogs !== null && expenses !== null ? sales.totalSell - cogs - expenses : null;
+      const productProfit = items ? productProfitOf(items) : null;
 
       return {
         range,
+        periodType,
         generatedAt: new Date().toISOString(),
         sales,
         prevSales,
@@ -479,14 +526,16 @@ export function useOwnerReport(
         cogs,
         netProfit,
         prevNetProfit,
-        accounts,
+        collectedPrevious: collected,
         customerActivity: activity,
-        topProducts: items ? topProductsOf(items) : null,
+        productProfit,
+        hasMissingCost: (productProfit ?? []).some((p) => p.missingCost),
         lowStock,
       };
     },
   });
 }
+
 
 /** null when the comparison would be meaningless (no prior data / zero base). */
 export function pctChange(current: number, previous: number | null | undefined): number | null {
