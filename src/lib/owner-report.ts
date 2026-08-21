@@ -9,7 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetch-all";
-import { buildPaymentBreakdown, type AllocationInput } from "@/lib/bill-payments";
+import { buildPaymentBreakdown, normalizeMethod, type AllocationInput } from "@/lib/bill-payments";
 import { agingBucket, type AgingBucket } from "@/lib/collections";
 import { PAYMENT_METHODS } from "@/lib/payments";
 
