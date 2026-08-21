@@ -415,14 +415,14 @@ export function useOwnerReport(
 
           if (prevItems && prevExp !== null && prevBills.length > 0) {
             const c = await settle(async () => cogsOf(prevItems));
-            if (c !== null) prevNetProfit = s.totalPaid - c - prevExp;
+            if (c !== null) prevNetProfit = s.totalSell - c - prevExp;
           }
         }
       }
 
       const cogs = items ? await settle(async () => cogsOf(items)) : null;
       const netProfit =
-        sales && cogs !== null && expenses !== null ? sales.totalPaid - cogs - expenses : null;
+        sales && cogs !== null && expenses !== null ? sales.totalSell - cogs - expenses : null;
 
       return {
         range,
