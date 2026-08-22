@@ -133,7 +133,10 @@ function OwnerReportPage() {
   const { data, isFetching, isError, refetch } = useOwnerReport(
     range,
     settings?.low_stock_threshold ?? 5,
+    period,
   );
+  const products = data?.productProfit ?? [];
+  const { pageItems: productPage, props: productPageProps } = usePaged(products, 25);
 
   const title = periodLabel(period);
   const business = useMemo(
