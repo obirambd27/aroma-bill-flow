@@ -133,6 +133,7 @@ function OwnerReportPage() {
   const { data, isFetching, isError, refetch } = useOwnerReport(
     range,
     settings?.low_stock_threshold ?? 5,
+    true,
     period,
   );
   const products = data?.productProfit ?? [];
