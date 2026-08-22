@@ -285,9 +285,14 @@ function OwnerReportPage() {
         <div className="space-y-6">
           <Section title="Sales Overview">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Total Sell" value={m(data.sales?.totalSell ?? null)} big>
+              <Stat label="Total Sell (All Sell: Paid + Credit)" value={m(data.sales?.totalSell ?? null)} big>
                 {data.sales && (
                   <Delta current={data.sales.totalSell} previous={data.prevSales?.totalSell} />
+                )}
+              </Stat>
+              <Stat label={profitLabel(data.periodType)} value={m(data.netProfit)} big>
+                {data.netProfit !== null && (
+                  <Delta current={data.netProfit} previous={data.prevNetProfit} />
                 )}
               </Stat>
               <Stat label="Total Paid Sell" value={m(data.sales?.totalPaid ?? null)}>
@@ -297,18 +302,164 @@ function OwnerReportPage() {
               </Stat>
               <Stat label="Bills Issued" value={data.sales ? String(data.sales.billCount) : NA} />
               <Stat label="Average Bill" value={m(data.sales?.averageBill ?? null)} />
-              <Stat label="Paid — Cash" value={m(data.sales?.byMethod["Cash"] ?? null)} />
-              <Stat
-                label="Paid — Bank Transfer"
-                value={m(data.sales?.byMethod["Bank Transfer"] ?? null)}
-              />
-              <Stat
-                label="Paid — Card Payment"
-                value={m(data.sales?.byMethod["Card Payment"] ?? null)}
-              />
               <Stat label="Tax Collected" value={m(data.sales?.tax ?? null)} />
               <Stat label="Discount Given" value={m(data.sales?.discount ?? null)} />
             </div>
+            <p className="text-xs text-muted-foreground">
+              {profitLabel(data.periodType)} = Total Sell − Cost of Goods Sold − Expenses. Estimate
+              — based on total sales, recorded cost prices, and logged expenses for this period.
+              {data.hasMissingCost
+                ? " Profit not available for items missing a recorded cost price at time of sale."
+                : ""}
+            </p>
+
+            <h3 className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Payments on this period's sales
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Stat label="Cash" value={m(data.sales?.byMethod["Cash"] ?? null)} />
+              <Stat
+                label="Bank Transfer"
+                value={m(data.sales?.byMethod["Bank Transfer"] ?? null)}
+              />
+              <Stat label="Card Payment" value={m(data.sales?.byMethod["Card Payment"] ?? null)} />
+            </div>
+
+            <h3 className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Collected from previous bills
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat
+                label={collectedLabel(data.periodType)}
+                value={m(data.collectedPrevious?.total ?? null)}
+                big
+              />
+              <Stat label="Cash" value={m(data.collectedPrevious?.byMethod["Cash"] ?? 0)} />
+              <Stat
+                label="Bank Transfer"
+                value={m(data.collectedPrevious?.byMethod["Bank Transfer"] ?? 0)}
+              />
+              <Stat
+                label="Card Payment"
+                value={m(data.collectedPrevious?.byMethod["Card Payment"] ?? 0)}
+              />
+              {!!data.collectedPrevious?.uncategorized && (
+                <Stat label="Uncategorized" value={m(data.collectedPrevious.uncategorized)} />
+              )}
+            </div>
+          </Section>
+
+          <Section title="Purchases & Expenses">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat label="Total Purchases" value={m(data.purchases)} />
+              <Stat label="Total Expenses" value={m(data.expenses)} />
+              <Stat label="Cost of Goods Sold" value={m(data.cogs)} />
+            </div>
+          </Section>
+
+          <Section title="Customer Activity">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat
+                label="New Customers"
+                value={data.customerActivity ? String(data.customerActivity.newCustomers) : NA}
+              />
+              <Stat
+                label="Returning Customers"
+                value={data.customerActivity ? String(data.customerActivity.returning) : NA}
+              />
+              <Stat
+                label="Low Stock Items"
+                value={data.lowStock ? String(data.lowStock.count) : NA}
+              />
+            </div>
+            {data.lowStock && data.lowStock.count > 0 && (
+              <Card className="p-4 text-sm text-muted-foreground">
+                {data.lowStock.count < 15 ? (
+                  data.lowStock.names.join(", ")
+                ) : (
+                  <Link to="/products" className="font-medium text-primary underline">
+                    View all low stock products
+                  </Link>
+                )}
+              </Card>
+            )}
+          </Section>
+
+          <Section title="Product Sales & Profit">
+            {products.length ? (
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Product</th>
+                        <th className="px-3 py-2 text-right">Qty Sold</th>
+                        <th className="px-3 py-2 text-right">Revenue</th>
+                        <th className="px-3 py-2 text-right">Cost</th>
+                        <th className="px-3 py-2 text-right">Profit</th>
+                        <th className="px-3 py-2 text-right">Margin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productPage.map((p) => (
+                        <tr key={p.name} className="border-t border-border">
+                          <td className="px-3 py-2">{p.name}</td>
+                          <td className="px-3 py-2 text-right">{p.qty}</td>
+                          <td className="px-3 py-2 text-right">{formatMoney(p.revenue)}</td>
+                          <td className="px-3 py-2 text-right">
+                            {p.missingCost && p.cost === 0 ? "—" : formatMoney(p.cost)}
+                          </td>
+                          <td
+                            className={`px-3 py-2 text-right font-medium ${
+                              p.profit === null
+                                ? "text-muted-foreground"
+                                : p.profit < 0
+                                  ? "text-destructive"
+                                  : p.margin !== null && p.margin < 10
+                                    ? "text-warning"
+                                    : ""
+                            }`}
+                          >
+                            {p.profit === null ? "—" : formatMoney(p.profit)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {p.margin === null ? "—" : `${p.margin.toFixed(1)}%`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-border bg-muted/40 font-semibold">
+                        <td className="px-3 py-2">Total ({products.length} products)</td>
+                        <td className="px-3 py-2 text-right">
+                          {products.reduce((t, p) => t + p.qty, 0)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {formatMoney(products.reduce((t, p) => t + p.revenue, 0))}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {formatMoney(products.reduce((t, p) => t + p.cost, 0))}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {formatMoney(products.reduce((t, p) => t + (p.profit ?? 0), 0))}
+                        </td>
+                        <td className="px-3 py-2" />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <Pagination {...productPageProps} label="products" />
+              </Card>
+            ) : (
+              <Card className="p-4 text-sm text-muted-foreground">
+                No products sold in this period.
+              </Card>
+            )}
+            {data.hasMissingCost && (
+              <p className="text-xs text-muted-foreground">
+                Profit not available for items missing a recorded cost price at time of sale.
+              </p>
+            )}
           </Section>
 
           <Section title="Outstanding">
@@ -363,111 +514,6 @@ function OwnerReportPage() {
                   </Card>
                 )}
               </>
-            ) : (
-              <Card className="p-4 text-sm text-destructive">{NA}</Card>
-            )}
-          </Section>
-
-          <Section title="Purchases, Expenses & Profit">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Total Purchases" value={m(data.purchases)} />
-              <Stat label="Total Expenses" value={m(data.expenses)} />
-              <Stat label="Cost of Goods Sold" value={m(data.cogs)} />
-              <Stat label="Net Profit (Estimate)" value={m(data.netProfit)} big>
-                {data.netProfit !== null && (
-                  <Delta current={data.netProfit} previous={data.prevNetProfit} />
-                )}
-              </Stat>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Estimate — based on total sell, recorded cost prices, and logged expenses for this
-              period.
-            </p>
-          </Section>
-
-          <Section title="Cash & Bank Snapshot (now)">
-            {data.accounts ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {data.accounts.map((a) => (
-                  <Stat key={a.name} label={`${a.name} (${a.type})`} value={formatMoney(a.balance)} />
-                ))}
-                <Stat
-                  label="Total"
-                  value={formatMoney(data.accounts.reduce((t, a) => t + a.balance, 0))}
-                  big
-                />
-              </div>
-            ) : (
-              <Card className="p-4 text-sm text-destructive">
-                Unavailable — please refresh and try again.
-              </Card>
-            )}
-          </Section>
-
-          <Section title="Customer Activity">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat
-                label="New Customers"
-                value={data.customerActivity ? String(data.customerActivity.newCustomers) : NA}
-              />
-              <Stat
-                label="Returning Customers"
-                value={data.customerActivity ? String(data.customerActivity.returning) : NA}
-              />
-            </div>
-          </Section>
-
-          <Section title="Top Selling Products">
-            {data.topProducts?.length ? (
-              <Card className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left">#</th>
-                      <th className="px-3 py-2 text-left">Product</th>
-                      <th className="px-3 py-2 text-right">Qty Sold</th>
-                      <th className="px-3 py-2 text-right">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.topProducts.map((p, i) => (
-                      <tr key={p.name} className="border-t border-border">
-                        <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                        <td className="px-3 py-2">{p.name}</td>
-                        <td className="px-3 py-2 text-right">{p.qty}</td>
-                        <td className="px-3 py-2 text-right font-medium">
-                          {formatMoney(p.revenue)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Card>
-            ) : (
-              <Card className="p-4 text-sm text-muted-foreground">
-                No products sold in this period.
-              </Card>
-            )}
-          </Section>
-
-          <Section title="Inventory Health">
-            {data.lowStock ? (
-              <Card className="space-y-2 p-4">
-                <p className="text-sm">
-                  <span className="text-lg font-semibold">{data.lowStock.count}</span>{" "}
-                  <span className="text-muted-foreground">
-                    product{data.lowStock.count === 1 ? "" : "s"} at or below their low-stock
-                    threshold
-                  </span>
-                </p>
-                {data.lowStock.count > 0 && data.lowStock.count < 15 ? (
-                  <p className="text-sm text-muted-foreground">{data.lowStock.names.join(", ")}</p>
-                ) : data.lowStock.count > 0 ? (
-                  <Link to="/products" className="text-sm font-medium text-primary underline">
-                    View all low stock products
-                  </Link>
-                ) : null}
-              </Card>
             ) : (
               <Card className="p-4 text-sm text-destructive">{NA}</Card>
             )}
