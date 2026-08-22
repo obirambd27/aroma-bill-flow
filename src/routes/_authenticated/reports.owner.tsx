@@ -23,13 +23,16 @@ import { agingLabel } from "@/lib/collections";
 import { cleanPhone } from "@/lib/invoice-share";
 import { agingTone } from "@/lib/collections";
 import {
+  collectedLabel,
   ownerPeriodRange,
   pctChange,
   periodLabel,
+  profitLabel,
   rangeLabel,
   useOwnerReport,
   type OwnerPeriod,
 } from "@/lib/owner-report";
+import { Pagination, usePaged } from "@/components/Pagination";
 import {
   downloadOwnerReportCSV,
   downloadOwnerReportXLSX,
