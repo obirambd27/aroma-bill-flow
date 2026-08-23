@@ -283,8 +283,8 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   section > h2{break-after:avoid}
   h2{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#7c3aed;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #e6e1f2}
   .subhead{font-size:8.5px;text-transform:uppercase;letter-spacing:.1em;color:#7a7186;margin:10px 0 6px;font-weight:700}
-  .hero-band{display:flex;gap:8px;margin-bottom:12px}
-  .hero{flex:1;border:1px solid #e3dcf3;border-radius:10px;padding:10px 12px;background:#fbfaff}
+  .hero-band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .hero{min-width:0;border:1px solid #e3dcf3;border-radius:10px;padding:10px 12px;background:#fbfaff}
   .hero.accent{background:#7c3aed;border-color:#7c3aed;color:#fff}
   .hero.accent span,.hero.accent .delta{color:rgba(255,255,255,.82)}
   .hero.warn{background:#fff7ed;border-color:#f6d5a8}
@@ -297,7 +297,7 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .delta{display:block;font-size:8.5px;font-weight:600;margin-top:2px}
   .delta.up{color:#12805c}.delta.down{color:#c0392b}
   .cols{display:flex;gap:12px;margin-top:8px}
-  .col{flex:1;border:1px solid #eceaf1;border-radius:9px;padding:8px 10px;background:#fff}
+  .col{flex:1 1 0;min-width:0;border:1px solid #eceaf1;border-radius:9px;padding:8px 10px;background:#fff}
   .cols.charts .col{background:#fdfcff}
   .colTotal{margin:0 0 4px;font-size:15px;font-weight:700}
   .donut-wrap{display:flex;align-items:center;gap:12px}
