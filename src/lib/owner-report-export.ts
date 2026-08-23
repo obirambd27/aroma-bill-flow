@@ -320,6 +320,7 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   thead{display:table-header-group}
   tfoot{display:table-row-group}
   tr{page-break-inside:avoid}
+  table.flow tfoot tr{break-before:avoid;page-break-before:avoid}
   .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
   td.low{background:#fff5e6}
   td.neg{background:#fdeaea;color:#c0392b;font-weight:600}
