@@ -265,10 +265,11 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
 <style>
   *{box-sizing:border-box}
   html,body{width:100%;max-width:100%;overflow-x:hidden}
-  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;padding:104px 2px 40px}
-  .runner{position:fixed;left:0;right:0;background:#fff}
-  .page-head{top:0;padding:14px 0 10px;border-bottom:2px solid #7c3aed}
-  .page-foot{bottom:0;padding:8px 0;border-top:1px solid #e3e0e8;color:#7a7186;font-size:8.5px;text-align:center}
+  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;padding:0 2px}
+  table.sheet{width:100%;border-collapse:collapse;margin:0}
+  table.sheet > thead > tr > td,table.sheet > tbody > tr > td,table.sheet > tfoot > tr > td{border:0;padding:0}
+  .page-head{padding:10px 0;border-bottom:2px solid #7c3aed;margin-bottom:10px}
+  .page-foot{padding:6px 0 0;border-top:1px solid #e3e0e8;color:#7a7186;font-size:8.5px;text-align:center;margin-top:8px}
   .brand{display:flex;justify-content:space-between;align-items:center;gap:20px}
   .bl{display:flex;gap:12px;align-items:center}
   .logo{max-height:46px;max-width:130px;object-fit:contain}
