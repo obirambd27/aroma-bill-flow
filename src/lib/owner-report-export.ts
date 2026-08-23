@@ -267,7 +267,10 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   html,body{width:100%;max-width:100%;overflow-x:hidden}
   body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;padding:0 2px}
   table.sheet{width:100%;border-collapse:collapse;margin:0}
-  table.sheet > thead > tr > td,table.sheet > tbody > tr > td,table.sheet > tfoot > tr > td{border:0;padding:0}
+  table.sheet > thead > tr > td,table.sheet > tbody > tr > td,table.sheet > tfoot > tr > td{border:0;padding:0;background:transparent;font-weight:400}
+  table.sheet > thead{display:table-header-group}
+  table.sheet > tfoot{display:table-footer-group}
+  table.sheet > tbody > tr,table.sheet > thead > tr,table.sheet > tfoot > tr{background:transparent}
   .page-head{padding:10px 0;border-bottom:2px solid #7c3aed;margin-bottom:10px}
   .page-foot{padding:6px 0 0;border-top:1px solid #e3e0e8;color:#7a7186;font-size:8.5px;text-align:center;margin-top:8px}
   .brand{display:flex;justify-content:space-between;align-items:center;gap:20px}
