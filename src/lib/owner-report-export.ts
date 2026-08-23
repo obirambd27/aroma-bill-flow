@@ -290,8 +290,8 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .hero.warn{background:#fff7ed;border-color:#f6d5a8}
   .hero span{display:block;color:#7a7186;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
   .hero strong{display:block;font-size:17px;margin-top:3px;letter-spacing:-.01em}
-  .grid{display:flex;flex-wrap:wrap;gap:6px}
-  .stat{flex:1;min-width:104px;border:1px solid #eceaf1;border-radius:7px;padding:6px 9px;background:#fff}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .stat{min-width:0;border:1px solid #eceaf1;border-radius:7px;padding:6px 9px;background:#fff;overflow:hidden}
   .stat span{display:block;color:#7a7186;font-size:8px;text-transform:uppercase;letter-spacing:.06em}
   .stat strong{font-size:12.5px}
   .delta{display:block;font-size:8.5px;font-weight:600;margin-top:2px}
