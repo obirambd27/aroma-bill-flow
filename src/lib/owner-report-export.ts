@@ -277,8 +277,9 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .rt strong{display:block;font-size:12.5px;color:#7c3aed;text-transform:uppercase;letter-spacing:.12em}
   .rt .date{font-size:11px;font-weight:600;margin-top:2px}
   .rt .gen{font-size:8.5px;color:#7a7186;margin-top:2px}
-  section{margin-bottom:14px}
-  section.break{page-break-before:always}
+  section{margin-bottom:14px;max-width:100%}
+  section.break{page-break-before:auto;break-inside:auto}
+  section > h2{break-after:avoid}
   h2{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#7c3aed;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #e6e1f2}
   .subhead{font-size:8.5px;text-transform:uppercase;letter-spacing:.1em;color:#7a7186;margin:10px 0 6px;font-weight:700}
   .hero-band{display:flex;gap:8px;margin-bottom:12px}
