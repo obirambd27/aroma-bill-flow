@@ -325,7 +325,9 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .foot{color:#7a7186;font-size:8.5px;margin:6px 0 0}
   @page{size:A4 portrait;margin:12mm}
 </style></head><body>
-<div class="runner page-head">
+<table class="sheet">
+<thead><tr><td>
+<div class="page-head">
   <div class="brand">
     <div class="bl">
       ${logoHtml}
@@ -341,8 +343,9 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
     </div>
   </div>
 </div>
-<div class="runner page-foot">Generated ${esc(generated)} — ${esc(business.name)}</div>
-
+</td></tr></thead>
+<tfoot><tr><td><div class="page-foot">Generated ${esc(generated)} — ${esc(business.name)}</div></td></tr></tfoot>
+<tbody><tr><td>
 <section><h2>Sales Overview</h2>${heroBand}${salesBlock}${paymentsBlock}</section>
 <section><h2>Customer Activity &amp; Inventory</h2><div class="grid">
 ${stat("New Customers", data.customerActivity ? String(data.customerActivity.newCustomers) : "Unable to calculate")}
@@ -351,6 +354,8 @@ ${stat("Low Stock Items", data.lowStock ? String(data.lowStock.count) : "Unable 
 </div></section>
 ${productSection}
 ${outstandingSection}
+</td></tr></tbody>
+</table>
 <script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
