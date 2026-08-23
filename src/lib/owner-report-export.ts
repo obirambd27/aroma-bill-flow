@@ -264,10 +264,15 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(head.title)}</title>
 <style>
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;padding:104px 0 40px}
-  .runner{position:fixed;left:0;right:0;background:#fff}
-  .page-head{top:0;padding:14px 0 10px;border-bottom:2px solid #7c3aed}
-  .page-foot{bottom:0;padding:8px 0;border-top:1px solid #e3e0e8;color:#7a7186;font-size:8.5px;text-align:center}
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{font-family:Inter,system-ui,sans-serif;color:#1a1024;margin:0;font-size:10.5px;padding:0 2px}
+  table.sheet{width:100%;border-collapse:collapse;margin:0}
+  table.sheet > thead > tr > td,table.sheet > tbody > tr > td,table.sheet > tfoot > tr > td{border:0;padding:0;background:transparent;font-weight:400}
+  table.sheet > thead{display:table-header-group}
+  table.sheet > tfoot{display:table-footer-group}
+  table.sheet > tbody > tr,table.sheet > thead > tr,table.sheet > tfoot > tr{background:transparent}
+  .page-head{padding:10px 0;border-bottom:2px solid #7c3aed;margin-bottom:10px}
+  .page-foot{padding:6px 0 0;border-top:1px solid #e3e0e8;color:#7a7186;font-size:8.5px;text-align:center;margin-top:8px}
   .brand{display:flex;justify-content:space-between;align-items:center;gap:20px}
   .bl{display:flex;gap:12px;align-items:center}
   .logo{max-height:46px;max-width:130px;object-fit:contain}
@@ -277,25 +282,26 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .rt strong{display:block;font-size:12.5px;color:#7c3aed;text-transform:uppercase;letter-spacing:.12em}
   .rt .date{font-size:11px;font-weight:600;margin-top:2px}
   .rt .gen{font-size:8.5px;color:#7a7186;margin-top:2px}
-  section{margin-bottom:14px}
-  section.break{page-break-before:always}
+  section{margin-bottom:14px;max-width:100%}
+  section.break{page-break-before:auto;break-inside:auto}
+  section > h2{break-after:avoid}
   h2{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#7c3aed;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #e6e1f2}
   .subhead{font-size:8.5px;text-transform:uppercase;letter-spacing:.1em;color:#7a7186;margin:10px 0 6px;font-weight:700}
-  .hero-band{display:flex;gap:8px;margin-bottom:12px}
-  .hero{flex:1;border:1px solid #e3dcf3;border-radius:10px;padding:10px 12px;background:#fbfaff}
+  .hero-band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .hero{min-width:0;border:1px solid #e3dcf3;border-radius:10px;padding:10px 12px;background:#fbfaff}
   .hero.accent{background:#7c3aed;border-color:#7c3aed;color:#fff}
   .hero.accent span,.hero.accent .delta{color:rgba(255,255,255,.82)}
   .hero.warn{background:#fff7ed;border-color:#f6d5a8}
   .hero span{display:block;color:#7a7186;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
   .hero strong{display:block;font-size:17px;margin-top:3px;letter-spacing:-.01em}
-  .grid{display:flex;flex-wrap:wrap;gap:6px}
-  .stat{flex:1;min-width:104px;border:1px solid #eceaf1;border-radius:7px;padding:6px 9px;background:#fff}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .stat{min-width:0;border:1px solid #eceaf1;border-radius:7px;padding:6px 9px;background:#fff;overflow:hidden}
   .stat span{display:block;color:#7a7186;font-size:8px;text-transform:uppercase;letter-spacing:.06em}
   .stat strong{font-size:12.5px}
   .delta{display:block;font-size:8.5px;font-weight:600;margin-top:2px}
   .delta.up{color:#12805c}.delta.down{color:#c0392b}
   .cols{display:flex;gap:12px;margin-top:8px}
-  .col{flex:1;border:1px solid #eceaf1;border-radius:9px;padding:8px 10px;background:#fff}
+  .col{flex:1 1 0;min-width:0;border:1px solid #eceaf1;border-radius:9px;padding:8px 10px;background:#fff}
   .cols.charts .col{background:#fdfcff}
   .colTotal{margin:0 0 4px;font-size:15px;font-weight:700}
   .donut-wrap{display:flex;align-items:center;gap:12px}
@@ -314,6 +320,7 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   thead{display:table-header-group}
   tfoot{display:table-row-group}
   tr{page-break-inside:avoid}
+  table.flow tfoot tr{break-before:avoid;page-break-before:avoid}
   .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
   td.low{background:#fff5e6}
   td.neg{background:#fdeaea;color:#c0392b;font-weight:600}
@@ -322,7 +329,9 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
   .foot{color:#7a7186;font-size:8.5px;margin:6px 0 0}
   @page{size:A4 portrait;margin:12mm}
 </style></head><body>
-<div class="runner page-head">
+<table class="sheet">
+<thead><tr><td>
+<div class="page-head">
   <div class="brand">
     <div class="bl">
       ${logoHtml}
@@ -338,8 +347,9 @@ ${data.hasMissingCost ? `<p class="foot">* Profit not available for items missin
     </div>
   </div>
 </div>
-<div class="runner page-foot">Generated ${esc(generated)} — ${esc(business.name)}</div>
-
+</td></tr></thead>
+<tfoot><tr><td><div class="page-foot">Generated ${esc(generated)} — ${esc(business.name)}</div></td></tr></tfoot>
+<tbody><tr><td>
 <section><h2>Sales Overview</h2>${heroBand}${salesBlock}${paymentsBlock}</section>
 <section><h2>Customer Activity &amp; Inventory</h2><div class="grid">
 ${stat("New Customers", data.customerActivity ? String(data.customerActivity.newCustomers) : "Unable to calculate")}
@@ -348,6 +358,8 @@ ${stat("Low Stock Items", data.lowStock ? String(data.lowStock.count) : "Unable 
 </div></section>
 ${productSection}
 ${outstandingSection}
+</td></tr></tbody>
+</table>
 <script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
