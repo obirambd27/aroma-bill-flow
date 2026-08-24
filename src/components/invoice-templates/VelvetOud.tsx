@@ -92,10 +92,10 @@ export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
             label: `Paid · ${line.method}${line.date ? ` · ${formatDate(line.date)}` : ""}`,
             value: formatMoney(line.amount),
           })),
-          { label: "Amount Paid", value: formatMoney(doc.paid) },
-          { label: "Balance Due", value: formatMoney(doc.balanceDue) },
         ]}
         totalValue={doc.total}
+        paid={doc.paid}
+        balanceDue={doc.balanceDue}
       />
     </DocumentSheet>
   );
