@@ -1139,6 +1139,54 @@ export type Database = {
           },
         ]
       }
+      payment_deletion_log: {
+        Row: {
+          account_id: string | null
+          affected_bills: Json
+          amount: number
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          deleted_at: string
+          id: string
+          payment_date: string | null
+          payment_id: string | null
+          payment_method: string | null
+          reason: string | null
+          snapshot: Json
+        }
+        Insert: {
+          account_id?: string | null
+          affected_bills?: Json
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          deleted_at?: string
+          id?: string
+          payment_date?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          snapshot?: Json
+        }
+        Update: {
+          account_id?: string | null
+          affected_bills?: Json
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          deleted_at?: string
+          id?: string
+          payment_date?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          snapshot?: Json
+        }
+        Relationships: []
+      }
       payment_made_allocations: {
         Row: {
           amount_allocated: number
@@ -2559,6 +2607,10 @@ export type Database = {
     Functions: {
       convert_price_list_order: {
         Args: { p_bill_id: string; p_order_id: string }
+        Returns: Json
+      }
+      delete_payment_received: {
+        Args: { p_payment_id: string; p_reason?: string }
         Returns: Json
       }
       reject_price_list_order: {
