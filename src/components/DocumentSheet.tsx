@@ -264,13 +264,20 @@ export function DocTotals({
   rows,
   totalLabel = "Total Due",
   totalValue,
+  paid,
+  balanceDue,
   stamp,
 }: {
   rows: { label: string; value: string }[];
   totalLabel?: string;
   totalValue: number | string;
+  paid?: number | undefined;
+  balanceDue?: number | undefined;
   stamp?: DocStamp | null | undefined;
 }) {
+  const showBalance = balanceDue !== undefined;
+  const settled = showBalance && Number(balanceDue) <= 0.0001;
+
   return (
     <section className="flex flex-wrap items-end justify-between gap-6 px-6 pt-8 sm:px-10">
       {stamp ? (
@@ -296,16 +303,50 @@ export function DocTotals({
             <dd className="numeric font-medium">{row.value}</dd>
           </div>
         ))}
-        <div className="mt-3 flex items-center justify-between gap-4 rounded-2xl bg-doc-accent px-4 py-3 text-doc-accent-foreground">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
-            {totalLabel}
-          </span>
-          <span className="numeric font-display text-xl font-bold">{formatMoney(totalValue)}</span>
-        </div>
+
+        {showBalance ? (
+          <>
+            <div className="mt-2 flex justify-between gap-4 border-t border-doc-line pt-2">
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-doc-label">
+                Grand Total
+              </dt>
+              <dd className="numeric font-semibold">{formatMoney(totalValue)}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-doc-muted">Amount Paid</dt>
+              <dd className="numeric font-medium">{formatMoney(paid ?? 0)}</dd>
+            </div>
+            <div
+              className={cn(
+                "mt-3 flex items-center justify-between gap-4 rounded-2xl px-4 py-3",
+                settled
+                  ? "bg-emerald-600 text-white"
+                  : "bg-doc-accent text-doc-accent-foreground",
+              )}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
+                {settled ? "Balance Due — Paid in Full" : "Balance Due"}
+              </span>
+              <span className="numeric font-display text-xl font-bold">
+                {formatMoney(balanceDue ?? 0)}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="mt-3 flex items-center justify-between gap-4 rounded-2xl bg-doc-accent px-4 py-3 text-doc-accent-foreground">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
+              {totalLabel}
+            </span>
+            <span className="numeric font-display text-xl font-bold">
+              {formatMoney(totalValue)}
+            </span>
+          </div>
+        )}
       </dl>
     </section>
   );
 }
+
 
 export function DocFooter({
   paymentDetails,

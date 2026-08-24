@@ -149,9 +149,19 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
           {doc.discountAmount > 0 && (
             <Line label="Discount" value={`−${formatMoney(doc.discountAmount)}`} />
           )}
+          <Line label="Grand Total" value={formatMoney(doc.total)} bold />
           <Line label="Amount Paid" value={formatMoney(doc.paid)} />
-          <Line label="Balance Due" value={formatMoney(doc.balanceDue)} />
-          <Line label="TOTAL" value={formatMoney(doc.total)} bold />
+          <div
+            className={cn(
+              "flex justify-between border-b border-doc-line px-2 py-1.5 text-[12px] font-bold",
+              doc.balanceDue <= 0.0001 ? "bg-emerald-100 text-emerald-900" : "bg-doc-tint",
+            )}
+          >
+            <span className="uppercase tracking-[0.1em]">
+              {doc.balanceDue <= 0.0001 ? "Balance Due — Paid in Full" : "Balance Due"}
+            </span>
+            <span className="numeric">{formatMoney(doc.balanceDue)}</span>
+          </div>
         </div>
       </div>
 
