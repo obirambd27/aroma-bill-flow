@@ -186,14 +186,25 @@ export function OrangeBulkTemplate({ doc }: { doc: InvoiceDoc }) {
               value={formatMoney(line.amount)}
             />
           ))}
-          <Row label="Amount Paid" value={formatMoney(doc.paid)} />
-          <Row label="Balance Due" value={formatMoney(doc.balanceDue)} />
-          <div className="mt-3 flex items-center justify-between gap-4 bg-doc-accent px-4 py-3 text-doc-accent-foreground">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+          <div className="mt-2 flex justify-between gap-4 border-t border-doc-line pt-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-doc-label">
               Grand Total
             </span>
+            <span className="numeric font-semibold">{formatMoney(doc.total)}</span>
+          </div>
+          <Row label="Amount Paid" value={formatMoney(doc.paid)} />
+          <div
+            className={`mt-3 flex items-center justify-between gap-4 px-4 py-3 ${
+              doc.balanceDue <= 0.0001
+                ? "bg-emerald-600 text-white"
+                : "bg-doc-accent text-doc-accent-foreground"
+            }`}
+          >
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+              {doc.balanceDue <= 0.0001 ? "Balance Due — Paid in Full" : "Balance Due"}
+            </span>
             <span className="numeric font-display text-xl font-bold">
-              {formatMoney(doc.total)}
+              {formatMoney(doc.balanceDue)}
             </span>
           </div>
         </dl>

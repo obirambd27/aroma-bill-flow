@@ -105,8 +105,8 @@ export function ThermalReceipt({
             <span>{formatMoney(bill.tax_amount)}</span>
           </div>
         )}
-        <div className="flex justify-between gap-2 text-[13px] font-bold">
-          <span>TOTAL</span>
+        <div className="flex justify-between gap-2 font-bold">
+          <span>Grand Total</span>
           <span>{formatMoney(total)}</span>
         </div>
         {Object.entries(byMethod).map(([method, amount]) => (
@@ -116,13 +116,17 @@ export function ThermalReceipt({
           </div>
         ))}
         <div className="flex justify-between gap-2">
-          <span>Paid</span>
+          <span>Amount Paid</span>
           <span>{formatMoney(paid)}</span>
         </div>
-        <div className="flex justify-between gap-2 font-bold">
-          <span>Balance Due</span>
+        <div className="mt-1 flex justify-between gap-2 border-t border-dashed border-foreground pt-1 text-[14px] font-bold">
+          <span>BALANCE DUE</span>
           <span>{formatMoney(balanceDue)}</span>
         </div>
+        {balanceDue <= 0.0001 && (
+          <p className="text-center text-[11px] font-bold">*** PAID IN FULL ***</p>
+        )}
+
 
       </div>
 
