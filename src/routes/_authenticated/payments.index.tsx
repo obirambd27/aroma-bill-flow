@@ -224,14 +224,25 @@ function PaymentsPage() {
                     </div>
                     <p className="numeric shrink-0 text-base font-bold">{formatMoney(p.amount)}</p>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {p.payment_allocations
-                      .map((a) => a.bills?.bill_number)
-                      .filter(Boolean)
-                      .join(", ") || "Unallocated"}
-                    {p.reference_number ? ` · Ref ${p.reference_number}` : ""}
-                  </p>
+                  <div className="mt-2 flex items-end justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      {p.payment_allocations
+                        .map((a) => a.bills?.bill_number)
+                        .filter(Boolean)
+                        .join(", ") || "Unallocated"}
+                      {p.reference_number ? ` · Ref ${p.reference_number}` : ""}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                      onClick={() => setToDelete(p)}
+                    >
+                      <Trash2 className="text-destructive" />
+                    </Button>
+                  </div>
                 </li>
+
               ))}
             </ul>
           </>
