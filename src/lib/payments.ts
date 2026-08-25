@@ -465,7 +465,7 @@ export async function syncCounterPayment(input: CounterPaymentInput) {
 export async function deletePaymentReceived(paymentId: string, reason: string | null) {
   const { data, error } = await supabase.rpc("delete_payment_received", {
     p_payment_id: paymentId,
-    p_reason: reason,
+    p_reason: reason ?? undefined,
   });
   if (error) throw error;
   const result = data as { ok: boolean; error?: string; bill_number?: string } | null;
