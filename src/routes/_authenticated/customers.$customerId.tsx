@@ -321,7 +321,11 @@ function CustomerDetailPage() {
                     <th className="px-4 py-3">Method</th>
                     <th className="px-4 py-3">Reference</th>
                     <th className="px-4 py-3 text-right">Amount</th>
+                    <th className="px-4 py-3 text-right">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {payments.map((p) => {
