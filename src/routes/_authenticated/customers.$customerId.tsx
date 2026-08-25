@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, Pencil, Plus, ReceiptText, Wallet } from "lucide-react";
+import { ArrowLeft, ChevronDown, Pencil, Plus, ReceiptText, Trash2, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
