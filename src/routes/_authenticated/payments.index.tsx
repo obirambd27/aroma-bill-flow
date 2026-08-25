@@ -250,6 +250,11 @@ function PaymentsPage() {
       </div>
 
       <RecordPaymentDialog open={open} onOpenChange={setOpen} />
+      <DeletePaymentDialog
+        payment={toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+      />
+
     </div>
   );
 }
