@@ -74,6 +74,8 @@ function CustomerDetailPage() {
   const { data: credit } = useCustomerCredit(customerId);
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<PaymentRow | null>(null);
+
 
   const statement = useMemo(() => {
     const rows = [
