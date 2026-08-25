@@ -448,6 +448,11 @@ function CustomerDetailPage() {
       </Tabs>
 
       <CustomerFormDialog open={editOpen} onOpenChange={setEditOpen} customer={customer} />
+      <DeletePaymentDialog
+        payment={paymentToDelete}
+        onOpenChange={(o) => !o && setPaymentToDelete(null)}
+      />
+
     </div>
   );
 }
