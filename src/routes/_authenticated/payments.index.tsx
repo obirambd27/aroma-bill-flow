@@ -44,6 +44,8 @@ function PaymentsPage() {
   const { data: payments = [], isLoading } = usePaymentsReceived();
   const { data: customers = [] } = useCustomers();
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<PaymentRow | null>(null);
+
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
   const [customerId, setCustomerId] = useState("all");
