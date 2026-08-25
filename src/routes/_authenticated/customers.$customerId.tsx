@@ -360,7 +360,21 @@ function CustomerDetailPage() {
                         <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                           {formatMoney(p.amount)}
                         </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPaymentToDelete(p);
+                            }}
+                          >
+                            <Trash2 className="text-destructive" />
+                          </Button>
+                        </td>
                       </tr>
+
                     );
                   })}
                 </tbody>
