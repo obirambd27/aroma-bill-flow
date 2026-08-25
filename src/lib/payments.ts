@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Bill } from "@/lib/data";
@@ -6,6 +6,7 @@ import { derivePaymentStatus, recalcBillBalance, round2 } from "@/lib/payment-ma
 
 export type PaymentReceived = Tables<"payments_received">;
 export type PaymentAllocation = Tables<"payment_allocations">;
+
 
 export const PAYMENT_METHODS = ["Cash", "Card Payment", "Bank Transfer"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -454,4 +455,57 @@ export async function syncCounterPayment(input: CounterPaymentInput) {
   });
 
   return payment;
+}
+
+/**
+ * Reverses a collection through the atomic `delete_payment_received` routine:
+ * bill balances, statuses, ledger effect and uncleared cheques are all undone,
+ * and the event is written to the deletion log.
+ */
+export async function deletePaymentReceived(paymentId: string, reason: string | null) {
+  const { data, error } = await supabase.rpc("delete_payment_received", {
+    p_payment_id: paymentId,
+    ...(reason ? { p_reason: reason } : {}),
+  });
+
+  if (error) throw error;
+  const result = data as { ok: boolean; error?: string; bill_number?: string } | null;
+  if (!result?.ok) {
+    if (result?.error === "negative_balance") {
+      throw new Error(
+        `Reversing this payment would leave bill ${result.bill_number ?? ""} with a negative balance.`.trim(),
+      );
+    }
+    if (result?.error === "not_found") throw new Error("This payment no longer exists.");
+    throw new Error("Could not reverse this payment.");
+  }
+  return result;
+}
+
+/** Mutation wrapper that refreshes every screen touched by a reversal. */
+export function useDeletePaymentReceived() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { paymentId: string; reason: string | null }) =>
+      deletePaymentReceived(input.paymentId, input.reason),
+    onSuccess: () => {
+      for (const key of [
+        "payments-received",
+        "bills",
+        "bill",
+        "accounts",
+        "account-statement",
+        "ledger-entries",
+        "customer-open-bills",
+        "customer-totals",
+        "cheques",
+        "day-book",
+        "dashboard",
+        "reconciliation",
+        "owner-report",
+      ]) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
+    },
+  });
 }

@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Trash2, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
+import { DeletePaymentDialog } from "@/components/DeletePaymentDialog";
 import { SyncIssuesBanner } from "@/components/SyncIssuesBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCustomers } from "@/lib/data";
-import { PAYMENT_METHODS, usePaymentsReceived } from "@/lib/payments";
+import { PAYMENT_METHODS, usePaymentsReceived, type PaymentRow } from "@/lib/payments";
 import { formatDate, formatMoney } from "@/lib/format";
 import { todayISO } from "@/lib/reports";
+
 
 export const Route = createFileRoute("/_authenticated/payments/")({
   head: () => ({
@@ -42,6 +44,8 @@ function PaymentsPage() {
   const { data: payments = [], isLoading } = usePaymentsReceived();
   const { data: customers = [] } = useCustomers();
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<PaymentRow | null>(null);
+
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
   const [customerId, setCustomerId] = useState("all");
@@ -160,6 +164,10 @@ function PaymentsPage() {
                     <th className="px-3 py-3">Reference</th>
                     <th className="px-3 py-3">Bills</th>
                     <th className="px-3 py-3 text-right">Amount</th>
+                    <th className="px-3 py-3 text-right">
+                      <span className="sr-only">Actions</span>
+                    </th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -186,7 +194,18 @@ function PaymentsPage() {
                       <td className="numeric px-3 py-3 text-right text-sm font-semibold">
                         {formatMoney(p.amount)}
                       </td>
+                      <td className="px-3 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                          onClick={() => setToDelete(p)}
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </td>
                     </tr>
+
                   ))}
                 </tbody>
               </table>
@@ -205,14 +224,25 @@ function PaymentsPage() {
                     </div>
                     <p className="numeric shrink-0 text-base font-bold">{formatMoney(p.amount)}</p>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {p.payment_allocations
-                      .map((a) => a.bills?.bill_number)
-                      .filter(Boolean)
-                      .join(", ") || "Unallocated"}
-                    {p.reference_number ? ` · Ref ${p.reference_number}` : ""}
-                  </p>
+                  <div className="mt-2 flex items-end justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      {p.payment_allocations
+                        .map((a) => a.bills?.bill_number)
+                        .filter(Boolean)
+                        .join(", ") || "Unallocated"}
+                      {p.reference_number ? ` · Ref ${p.reference_number}` : ""}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                      onClick={() => setToDelete(p)}
+                    >
+                      <Trash2 className="text-destructive" />
+                    </Button>
+                  </div>
                 </li>
+
               ))}
             </ul>
           </>
@@ -220,6 +250,11 @@ function PaymentsPage() {
       </div>
 
       <RecordPaymentDialog open={open} onOpenChange={setOpen} />
+      <DeletePaymentDialog
+        payment={toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+      />
+
     </div>
   );
 }

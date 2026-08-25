@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, Pencil, Plus, ReceiptText, Wallet } from "lucide-react";
+import { ArrowLeft, ChevronDown, Pencil, Plus, ReceiptText, Trash2, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
@@ -20,7 +20,9 @@ import {
   CustomerRemindersPanel,
 } from "@/components/CustomerActivityPanel";
 import { useCustomer, useCustomerBills } from "@/lib/data";
-import { useCustomerPaymentsReceived } from "@/lib/payments";
+import { useCustomerPaymentsReceived, type PaymentRow } from "@/lib/payments";
+import { DeletePaymentDialog } from "@/components/DeletePaymentDialog";
+
 import { useCustomerCredit } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -72,6 +74,8 @@ function CustomerDetailPage() {
   const { data: credit } = useCustomerCredit(customerId);
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<PaymentRow | null>(null);
+
 
   const statement = useMemo(() => {
     const rows = [
@@ -321,7 +325,11 @@ function CustomerDetailPage() {
                     <th className="px-4 py-3">Method</th>
                     <th className="px-4 py-3">Reference</th>
                     <th className="px-4 py-3 text-right">Amount</th>
+                    <th className="px-4 py-3 text-right">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {payments.map((p) => {
@@ -356,7 +364,21 @@ function CustomerDetailPage() {
                         <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                           {formatMoney(p.amount)}
                         </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPaymentToDelete(p);
+                            }}
+                          >
+                            <Trash2 className="text-destructive" />
+                          </Button>
+                        </td>
                       </tr>
+
                     );
                   })}
                 </tbody>
@@ -426,6 +448,11 @@ function CustomerDetailPage() {
       </Tabs>
 
       <CustomerFormDialog open={editOpen} onOpenChange={setEditOpen} customer={customer} />
+      <DeletePaymentDialog
+        payment={paymentToDelete}
+        onOpenChange={(o) => !o && setPaymentToDelete(null)}
+      />
+
     </div>
   );
 }
