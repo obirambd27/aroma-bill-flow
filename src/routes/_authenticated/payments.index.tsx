@@ -194,7 +194,18 @@ function PaymentsPage() {
                       <td className="numeric px-3 py-3 text-right text-sm font-semibold">
                         {formatMoney(p.amount)}
                       </td>
+                      <td className="px-3 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Reverse payment of ${formatMoney(p.amount)}`}
+                          onClick={() => setToDelete(p)}
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </td>
                     </tr>
+
                   ))}
                 </tbody>
               </table>
