@@ -1034,12 +1034,15 @@ export type Database = {
           description: string | null
           entry_date: string
           entry_type: string
+          event_role: string
           id: string
+          payment_ref: string | null
           related_bill_id: string | null
           related_expense_id: string | null
           related_payment_id: string | null
           related_purchase_id: string | null
           related_return_id: string | null
+          reverses_entry_id: string | null
         }
         Insert: {
           account_id: string
@@ -1048,12 +1051,15 @@ export type Database = {
           description?: string | null
           entry_date?: string
           entry_type: string
+          event_role?: string
           id?: string
+          payment_ref?: string | null
           related_bill_id?: string | null
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
           related_return_id?: string | null
+          reverses_entry_id?: string | null
         }
         Update: {
           account_id?: string
@@ -1062,12 +1068,15 @@ export type Database = {
           description?: string | null
           entry_date?: string
           entry_type?: string
+          event_role?: string
           id?: string
+          payment_ref?: string | null
           related_bill_id?: string | null
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
           related_return_id?: string | null
+          reverses_entry_id?: string | null
         }
         Relationships: [
           {
@@ -1098,7 +1107,50 @@ export type Database = {
             referencedRelation: "payments_received"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ledger_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      ledger_integrity_runs: {
+        Row: {
+          accounts_affected: number
+          corrected_total: number
+          created_at: string
+          details: Json
+          id: string
+          missing_forward_count: number
+          mode: string
+          phantom_count: number
+          warnings: Json
+        }
+        Insert: {
+          accounts_affected?: number
+          corrected_total?: number
+          created_at?: string
+          details?: Json
+          id?: string
+          missing_forward_count?: number
+          mode: string
+          phantom_count?: number
+          warnings?: Json
+        }
+        Update: {
+          accounts_affected?: number
+          corrected_total?: number
+          created_at?: string
+          details?: Json
+          id?: string
+          missing_forward_count?: number
+          mode?: string
+          phantom_count?: number
+          warnings?: Json
+        }
+        Relationships: []
       }
       payment_allocations: {
         Row: {
@@ -2605,6 +2657,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_ledger_integrity: { Args: { p_repair?: boolean }; Returns: Json }
       convert_price_list_order: {
         Args: { p_bill_id: string; p_order_id: string }
         Returns: Json
@@ -2613,6 +2666,7 @@ export type Database = {
         Args: { p_payment_id: string; p_reason?: string }
         Returns: Json
       }
+      recalc_account_balances: { Args: never; Returns: number }
       reject_price_list_order: {
         Args: { p_order_id: string; p_reason: string }
         Returns: Json
