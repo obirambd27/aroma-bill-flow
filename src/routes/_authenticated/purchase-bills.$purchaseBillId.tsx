@@ -59,6 +59,7 @@ function PurchaseBillDetail() {
   const { data: settings } = useSettings();
   const [voidOpen, setVoidOpen] = useState(false);
   const [working, setWorking] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   if (isLoading) {
     return <p className="p-8 text-center text-sm text-muted-foreground">Loading purchase bill…</p>;
@@ -76,8 +77,6 @@ function PurchaseBillDetail() {
   }
 
   const balanceDue = Number(bill.total_amount) - Number(bill.amount_paid);
-
-  const [payOpen, setPayOpen] = useState(false);
 
   const doVoid = async () => {
     setWorking(true);
