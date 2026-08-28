@@ -14,6 +14,7 @@ import { useSettings, type Settings } from "@/lib/data";
 import { DEFAULT_SHARE_FOOTER } from "@/lib/invoice-share";
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { InvoiceTemplateGallery } from "@/components/InvoiceTemplateGallery";
+import { LedgerIntegrityCheck } from "@/components/LedgerIntegrityCheck";
 import { DEFAULT_GOOGLE_REVIEW_LINK, type InvoiceTemplateId } from "@/lib/invoice-doc";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -461,6 +462,13 @@ function SettingsPage() {
             <InvoicePreview settings={form} />
           </div>
         </div>
+      </Section>
+
+      <Section
+        title="Ledger Integrity Check"
+        description="Scans the ledger for asymmetric money entries (phantom reversals or collections missing from account balances) and can repair them automatically."
+      >
+        <LedgerIntegrityCheck />
       </Section>
 
       <Section
