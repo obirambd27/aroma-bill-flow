@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, ShieldCheck, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import {
   useLedgerIntegrityCheck,
   useLedgerIntegrityRuns,
@@ -23,7 +23,7 @@ export function LedgerIntegrityCheck() {
         if (repair) {
           toast.success(
             issues > 0
-              ? `Corrected ${issues} entr${issues === 1 ? "y" : "ies"} totalling ${formatCurrency(result.total_amount)}.`
+              ? `Corrected ${issues} entr${issues === 1 ? "y" : "ies"} totalling ${formatMoney(result.total_amount)}.`
               : "Nothing needed fixing — the ledger is balanced.",
           );
         } else {
@@ -69,7 +69,7 @@ export function LedgerIntegrityCheck() {
             <p>
               {issues === 0
                 ? "Every reversal has a matching original entry and every collection is reflected in an account balance."
-                : `Found ${report.phantom_count} unmatched reversal${report.phantom_count === 1 ? "" : "s"} and ${report.missing_forward_count} collection${report.missing_forward_count === 1 ? "" : "s"} missing from account balances across ${report.accounts_affected} account${report.accounts_affected === 1 ? "" : "s"}${report.mode === "repair" ? ` — corrections applied totalling ${formatCurrency(report.total_amount)}` : ""}.`}
+                : `Found ${report.phantom_count} unmatched reversal${report.phantom_count === 1 ? "" : "s"} and ${report.missing_forward_count} collection${report.missing_forward_count === 1 ? "" : "s"} missing from account balances across ${report.accounts_affected} account${report.accounts_affected === 1 ? "" : "s"}${report.mode === "repair" ? ` — corrections applied totalling ${formatMoney(report.total_amount)}` : ""}.`}
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export function LedgerIntegrityCheck() {
                         ? "Reversal without an original entry"
                         : "Collection missing from account balance"}
                     </span>
-                    <span>{formatCurrency(Math.abs(Number(d.amount)))}</span>
+                    <span>{formatMoney(Math.abs(Number(d.amount)))}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {d.account} · {d.entry_date} · {d.description ?? "—"} ·{" "}
@@ -100,7 +100,7 @@ export function LedgerIntegrityCheck() {
                 <li key={w.entry_id} className="rounded-lg bg-amber-500/10 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 font-medium">
                     <span>{w.description}</span>
-                    <span>{formatCurrency(Math.abs(Number(w.amount)))}</span>
+                    <span>{formatMoney(Math.abs(Number(w.amount)))}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {w.account} · {w.entry_date} · review manually
@@ -116,7 +116,7 @@ export function LedgerIntegrityCheck() {
         <p className="text-xs text-muted-foreground">
           Last check {new Date(lastRun.created_at).toLocaleString()} — {lastRun.phantom_count}{" "}
           unmatched reversal(s), {lastRun.missing_forward_count} missing collection(s),{" "}
-          {formatCurrency(Number(lastRun.corrected_total))} corrected.
+          {formatMoney(Number(lastRun.corrected_total))} corrected.
         </p>
       )}
     </div>
