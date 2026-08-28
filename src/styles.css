@@ -297,6 +297,16 @@
     page-break-inside: auto !important;
   }
 
+  /* Short delivery notes: centre the content block on the A4 page instead of
+     leaving a large blank area below it. Long notes paginate normally. */
+  .invoice-sheet.doc-dn-short {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-height: calc(297mm - 26mm) !important;
+  }
+
+
   .invoice-sheet:not(.doc-sheet) * {
     color: #000 !important;
     background: transparent !important;
