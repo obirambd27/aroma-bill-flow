@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAllProducts, useWarehouses } from "@/lib/data";
+import { defaultWarehouseId, useAllProducts, useWarehouses } from "@/lib/data";
 import { useVendors } from "@/lib/purchases";
 import { useAccounts } from "@/lib/accounting";
 import {
@@ -113,7 +113,7 @@ function NewPurchaseReturnPage() {
   }, [billId, returnable]);
 
   useEffect(() => {
-    if (!warehouseId && warehouses.length > 0) setWarehouseId(warehouses[0]!.id);
+    if (!warehouseId && warehouses.length > 0) setWarehouseId(defaultWarehouseId(warehouses));
   }, [warehouses, warehouseId]);
 
   const subtotal = lines.reduce(

@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useBill, useCustomers, useProducts, useWarehouses } from "@/lib/data";
+import { defaultWarehouseId, useBill, useCustomers, useProducts, useWarehouses } from "@/lib/data";
 import { useDeliveryNote, useSalesOrder } from "@/lib/sales";
 
 export const Route = createFileRoute("/_authenticated/delivery-notes/new")({
@@ -178,7 +178,7 @@ function DeliveryNoteBuilder() {
     setBalanceAmount(String((Number(totalAmount) || 0) - (Number(advanceAmount) || 0)));
   }, [totalAmount, advanceAmount, balanceTouched]);
 
-  const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
+  const activeWarehouseId = warehouseId || defaultWarehouseId(warehouses);
 
   const results = useMemo(() => {
     const q = productSearch.trim().toLowerCase();
