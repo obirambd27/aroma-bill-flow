@@ -281,7 +281,7 @@ function NewBillPage() {
     setEditHydrated(true);
   }, [editingBill, editHydrated]);
 
-  const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
+  const activeWarehouseId = warehouseId || defaultWarehouseId(warehouses);
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
   const stockFor = (productId: string, wId: string) => {

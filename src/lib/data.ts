@@ -99,6 +99,24 @@ export function useWarehouses() {
   });
 }
 
+/**
+ * Resolve the default warehouse id: the row flagged is_default, falling back to
+ * the first active warehouse alphabetically when no default is set (data issue).
+ * Never rely on array order — sort_order does not reflect the default flag.
+ */
+export function defaultWarehouseId(warehouses: Warehouse[]): string {
+  if (warehouses.length === 0) return "";
+  const flagged = warehouses.filter((w) => w.is_default);
+  if (flagged.length > 0) {
+    if (flagged.length > 1) {
+      console.warn("[warehouses] Multiple default warehouses detected — data integrity issue", flagged.map((w) => w.name));
+    }
+    return flagged[0]!.id;
+  }
+  console.warn("[warehouses] No default warehouse set — falling back to first active warehouse");
+  return [...warehouses].sort((a, b) => a.name.localeCompare(b.name))[0]!.id;
+}
+
 /** All per-warehouse stock rows, keyed lookup done in the component. */
 export function useProductStock() {
   return useQuery({
