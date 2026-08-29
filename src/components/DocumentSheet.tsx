@@ -85,6 +85,7 @@ export function DocHero({
   chipLabel,
   documentNumber,
   stats,
+  qrCodes,
 }: {
   logoUrl?: string | null | undefined;
   icon?: ReactNode | undefined;
@@ -93,6 +94,8 @@ export function DocHero({
   chipLabel: string;
   documentNumber: string;
   stats: DocStat[];
+  /** Header QR codes (WhatsApp contact). */
+  qrCodes?: DocQr[] | undefined;
 }) {
   return (
     <header className="relative overflow-hidden bg-doc-accent px-6 py-7 text-doc-accent-foreground sm:px-10 sm:py-9">
@@ -130,11 +133,18 @@ export function DocHero({
           </div>
         </div>
 
-        <div className="text-right">
-          <span className="inline-block rounded-full bg-white/20 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
-            {chipLabel}
-          </span>
-          <p className="numeric mt-2 font-display text-lg font-bold">{documentNumber}</p>
+        <div className="flex items-start gap-4">
+          {qrCodes && qrCodes.length > 0 && (
+            <div className="doc-header-qr shrink-0 rounded-xl bg-white p-1.5">
+              <DocQrCodes codes={qrCodes} size={56} />
+            </div>
+          )}
+          <div className="text-right">
+            <span className="inline-block rounded-full bg-white/20 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
+              {chipLabel}
+            </span>
+            <p className="numeric mt-2 font-display text-lg font-bold">{documentNumber}</p>
+          </div>
         </div>
       </div>
 

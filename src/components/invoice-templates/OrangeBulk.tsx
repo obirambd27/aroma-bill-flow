@@ -1,7 +1,7 @@
 import { DocumentSheet } from "@/components/DocumentSheet";
 import { DocQrCodes } from "@/components/WhatsAppQr";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { InvoiceDoc } from "@/lib/invoice-doc";
+import { footerQrCodes, headerQrCodes, type InvoiceDoc } from "@/lib/invoice-doc";
 import { cn } from "@/lib/utils";
 
 /** "Orange Bulk" — bold wordmark, accent table header, wide totals bar. */
@@ -33,9 +33,12 @@ export function OrangeBulkTemplate({ doc }: { doc: InvoiceDoc }) {
             )}
           </div>
         </div>
-        <p className="font-display text-3xl font-extrabold uppercase tracking-tight text-doc-accent sm:text-4xl">
-          {doc.docLabel}
-        </p>
+        <div className="flex items-start gap-4">
+          <p className="font-display text-3xl font-extrabold uppercase tracking-tight text-doc-accent sm:text-4xl">
+            {doc.docLabel}
+          </p>
+          <DocQrCodes codes={headerQrCodes(b)} size={60} />
+        </div>
       </div>
 
       {/* Decorative split rule */}
@@ -94,7 +97,7 @@ export function OrangeBulkTemplate({ doc }: { doc: InvoiceDoc }) {
         </p>
       </div>
       <div className="flex items-center gap-3 text-right">
-        <DocQrCodes codes={b.qrCodes} size={68} />
+        <DocQrCodes codes={footerQrCodes(b)} size={68} />
         <div>
           <p className="font-display text-sm font-bold text-doc-ink">
             <span className="text-doc-accent">{first}</span>

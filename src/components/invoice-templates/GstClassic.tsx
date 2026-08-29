@@ -1,7 +1,7 @@
 import { DocumentSheet } from "@/components/DocumentSheet";
 import { DocQrCodes } from "@/components/WhatsAppQr";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { InvoiceDoc } from "@/lib/invoice-doc";
+import { footerQrCodes, headerQrCodes, type InvoiceDoc } from "@/lib/invoice-doc";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,6 +43,11 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
               .join(" · ")}
           </p>
         </div>
+        {headerQrCodes(b).length > 0 && (
+          <div className="flex w-24 shrink-0 items-center justify-center border-l border-doc-line p-2">
+            <DocQrCodes codes={headerQrCodes(b)} size={60} />
+          </div>
+        )}
       </div>
 
       <div className="flex items-stretch border-t border-doc-line">
@@ -135,9 +140,9 @@ export function GstClassicTemplate({ doc }: { doc: InvoiceDoc }) {
             </p>
           </div>
         )}
-        {b.qrCodes.length > 0 && (
+        {footerQrCodes(b).length > 0 && (
           <div className="shrink-0 border-r border-doc-line p-2 text-center">
-            <DocQrCodes codes={b.qrCodes} size={68} />
+            <DocQrCodes codes={footerQrCodes(b)} size={68} />
           </div>
         )}
         <div className="min-w-0 flex-1 border-r border-doc-line" />

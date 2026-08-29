@@ -2,7 +2,7 @@ import { DocQrCodes } from "@/components/WhatsAppQr";
 import type { Tables } from "@/integrations/supabase/types";
 import type { PaymentLine } from "@/lib/bill-payments";
 import { formatDate, formatMoney } from "@/lib/format";
-import { businessFromSettings } from "@/lib/invoice-doc";
+import { businessFromSettings, footerQrCodes, headerQrCodes } from "@/lib/invoice-doc";
 
 type Bill = Tables<"bills"> & {
   customers: Tables<"customers"> | null;
@@ -51,6 +51,15 @@ export function ThermalReceipt({
         {settings?.business_phone && <p className="text-[10px]">{settings.business_phone}</p>}
         {settings?.tax_id && <p className="text-[10px]">TRN: {settings.tax_id}</p>}
         <p className="mt-2 text-[11px] font-bold">{taxed ? "TAX INVOICE" : "INVOICE"}</p>
+        {headerQrCodes(businessFromSettings(settings)).length > 0 && (
+          <div className="mt-2 flex justify-center">
+            <DocQrCodes
+              codes={headerQrCodes(businessFromSettings(settings))}
+              size={64}
+              direction="column"
+            />
+          </div>
+        )}
       </div>
 
       <p className="my-1 overflow-hidden whitespace-nowrap">{dash}</p>
@@ -135,7 +144,11 @@ export function ThermalReceipt({
       <div className="text-center text-[10px]">
         {settings?.invoice_footer_note && <p>{settings.invoice_footer_note}</p>}
         <div className="mt-2 flex justify-center">
-          <DocQrCodes codes={businessFromSettings(settings).qrCodes} size={64} />
+          <DocQrCodes
+            codes={footerQrCodes(businessFromSettings(settings))}
+            size={64}
+            direction="column"
+          />
         </div>
         <p className="mt-2 text-[9px] leading-tight">
           This is a computer generated bill and does not require a signature.

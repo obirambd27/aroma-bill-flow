@@ -18,7 +18,18 @@ export function resolveTemplateId(value?: string | null): InvoiceTemplateId {
     : DEFAULT_INVOICE_TEMPLATE;
 }
 
-export type InvoiceQr = { value: string; label: string | null };
+export type InvoiceQrKind = "whatsapp" | "google" | "other";
+export type InvoiceQr = { value: string; label: string | null; kind: InvoiceQrKind };
+
+/** QR codes that belong in the document header (WhatsApp contact). */
+export function headerQrCodes(business: { qrCodes: InvoiceQr[] }): InvoiceQr[] {
+  return business.qrCodes.filter((c) => c.kind === "whatsapp");
+}
+
+/** QR codes that belong in the document footer (Google review + others). */
+export function footerQrCodes(business: { qrCodes: InvoiceQr[] }): InvoiceQr[] {
+  return business.qrCodes.filter((c) => c.kind !== "whatsapp");
+}
 
 export type InvoiceBusiness = {
   name: string;
@@ -113,11 +124,16 @@ function qrCodesFromSettings(settings: SettingsLike | null | undefined): Invoice
   const google = settings?.google_review_qr_link?.trim() || DEFAULT_GOOGLE_REVIEW_LINK;
   const codes: InvoiceQr[] = [];
   if (whatsapp)
-    codes.push({ value: whatsapp, label: settings?.whatsapp_qr_name?.trim() || "Chat on WhatsApp" });
+    codes.push({
+      value: whatsapp,
+      label: settings?.whatsapp_qr_name?.trim() || "Chat on WhatsApp",
+      kind: "whatsapp",
+    });
   if (google)
     codes.push({
       value: google,
       label: settings?.google_review_qr_name?.trim() || "Review us on Google",
+      kind: "google",
     });
   return codes;
 }
