@@ -322,6 +322,50 @@
     filter: none !important;
   }
 
+  /* Borders must be real ink, not shadows — they survive printers with
+     "Background graphics" turned off. */
+  .invoice-sheet table,
+  .invoice-sheet th,
+  .invoice-sheet td,
+  .invoice-sheet [class*="border"] {
+    border-color: #111 !important;
+  }
+
+  .invoice-sheet.doc-gst,
+  .invoice-sheet.doc-gst table,
+  .invoice-sheet.doc-gst th,
+  .invoice-sheet.doc-gst td {
+    border-style: solid !important;
+    border-color: #111 !important;
+  }
+
+  .invoice-sheet.doc-gst {
+    border: 1px solid #111 !important;
+  }
+
+  .invoice-sheet.doc-gst th,
+  .invoice-sheet.doc-gst td {
+    border-width: 1px !important;
+  }
+
+  /* Shaded blocks (hero band, totals bar, table headers) keep their fill. */
+  .invoice-sheet [class*="bg-doc-accent"],
+  .invoice-sheet [class*="bg-doc-tint"],
+  .invoice-sheet [class*="bg-emerald"],
+  .invoice-sheet thead tr,
+  .invoice-sheet .doc-header-qr {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* QR codes must always print on a white tile so scanners can read them. */
+  .invoice-sheet .doc-header-qr,
+  .thermal-sheet img[alt="WhatsApp QR code"],
+  .invoice-sheet img[alt="WhatsApp QR code"] {
+    background: #fff !important;
+  }
+
+
   /* Long words / emails / addresses must wrap instead of being clipped. */
   .invoice-sheet * {
     overflow-wrap: anywhere !important;
