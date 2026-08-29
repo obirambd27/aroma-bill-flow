@@ -7,7 +7,7 @@ import {
   DocumentSheet,
 } from "@/components/DocumentSheet";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { InvoiceDoc } from "@/lib/invoice-doc";
+import { footerQrCodes, headerQrCodes, type InvoiceDoc } from "@/lib/invoice-doc";
 
 /** "Velvet & Oud" — violet hero band, tinted item rows, rotated status stamp. */
 export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
@@ -19,6 +19,7 @@ export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
       businessName={b.name}
       tagline={b.tagline}
       chipLabel={doc.docLabel}
+      qrCodes={headerQrCodes(b)}
       documentNumber={doc.number}
       stats={[
         { label: "Issued", value: formatDate(doc.date) },
@@ -35,7 +36,7 @@ export function VelvetOudTemplate({ doc }: { doc: InvoiceDoc }) {
       note={b.footerNote}
       signatureUrl={b.signatureUrl}
       businessName={b.name}
-      qrCodes={b.qrCodes}
+      qrCodes={footerQrCodes(b)}
     >
       {doc.amountInWordsLabel && (
         <p className="mb-5 text-xs text-doc-muted">
