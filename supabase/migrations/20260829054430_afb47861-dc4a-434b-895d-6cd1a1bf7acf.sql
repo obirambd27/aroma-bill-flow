@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS warehouses_single_default ON public.warehouses (is_default) WHERE is_default;
