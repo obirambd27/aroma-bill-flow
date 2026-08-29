@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCustomers, useProducts, useWarehouses } from "@/lib/data";
+import { defaultWarehouseId, useCustomers, useProducts, useWarehouses } from "@/lib/data";
 import { useAccounts } from "@/lib/accounting";
 import {
   RETURN_REASONS,
@@ -94,7 +94,7 @@ function NewSalesReturnPage() {
   const selectedBill = bills.find((b) => b.id === billId) ?? null;
 
   useEffect(() => {
-    if (!warehouseId && warehouses.length > 0) setWarehouseId(warehouses[0]!.id);
+    if (!warehouseId && warehouses.length > 0) setWarehouseId(defaultWarehouseId(warehouses));
   }, [warehouses, warehouseId]);
 
   useEffect(() => {

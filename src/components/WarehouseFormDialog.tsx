@@ -60,6 +60,20 @@ export function WarehouseFormDialog({
       is_active: form.isActive,
     };
 
+    // Only one warehouse may be default (enforced by a DB unique index), so
+    // clear the previous default BEFORE saving this one as default.
+    if (form.isDefault) {
+      const clearQ = supabase.from("warehouses").update({ is_default: false }).eq("is_default", true);
+      const { error: clearError } = warehouse
+        ? await clearQ.neq("id", warehouse.id)
+        : await clearQ;
+      if (clearError) {
+        setSaving(false);
+        toast.error("Could not unset the previous default warehouse");
+        return;
+      }
+    }
+
     const { data, error } = warehouse
       ? await supabase.from("warehouses").update(payload).eq("id", warehouse.id).select().single()
       : await supabase.from("warehouses").insert(payload).select().single();
@@ -68,13 +82,6 @@ export function WarehouseFormDialog({
       setSaving(false);
       toast.error(error?.message ?? "Could not save the warehouse");
       return;
-    }
-
-    if (form.isDefault) {
-      await supabase
-        .from("warehouses")
-        .update({ is_default: false })
-        .neq("id", (data as Warehouse).id);
     }
 
     setSaving(false);

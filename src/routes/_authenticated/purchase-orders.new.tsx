@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useProducts, useSettings, useWarehouses } from "@/lib/data";
+import { defaultWarehouseId, useProducts, useSettings, useWarehouses } from "@/lib/data";
 import { usePurchaseOrder, useVendors } from "@/lib/purchases";
 import { formatMoney } from "@/lib/format";
 
@@ -93,7 +93,7 @@ function PurchaseOrderBuilder() {
     setHydrated(true);
   }, [existing, hydrated]);
 
-  const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
+  const activeWarehouseId = warehouseId || defaultWarehouseId(warehouses);
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
   const results = useMemo(() => {

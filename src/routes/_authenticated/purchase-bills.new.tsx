@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProducts, useSettings, useWarehouses } from "@/lib/data";
+import { defaultWarehouseId, useProducts, useSettings, useWarehouses } from "@/lib/data";
 import { useAccounts } from "@/lib/accounting";
 import {
   PURCHASE_PAYMENT_METHODS,
@@ -122,7 +122,7 @@ function PurchaseBillBuilder() {
     if (!accountId && payAccounts.length > 0) setAccountId(payAccounts[0]!.id);
   }, [accountId, payAccounts]);
 
-  const activeWarehouseId = warehouseId || warehouses[0]?.id || "";
+  const activeWarehouseId = warehouseId || defaultWarehouseId(warehouses);
   const taxRate = Number(taxRateInput ?? settings?.default_tax_rate ?? 0);
 
   const results = useMemo(() => {

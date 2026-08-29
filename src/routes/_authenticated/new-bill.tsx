@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useValidateBillPayment } from "@/lib/reconcile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  defaultWarehouseId,
   useBill,
   useCustomers,
   useProducts,
