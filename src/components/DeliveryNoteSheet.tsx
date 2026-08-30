@@ -51,7 +51,6 @@ export function DeliveryNoteSheet({ doc }: { doc: DeliveryNoteDoc }) {
 
   /* Short notes get vertically centred on the printed A4 page instead of
      leaving a large blank area beneath the content. */
-  const isShort = items.length <= 8;
 
   const head = (
     <div className="flex flex-wrap items-start justify-between gap-6 border-b border-doc-line px-8 pb-5 pt-8">
@@ -89,7 +88,7 @@ export function DeliveryNoteSheet({ doc }: { doc: DeliveryNoteDoc }) {
   );
 
   return (
-    <DocumentSheet className={`doc-dn${isShort ? " doc-dn-short" : ""}`} runningHead={head}>
+    <DocumentSheet className="doc-dn" runningHead={head}>
       <div className="space-y-5 px-8 pb-10 pt-5">
         <div className="space-y-1 text-xs">
           <Field label="Buyer" value={doc.buyerName || DASH} strong />

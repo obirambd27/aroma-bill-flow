@@ -197,22 +197,8 @@ function NewSalesReturnPage() {
     if (!creditPrompt) return;
     setSaving(true);
     try {
-      const note = await createCreditNoteFromReturn({
-        id: creditPrompt.returnId,
-        customer_id: customerId,
-        return_number: null,
-        return_date: returnDate,
-        reason: reason || null,
-        subtotal,
-        tax_amount: taxAmount,
-        total_amount: total,
-        sales_return_items: activeLines.map((l) => ({
-          product_id: l.productId,
-          product_name_snapshot: l.name,
-          quantity: l.quantity,
-          unit_price: l.unitPrice,
-        })),
-      });
+      const note = await createCreditNoteFromReturn({ id: creditPrompt.returnId });
+
       queryClient.invalidateQueries();
       toast.success(`Credit note ${note.credit_note_number ?? ""} created`);
       void navigate({ to: "/credit-notes/$creditNoteId", params: { creditNoteId: note.id } });

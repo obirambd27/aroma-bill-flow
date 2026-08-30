@@ -201,7 +201,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           collapsed ? "md:pl-22" : "md:pl-66",
         )}
       >
-        <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="w-full space-y-6">
           <PwaBanners />
           {children}
         </div>

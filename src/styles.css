@@ -297,14 +297,16 @@
     page-break-inside: auto !important;
   }
 
-  /* Short delivery notes: centre the content block on the A4 page instead of
-     leaving a large blank area below it. Long notes paginate normally. */
-  .invoice-sheet.doc-dn-short {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    min-height: calc(297mm - 26mm) !important;
+  /* Delivery notes always render top-anchored: the header stays pinned to the
+     top of the page and content flows naturally beneath it, whatever the
+     item count. (Replaces the earlier short-note vertical centering.) */
+  .invoice-sheet.doc-dn {
+    display: block !important;
+    justify-content: flex-start !important;
+    min-height: 0 !important;
   }
+
+
 
 
   .invoice-sheet:not(.doc-sheet) * {
