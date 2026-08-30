@@ -405,28 +405,36 @@ export async function createCreditNote(input: CreditNoteInput) {
   return note;
 }
 
-/** Create a credit note that mirrors a completed sales return. */
-export async function createCreditNoteFromReturn(ret: {
-  id: string;
-  customer_id: string | null;
-  return_number: string | null;
-  return_date: string;
-  reason: string | null;
-  subtotal: number | string;
-  tax_amount: number | string;
-  total_amount: number | string;
-  sales_return_items: { product_id: string | null; product_name_snapshot: string; quantity: number | string; unit_price: number | string }[];
-}) {
+/**
+ * Create a credit note that mirrors a completed sales return.
+ * The return and its lines are re-read from the database so the credit note can
+ * never be built from stale/cleared form state (which produced empty notes).
+ */
+export async function createCreditNoteFromReturn(source: { id: string }) {
+  const { data: ret, error } = await supabase
+    .from("sales_returns")
+    .select("*, sales_return_items(*)")
+    .eq("id", source.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!ret) throw new Error("The sales return could not be found");
   if (!ret.customer_id) throw new Error("Walk-in returns cannot be credited — select a customer");
+
+  const items = (ret.sales_return_items ?? []) as SalesReturnItem[];
+  if (items.length === 0) throw new Error("This return has no items to credit");
+
+  const subtotal = Number(ret.subtotal) || items.reduce((s, i) => s + Number(i.line_total), 0);
+  const total = Number(ret.total_amount) || subtotal + Number(ret.tax_amount ?? 0);
+
   return createCreditNote({
     customerId: ret.customer_id,
     salesReturnId: ret.id,
     creditNoteDate: ret.return_date,
     reason: ret.reason ?? `Against return ${ret.return_number ?? ""}`.trim(),
-    subtotal: Number(ret.subtotal),
-    taxAmount: Number(ret.tax_amount),
-    total: Number(ret.total_amount),
-    items: ret.sales_return_items.map((i) => ({
+    subtotal,
+    taxAmount: Number(ret.tax_amount) || 0,
+    total,
+    items: items.map((i) => ({
       productId: i.product_id,
       description: i.product_name_snapshot,
       quantity: Number(i.quantity),
@@ -434,6 +442,7 @@ export async function createCreditNoteFromReturn(ret: {
     })),
   });
 }
+
 
 export async function applyCreditToBill(input: {
   creditNoteId: string;
