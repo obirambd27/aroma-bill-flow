@@ -36,11 +36,17 @@ export function StockTransferDialog({
   defaultFromWarehouseId?: string;
 }) {
   const queryClient = useQueryClient();
-  const { data: products = [] } = useAllProducts();
+  const {
+    data: products = [],
+    error: productError,
+    refetch: refetchProducts,
+  } = useAllProducts();
   const { data: warehouses = [] } = useWarehouses();
   const { data: stockRows = [] } = useProductStock();
 
   const [productId, setProductId] = useState("");
+  const [productOpen, setProductOpen] = useState(false);
+  const [productQuery, setProductQuery] = useState("");
   const [fromId, setFromId] = useState(defaultFromWarehouseId ?? "");
   const [toId, setToId] = useState("");
   const [qty, setQty] = useState("1");
@@ -50,17 +56,42 @@ export function StockTransferDialog({
   useEffect(() => {
     if (!open) return;
     setProductId("");
+    setProductQuery("");
     setFromId(defaultFromWarehouseId ?? "");
     setToId("");
     setQty("1");
     setNotes("");
   }, [open, defaultFromWarehouseId]);
 
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === productId) ?? null,
+    [products, productId],
+  );
+
+  const productResults = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    const matches = q
+      ? products.filter((p) =>
+          [p.name, p.sku, p.brand].some((v) => (v ?? "").toLowerCase().includes(q)),
+        )
+      : products;
+    return matches.slice(0, 30);
+  }, [products, productQuery]);
+
+  const stockBreakdown = useMemo(() => {
+    if (!productId) return [];
+    return warehouses.map((w) => {
+      const row = stockRows.find((r) => r.product_id === productId && r.warehouse_id === w.id);
+      return { id: w.id, name: w.name, qty: Number(row?.stock_on_hand ?? 0) };
+    });
+  }, [productId, warehouses, stockRows]);
+
   const available = useMemo(() => {
     const row = stockRows.find((r) => r.product_id === productId && r.warehouse_id === fromId);
     if (!row) return 0;
     return Number(row.stock_on_hand) - Number(row.committed_stock);
   }, [stockRows, productId, fromId]);
+
 
   const submit = async () => {
     const quantity = Number(qty);
