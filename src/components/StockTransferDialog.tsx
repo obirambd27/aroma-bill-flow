@@ -150,19 +150,78 @@ export function StockTransferDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Product</Label>
-            <Select value={productId} onValueChange={setProductId}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={productOpen} onOpenChange={setProductOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full justify-between font-normal"
+                >
+                  <span className="truncate">{selectedProduct?.name ?? "Select product"}</span>
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
+                <div className="border-b border-border p-2">
+                  <Input
+                    autoFocus
+                    className="h-10"
+                    placeholder="Search name, SKU or brand"
+                    value={productQuery}
+                    onChange={(e) => setProductQuery(e.target.value)}
+                  />
+                </div>
+                <ul className="max-h-64 overflow-y-auto py-1">
+                  {productError ? (
+                    <li className="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+                      <p>Could not load products.</p>
+                      <Button size="sm" variant="outline" onClick={() => refetchProducts()}>
+                        Retry
+                      </Button>
+                    </li>
+                  ) : productResults.length === 0 ? (
+                    <li className="px-3 py-3 text-sm text-muted-foreground">No products found.</li>
+                  ) : (
+                    productResults.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted"
+                          onClick={() => {
+                            setProductId(p.id);
+                            setProductOpen(false);
+                          }}
+                        >
+                          {p.name}
+                          {p.sku ? (
+                            <span className="ml-2 text-xs text-muted-foreground">{p.sku}</span>
+                          ) : null}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </PopoverContent>
+            </Popover>
+            {productId && (
+              <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs">
+                <p className="mb-1 font-medium">Stock by warehouse</p>
+                {stockBreakdown.length === 0 ? (
+                  <p className="text-muted-foreground">No stock recorded yet.</p>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {stockBreakdown.map((row) => (
+                      <li key={row.id} className="flex justify-between gap-3">
+                        <span className="truncate text-muted-foreground">{row.name}</span>
+                        <span className="numeric font-medium">{row.qty}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
+
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
