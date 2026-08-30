@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useProductStock, useWarehouses } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+
 import {
   Select,
   SelectContent,
