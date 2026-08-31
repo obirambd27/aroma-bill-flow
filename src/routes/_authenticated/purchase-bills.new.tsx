@@ -574,6 +574,19 @@ function PurchaseBillBuilder() {
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label htmlFor="pb-discount">Discount (AED)</Label>
+            <Input
+              id="pb-discount"
+              type="number"
+              min={0}
+              step="0.01"
+              className="numeric h-10"
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value)}
+            />
+          </div>
+
           <dl className="space-y-2 border-t border-border pt-4 text-sm">
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Subtotal</dt>
@@ -583,12 +596,18 @@ function PurchaseBillBuilder() {
               <dt className="text-muted-foreground">Tax</dt>
               <dd className="numeric font-medium">{formatMoney(taxAmount)}</dd>
             </div>
+            {discount > 0 && (
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Discount</dt>
+                <dd className="numeric font-medium">−{formatMoney(discount)}</dd>
+              </div>
+            )}
             <div className="flex items-center justify-between border-t border-border pt-3">
               <dt className="font-semibold">Bill total</dt>
               <dd className="numeric text-2xl font-bold">{formatMoney(total)}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Paid now</dt>
+              <dt className="text-muted-foreground">{editId ? "Already paid" : "Paid now"}</dt>
               <dd className="numeric font-medium">{formatMoney(amountPaid)}</dd>
             </div>
             <div className="flex items-center justify-between">
@@ -598,8 +617,15 @@ function PurchaseBillBuilder() {
           </dl>
 
           <Button className="hidden h-12 w-full lg:flex" disabled={saving} onClick={finalize}>
-            {saving ? "Recording…" : "Finalize Purchase Bill"}
+            {saving
+              ? editId
+                ? "Saving…"
+                : "Recording…"
+              : editId
+                ? "Save Changes"
+                : "Finalize Purchase Bill"}
           </Button>
+
         </div>
       </div>
 
