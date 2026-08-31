@@ -468,7 +468,7 @@ function PurchaseBillBuilder() {
             )}
           </div>
 
-          <div className="surface-card space-y-4 p-5">
+          <div className={editId ? "hidden" : "surface-card space-y-4 p-5"}>
             <h2 className="text-sm font-semibold">Payment</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
