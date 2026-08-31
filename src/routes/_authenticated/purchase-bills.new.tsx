@@ -24,6 +24,8 @@ import { useAccounts } from "@/lib/accounting";
 import {
   PURCHASE_PAYMENT_METHODS,
   finalizePurchaseBill,
+  updatePurchaseBill,
+  usePurchaseBill,
   usePurchaseOrder,
   useVendors,
   type PurchasePaymentMethod,
@@ -31,9 +33,12 @@ import {
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/purchase-bills/new")({
-  validateSearch: (search: Record<string, unknown>): { poId?: string; vendorId?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { poId?: string; vendorId?: string; edit?: string } => ({
     ...(typeof search["poId"] === "string" ? { poId: search["poId"] } : {}),
     ...(typeof search["vendorId"] === "string" ? { vendorId: search["vendorId"] } : {}),
+    ...(typeof search["edit"] === "string" ? { edit: search["edit"] } : {}),
   }),
   head: () => ({
     meta: [
