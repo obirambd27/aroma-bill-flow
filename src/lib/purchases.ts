@@ -490,3 +490,144 @@ export async function voidPurchaseBill(billId: string) {
 
   if (bill.vendor_id) await refreshVendorTotals(bill.vendor_id);
 }
+
+export type UpdatePurchaseBillInput = {
+  billId: string;
+  vendorId: string;
+  vendorName: string;
+  billDate: string;
+  warehouseId: string;
+  taxRate: number;
+  isTaxed: boolean;
+  discountAmount?: number;
+  notes: string | null;
+  lines: PurchaseBillLine[];
+};
+
+/**
+ * Edits a finalized purchase bill in place: reverses the original stock effect,
+ * replaces the line items and re-posts the bill's own accounting entries
+ * (Inventory Asset + Accounts Payable). Payments already recorded against the
+ * bill are left untouched and only clamped to the new total.
+ */
+export async function updatePurchaseBill(input: UpdatePurchaseBillInput) {
+  const { data: existing } = await supabase
+    .from("purchase_bills")
+    .select("*, purchase_bill_items(*)")
+    .eq("id", input.billId)
+    .maybeSingle();
+  if (!existing) throw new Error("Purchase bill not found");
+  if (existing.status === "Voided") throw new Error("A voided bill cannot be edited");
+
+  const oldItems = (existing as unknown as { purchase_bill_items: PurchaseBillItem[] })
+    .purchase_bill_items;
+
+  // 1. Reverse the original stock effect.
+  for (const item of oldItems) {
+    const wId = item.warehouse_id ?? existing.warehouse_id;
+    if (!item.product_id || !wId) continue;
+    await addStock(item.product_id, wId, -Number(item.quantity));
+    await supabase.from("stock_movements").insert({
+      product_id: item.product_id,
+      warehouse_id: wId,
+      movement_type: "Edit Reversal",
+      quantity_change: -Number(item.quantity),
+      related_purchase_id: existing.id,
+      reason: `Edit of ${existing.bill_number ?? "purchase bill"}`,
+    });
+  }
+
+  // 2. Remove only the bill's own accounting entries — payment entries stay.
+  await supabase
+    .from("ledger_entries")
+    .delete()
+    .eq("related_purchase_id", existing.id)
+    .eq("entry_type", "Purchase");
+
+  // 3. Replace line items and header.
+  const subtotal = input.lines.reduce((s, l) => s + l.quantity * l.unitCost, 0);
+  const taxAmount = input.isTaxed ? (subtotal * input.taxRate) / 100 : 0;
+  const discount = Math.min(Math.max(Number(input.discountAmount) || 0, 0), subtotal + taxAmount);
+  const total = subtotal + taxAmount - discount;
+  const amountPaid = Math.min(Math.max(Number(existing.amount_paid) || 0, 0), total);
+
+  await supabase.from("purchase_bill_items").delete().eq("purchase_bill_id", existing.id);
+  const { error: itemsError } = await supabase.from("purchase_bill_items").insert(
+    input.lines.map((l) => ({
+      purchase_bill_id: existing.id,
+      product_id: l.productId,
+      product_name_snapshot: l.name,
+      warehouse_id: input.warehouseId,
+      quantity: l.quantity,
+      unit_cost: l.unitCost,
+      line_total: l.quantity * l.unitCost,
+    })),
+  );
+  if (itemsError) throw itemsError;
+
+  const { error: headerError } = await supabase
+    .from("purchase_bills")
+    .update({
+      vendor_id: input.vendorId,
+      bill_date: input.billDate,
+      warehouse_id: input.warehouseId,
+      subtotal,
+      tax_amount: taxAmount,
+      discount_amount: discount,
+      total_amount: total,
+      amount_paid: amountPaid,
+      payment_status: derivePaymentStatus(amountPaid, total),
+      notes: input.notes,
+    })
+    .eq("id", existing.id);
+  if (headerError) throw headerError;
+
+  // 4. Re-apply stock for the new lines.
+  for (const l of input.lines) {
+    await addStock(l.productId, input.warehouseId, l.quantity);
+    await supabase.from("stock_movements").insert({
+      product_id: l.productId,
+      warehouse_id: input.warehouseId,
+      movement_type: "Purchase",
+      quantity_change: l.quantity,
+      related_purchase_id: existing.id,
+      reason: `Edit of ${existing.bill_number ?? "purchase bill"}`,
+    });
+    if (l.updateCostPrice) {
+      await supabase.from("products").update({ cost_price: l.unitCost }).eq("id", l.productId);
+    }
+  }
+
+  // 5. Re-post inventory value and any remaining payable.
+  const inventoryId = await accountIdByName("Inventory Asset");
+  if (inventoryId) {
+    await supabase.from("ledger_entries").insert({
+      account_id: inventoryId,
+      entry_date: input.billDate,
+      entry_type: "Purchase",
+      amount: total,
+      related_purchase_id: existing.id,
+      description: `Purchase ${existing.bill_number ?? ""} (edited) from ${input.vendorName}`,
+    });
+  }
+  const balance = total - amountPaid;
+  if (balance > 0.001) {
+    const apId = await accountIdByName("Accounts Payable");
+    if (apId) {
+      await supabase.from("ledger_entries").insert({
+        account_id: apId,
+        entry_date: input.billDate,
+        entry_type: "Purchase",
+        amount: balance,
+        related_purchase_id: existing.id,
+        description: `Payable to ${input.vendorName} · ${existing.bill_number ?? ""}`,
+      });
+    }
+  }
+
+  await refreshVendorTotals(input.vendorId);
+  if (existing.vendor_id && existing.vendor_id !== input.vendorId) {
+    await refreshVendorTotals(existing.vendor_id);
+  }
+  return existing.id;
+}
