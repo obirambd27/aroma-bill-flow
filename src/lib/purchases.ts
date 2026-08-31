@@ -290,6 +290,7 @@ export async function finalizePurchaseBill(input: FinalizePurchaseBillInput) {
       warehouse_id: input.warehouseId,
       subtotal,
       tax_amount: taxAmount,
+      discount_amount: discount,
       total_amount: total,
       amount_paid: amountPaid,
       payment_status: derivePaymentStatus(amountPaid, total),
