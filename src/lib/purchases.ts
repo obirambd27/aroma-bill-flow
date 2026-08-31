@@ -262,6 +262,7 @@ export type FinalizePurchaseBillInput = {
   warehouseId: string;
   taxRate: number;
   isTaxed: boolean;
+  discountAmount?: number;
   notes: string | null;
   lines: PurchaseBillLine[];
   amountPaid: number;
@@ -275,8 +276,10 @@ export type FinalizePurchaseBillInput = {
 export async function finalizePurchaseBill(input: FinalizePurchaseBillInput) {
   const subtotal = input.lines.reduce((s, l) => s + l.quantity * l.unitCost, 0);
   const taxAmount = input.isTaxed ? (subtotal * input.taxRate) / 100 : 0;
-  const total = subtotal + taxAmount;
+  const discount = Math.min(Math.max(Number(input.discountAmount) || 0, 0), subtotal + taxAmount);
+  const total = subtotal + taxAmount - discount;
   const amountPaid = Math.min(Math.max(input.amountPaid, 0), total);
+
 
   const { data: bill, error } = await supabase
     .from("purchase_bills")
