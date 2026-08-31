@@ -1808,6 +1808,7 @@ export type Database = {
           bill_date: string
           bill_number: string | null
           created_at: string
+          discount_amount: number
           id: string
           notes: string | null
           payment_status: string
@@ -1825,6 +1826,7 @@ export type Database = {
           bill_date?: string
           bill_number?: string | null
           created_at?: string
+          discount_amount?: number
           id?: string
           notes?: string | null
           payment_status?: string
@@ -1842,6 +1844,7 @@ export type Database = {
           bill_date?: string
           bill_number?: string | null
           created_at?: string
+          discount_amount?: number
           id?: string
           notes?: string | null
           payment_status?: string
