@@ -174,8 +174,11 @@ function PurchaseBillBuilder() {
 
   const subtotal = lines.reduce((s, l) => s + l.unitCost * l.quantity, 0);
   const taxAmount = isTaxed ? (subtotal * taxRate) / 100 : 0;
-  const total = subtotal + taxAmount;
-  const amountPaid = Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
+  const discount = Math.min(Math.max(Number(discountInput) || 0, 0), subtotal + taxAmount);
+  const total = subtotal + taxAmount - discount;
+  const amountPaid = editId
+    ? Math.min(Number(editing?.amount_paid ?? 0), total)
+    : Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
   const balanceDue = total - amountPaid;
 
   const addLine = (productId: string) => {
