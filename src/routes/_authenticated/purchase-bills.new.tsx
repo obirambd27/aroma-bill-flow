@@ -220,25 +220,25 @@ function PurchaseBillBuilder() {
       toast.error("Select a warehouse");
       return;
     }
-    if (amountPaid > 0 && !accountId) {
+    if (!editId && amountPaid > 0 && !accountId) {
       toast.error("Select the account you are paying from");
       return;
     }
-    if (amountPaid > 0 && paymentMethod === "Cheque" && !chequeNumber.trim()) {
+    if (!editId && amountPaid > 0 && paymentMethod === "Cheque" && !chequeNumber.trim()) {
       toast.error("Enter the cheque number");
       return;
     }
 
     setSaving(true);
     try {
-      const bill = await finalizePurchaseBill({
+      const payload = {
         vendorId,
         vendorName: vendors.find((v) => v.id === vendorId)?.name ?? "Vendor",
-        purchaseOrderId: poId || null,
         billDate,
         warehouseId: activeWarehouseId,
         taxRate,
         isTaxed,
+        discountAmount: discount,
         notes: notes || null,
         lines: lines.map((l) => ({
           productId: l.productId,
@@ -247,6 +247,22 @@ function PurchaseBillBuilder() {
           unitCost: l.unitCost,
           updateCostPrice: l.updateCostPrice,
         })),
+      };
+
+      if (editId) {
+        await updatePurchaseBill({ billId: editId, ...payload });
+        queryClient.invalidateQueries();
+        toast.success("Purchase bill updated");
+        navigate({
+          to: "/purchase-bills/$purchaseBillId",
+          params: { purchaseBillId: editId },
+        });
+        return;
+      }
+
+      const bill = await finalizePurchaseBill({
+        ...payload,
+        purchaseOrderId: poId || null,
         amountPaid,
         paymentMethod,
         accountId: amountPaid > 0 ? accountId : null,
@@ -269,13 +285,16 @@ function PurchaseBillBuilder() {
   return (
     <div className="space-y-6 pb-28 lg:pb-0">
       <PageHeader
-        title="New Purchase Bill"
+        title={editId ? `Edit ${editing?.bill_number ?? "Purchase Bill"}` : "New Purchase Bill"}
         description={
-          po
-            ? `Receiving against ${po.order_number}`
-            : "Adds stock to the warehouse and posts to your accounts."
+          editId
+            ? "Stock and accounting entries are corrected automatically. Payments already recorded stay in place."
+            : po
+              ? `Receiving against ${po.order_number}`
+              : "Adds stock to the warehouse and posts to your accounts."
         }
       />
+
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-4">
