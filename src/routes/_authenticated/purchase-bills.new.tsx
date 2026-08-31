@@ -24,6 +24,8 @@ import { useAccounts } from "@/lib/accounting";
 import {
   PURCHASE_PAYMENT_METHODS,
   finalizePurchaseBill,
+  updatePurchaseBill,
+  usePurchaseBill,
   usePurchaseOrder,
   useVendors,
   type PurchasePaymentMethod,
@@ -31,9 +33,12 @@ import {
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/purchase-bills/new")({
-  validateSearch: (search: Record<string, unknown>): { poId?: string; vendorId?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { poId?: string; vendorId?: string; edit?: string } => ({
     ...(typeof search["poId"] === "string" ? { poId: search["poId"] } : {}),
     ...(typeof search["vendorId"] === "string" ? { vendorId: search["vendorId"] } : {}),
+    ...(typeof search["edit"] === "string" ? { edit: search["edit"] } : {}),
   }),
   head: () => ({
     meta: [
@@ -68,7 +73,9 @@ function PurchaseBillBuilder() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const poId = search.poId ?? "";
+  const editId = search.edit ?? "";
   const { data: po } = usePurchaseOrder(poId);
+  const { data: editing } = usePurchaseBill(editId);
 
   const { data: vendors = [] } = useVendors();
   const { data: products = [] } = useProducts();
@@ -88,6 +95,7 @@ function PurchaseBillBuilder() {
   const [productSearch, setProductSearch] = useState("");
   const [isTaxed, setIsTaxed] = useState(false);
   const [taxRateInput, setTaxRateInput] = useState<string | null>(null);
+  const [discountInput, setDiscountInput] = useState("0");
   const [notes, setNotes] = useState("");
   const [amountPaidInput, setAmountPaidInput] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState<PurchasePaymentMethod>("Cash");
@@ -100,7 +108,7 @@ function PurchaseBillBuilder() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!po || hydrated) return;
+    if (!po || hydrated || editId) return;
     setVendorId(po.vendor_id ?? "");
     setWarehouseId(po.warehouse_id ?? "");
     setIsTaxed(Number(po.tax_amount) > 0);
@@ -116,7 +124,33 @@ function PurchaseBillBuilder() {
         .filter((l) => l.quantity > 0),
     );
     setHydrated(true);
-  }, [po, hydrated]);
+  }, [po, hydrated, editId]);
+
+  useEffect(() => {
+    if (!editing || hydrated) return;
+    setVendorId(editing.vendor_id ?? "");
+    setWarehouseId(editing.warehouse_id ?? "");
+    setBillDate(editing.bill_date);
+    setIsTaxed(Number(editing.tax_amount) > 0);
+    if (Number(editing.subtotal) > 0 && Number(editing.tax_amount) > 0) {
+      setTaxRateInput(
+        String(Math.round((Number(editing.tax_amount) / Number(editing.subtotal)) * 10000) / 100),
+      );
+    }
+    setDiscountInput(String(Number(editing.discount_amount ?? 0)));
+    setNotes(editing.notes ?? "");
+    setLines(
+      editing.purchase_bill_items.map((i) => ({
+        productId: i.product_id ?? "",
+        name: i.product_name_snapshot,
+        unitCost: Number(i.unit_cost),
+        quantity: Number(i.quantity),
+        updateCostPrice: false,
+      })),
+    );
+    setHydrated(true);
+  }, [editing, hydrated]);
+
 
   useEffect(() => {
     if (!accountId && payAccounts.length > 0) setAccountId(payAccounts[0]!.id);
@@ -140,8 +174,11 @@ function PurchaseBillBuilder() {
 
   const subtotal = lines.reduce((s, l) => s + l.unitCost * l.quantity, 0);
   const taxAmount = isTaxed ? (subtotal * taxRate) / 100 : 0;
-  const total = subtotal + taxAmount;
-  const amountPaid = Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
+  const discount = Math.min(Math.max(Number(discountInput) || 0, 0), subtotal + taxAmount);
+  const total = subtotal + taxAmount - discount;
+  const amountPaid = editId
+    ? Math.min(Number(editing?.amount_paid ?? 0), total)
+    : Math.min(Math.max(Number(amountPaidInput) || 0, 0), total);
   const balanceDue = total - amountPaid;
 
   const addLine = (productId: string) => {
@@ -183,25 +220,25 @@ function PurchaseBillBuilder() {
       toast.error("Select a warehouse");
       return;
     }
-    if (amountPaid > 0 && !accountId) {
+    if (!editId && amountPaid > 0 && !accountId) {
       toast.error("Select the account you are paying from");
       return;
     }
-    if (amountPaid > 0 && paymentMethod === "Cheque" && !chequeNumber.trim()) {
+    if (!editId && amountPaid > 0 && paymentMethod === "Cheque" && !chequeNumber.trim()) {
       toast.error("Enter the cheque number");
       return;
     }
 
     setSaving(true);
     try {
-      const bill = await finalizePurchaseBill({
+      const payload = {
         vendorId,
         vendorName: vendors.find((v) => v.id === vendorId)?.name ?? "Vendor",
-        purchaseOrderId: poId || null,
         billDate,
         warehouseId: activeWarehouseId,
         taxRate,
         isTaxed,
+        discountAmount: discount,
         notes: notes || null,
         lines: lines.map((l) => ({
           productId: l.productId,
@@ -210,6 +247,22 @@ function PurchaseBillBuilder() {
           unitCost: l.unitCost,
           updateCostPrice: l.updateCostPrice,
         })),
+      };
+
+      if (editId) {
+        await updatePurchaseBill({ billId: editId, ...payload });
+        queryClient.invalidateQueries();
+        toast.success("Purchase bill updated");
+        navigate({
+          to: "/purchase-bills/$purchaseBillId",
+          params: { purchaseBillId: editId },
+        });
+        return;
+      }
+
+      const bill = await finalizePurchaseBill({
+        ...payload,
+        purchaseOrderId: poId || null,
         amountPaid,
         paymentMethod,
         accountId: amountPaid > 0 ? accountId : null,
@@ -232,13 +285,16 @@ function PurchaseBillBuilder() {
   return (
     <div className="space-y-6 pb-28 lg:pb-0">
       <PageHeader
-        title="New Purchase Bill"
+        title={editId ? `Edit ${editing?.bill_number ?? "Purchase Bill"}` : "New Purchase Bill"}
         description={
-          po
-            ? `Receiving against ${po.order_number}`
-            : "Adds stock to the warehouse and posts to your accounts."
+          editId
+            ? "Stock and accounting entries are corrected automatically. Payments already recorded stay in place."
+            : po
+              ? `Receiving against ${po.order_number}`
+              : "Adds stock to the warehouse and posts to your accounts."
         }
       />
+
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-4">
@@ -412,7 +468,7 @@ function PurchaseBillBuilder() {
             )}
           </div>
 
-          <div className="surface-card space-y-4 p-5">
+          <div className={editId ? "hidden" : "surface-card space-y-4 p-5"}>
             <h2 className="text-sm font-semibold">Payment</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -518,6 +574,19 @@ function PurchaseBillBuilder() {
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label htmlFor="pb-discount">Discount (AED)</Label>
+            <Input
+              id="pb-discount"
+              type="number"
+              min={0}
+              step="0.01"
+              className="numeric h-10"
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value)}
+            />
+          </div>
+
           <dl className="space-y-2 border-t border-border pt-4 text-sm">
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Subtotal</dt>
@@ -527,12 +596,18 @@ function PurchaseBillBuilder() {
               <dt className="text-muted-foreground">Tax</dt>
               <dd className="numeric font-medium">{formatMoney(taxAmount)}</dd>
             </div>
+            {discount > 0 && (
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Discount</dt>
+                <dd className="numeric font-medium">−{formatMoney(discount)}</dd>
+              </div>
+            )}
             <div className="flex items-center justify-between border-t border-border pt-3">
               <dt className="font-semibold">Bill total</dt>
               <dd className="numeric text-2xl font-bold">{formatMoney(total)}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Paid now</dt>
+              <dt className="text-muted-foreground">{editId ? "Already paid" : "Paid now"}</dt>
               <dd className="numeric font-medium">{formatMoney(amountPaid)}</dd>
             </div>
             <div className="flex items-center justify-between">
@@ -542,8 +617,15 @@ function PurchaseBillBuilder() {
           </dl>
 
           <Button className="hidden h-12 w-full lg:flex" disabled={saving} onClick={finalize}>
-            {saving ? "Recording…" : "Finalize Purchase Bill"}
+            {saving
+              ? editId
+                ? "Saving…"
+                : "Recording…"
+              : editId
+                ? "Save Changes"
+                : "Finalize Purchase Bill"}
           </Button>
+
         </div>
       </div>
 
