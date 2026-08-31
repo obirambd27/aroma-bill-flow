@@ -73,7 +73,9 @@ function PurchaseBillBuilder() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const poId = search.poId ?? "";
+  const editId = search.edit ?? "";
   const { data: po } = usePurchaseOrder(poId);
+  const { data: editing } = usePurchaseBill(editId);
 
   const { data: vendors = [] } = useVendors();
   const { data: products = [] } = useProducts();
@@ -93,6 +95,7 @@ function PurchaseBillBuilder() {
   const [productSearch, setProductSearch] = useState("");
   const [isTaxed, setIsTaxed] = useState(false);
   const [taxRateInput, setTaxRateInput] = useState<string | null>(null);
+  const [discountInput, setDiscountInput] = useState("0");
   const [notes, setNotes] = useState("");
   const [amountPaidInput, setAmountPaidInput] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState<PurchasePaymentMethod>("Cash");
@@ -105,7 +108,7 @@ function PurchaseBillBuilder() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!po || hydrated) return;
+    if (!po || hydrated || editId) return;
     setVendorId(po.vendor_id ?? "");
     setWarehouseId(po.warehouse_id ?? "");
     setIsTaxed(Number(po.tax_amount) > 0);
@@ -121,7 +124,33 @@ function PurchaseBillBuilder() {
         .filter((l) => l.quantity > 0),
     );
     setHydrated(true);
-  }, [po, hydrated]);
+  }, [po, hydrated, editId]);
+
+  useEffect(() => {
+    if (!editing || hydrated) return;
+    setVendorId(editing.vendor_id ?? "");
+    setWarehouseId(editing.warehouse_id ?? "");
+    setBillDate(editing.bill_date);
+    setIsTaxed(Number(editing.tax_amount) > 0);
+    if (Number(editing.subtotal) > 0 && Number(editing.tax_amount) > 0) {
+      setTaxRateInput(
+        String(Math.round((Number(editing.tax_amount) / Number(editing.subtotal)) * 10000) / 100),
+      );
+    }
+    setDiscountInput(String(Number(editing.discount_amount ?? 0)));
+    setNotes(editing.notes ?? "");
+    setLines(
+      editing.purchase_bill_items.map((i) => ({
+        productId: i.product_id ?? "",
+        name: i.product_name_snapshot,
+        unitCost: Number(i.unit_cost),
+        quantity: Number(i.quantity),
+        updateCostPrice: false,
+      })),
+    );
+    setHydrated(true);
+  }, [editing, hydrated]);
+
 
   useEffect(() => {
     if (!accountId && payAccounts.length > 0) setAccountId(payAccounts[0]!.id);
