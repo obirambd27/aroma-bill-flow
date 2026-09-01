@@ -220,6 +220,9 @@ function PurchaseBillDetail() {
           rows={[
             { label: "Subtotal", value: formatMoney(bill.subtotal) },
             { label: "Tax", value: formatMoney(bill.tax_amount) },
+            ...(Number(bill.discount_amount ?? 0) > 0
+              ? [{ label: "Discount", value: `−${formatMoney(bill.discount_amount)}` }]
+              : []),
             { label: "Paid", value: formatMoney(bill.amount_paid) },
             { label: "Balance due", value: formatMoney(balanceDue) },
           ]}
