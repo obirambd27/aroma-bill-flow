@@ -22,6 +22,7 @@ import {
 import { useCustomer, useCustomerBills } from "@/lib/data";
 import { useCustomerPaymentsReceived, type PaymentRow } from "@/lib/payments";
 import { DeletePaymentDialog } from "@/components/DeletePaymentDialog";
+import { BillPreviewSheet } from "@/components/BillPreviewSheet";
 
 import { useCustomerCredit } from "@/lib/returns";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -286,7 +287,7 @@ function CustomerDetailPage() {
                     <tr
                       key={b.id}
                       className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50"
-                      onClick={() => navigate({ to: "/bills/$billId", params: { billId: b.id } })}
+                      onClick={() => setPreviewBillId(b.id)}
                     >
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(b.bill_date)}
@@ -346,10 +347,7 @@ function CustomerDetailPage() {
                           "border-b border-border/60 transition-colors last:border-0",
                           firstBillId && "cursor-pointer hover:bg-muted/50",
                         )}
-                        onClick={() =>
-                          firstBillId &&
-                          navigate({ to: "/bills/$billId", params: { billId: firstBillId } })
-                        }
+                        onClick={() => firstBillId && setPreviewBillId(firstBillId)}
                       >
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {formatDate(p.payment_date)}
@@ -419,10 +417,7 @@ function CustomerDetailPage() {
                           "border-b border-border/60 transition-colors last:border-0",
                           row.billId && "cursor-pointer hover:bg-muted/50",
                         )}
-                        onClick={() =>
-                          row.billId &&
-                          navigate({ to: "/bills/$billId", params: { billId: row.billId } })
-                        }
+                        onClick={() => row.billId && setPreviewBillId(row.billId)}
                       >
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {formatDate(row.date)}
