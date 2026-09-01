@@ -76,6 +76,7 @@ function CustomerDetailPage() {
   const [tab, setTab] = useState<string>("overview");
   const [editOpen, setEditOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<PaymentRow | null>(null);
+  const [previewBillId, setPreviewBillId] = useState<string | null>(null);
 
 
   const statement = useMemo(() => {
