@@ -504,3 +504,56 @@ export async function applyCreditToBill(input: {
     });
   }
 }
+
+/**
+ * Edit a standalone credit note. Only allowed while the note is still Open,
+ * has nothing applied to a bill, and was not generated from a sales return.
+ */
+export async function updateCreditNote(input: CreditNoteInput & { creditNoteId: string }) {
+  const { data: note, error } = await supabase
+    .from("credit_notes")
+    .select("id, status, amount_applied, sales_return_id")
+    .eq("id", input.creditNoteId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!note) throw new Error("This credit note no longer exists");
+  if (note.sales_return_id)
+    throw new Error("Credit notes generated from a sales return cannot be edited");
+  if (Number(note.amount_applied) > 0.001 || note.status !== "Open")
+    throw new Error("This credit note has already been applied and can no longer be edited");
+
+  const { error: delError } = await supabase
+    .from("credit_note_items")
+    .delete()
+    .eq("credit_note_id", note.id);
+  if (delError) throw delError;
+
+  if (input.items.length > 0) {
+    const { error: itemsError } = await supabase.from("credit_note_items").insert(
+      input.items.map((i) => ({
+        credit_note_id: note.id,
+        product_id: i.productId,
+        description: i.description,
+        quantity: i.quantity,
+        unit_price: i.unitPrice,
+        line_total: (i.quantity ?? 1) * i.unitPrice,
+      })),
+    );
+    if (itemsError) throw itemsError;
+  }
+
+  const { error: headError } = await supabase
+    .from("credit_notes")
+    .update({
+      customer_id: input.customerId,
+      credit_note_date: input.creditNoteDate,
+      reason: input.reason,
+      subtotal: input.subtotal,
+      tax_amount: input.taxAmount,
+      total_amount: input.total,
+    })
+    .eq("id", note.id);
+  if (headError) throw headError;
+
+  return note;
+}
