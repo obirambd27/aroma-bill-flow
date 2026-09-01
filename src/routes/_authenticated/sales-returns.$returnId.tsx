@@ -60,7 +60,7 @@ function SalesReturnDetail() {
   const generateCredit = async () => {
     setWorking(true);
     try {
-      const note = await createCreditNoteFromReturn(ret);
+      const note = await createCreditNoteFromReturn({ id: ret.id });
       queryClient.invalidateQueries();
       toast.success(`Credit note ${note.credit_note_number ?? ""} created`);
       void navigate({ to: "/credit-notes/$creditNoteId", params: { creditNoteId: note.id } });
