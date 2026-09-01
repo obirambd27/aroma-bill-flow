@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,10 +16,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCustomers, useProducts } from "@/lib/data";
-import { createCreditNote } from "@/lib/returns";
+import { CustomerPicker } from "@/components/CustomerPicker";
+import { createCreditNote, updateCreditNote, useCreditNote } from "@/lib/returns";
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/credit-notes/new")({
+  validateSearch: (search: Record<string, unknown>): { edit?: string } => ({
+    ...(typeof search["edit"] === "string" ? { edit: search["edit"] as string } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "New Credit Note — Fragrance Billing" },
@@ -55,14 +59,34 @@ const newLine = (): Line => ({
 function NewCreditNotePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: customers = [] } = useCustomers();
   const { data: products = [] } = useProducts();
+  const search = Route.useSearch();
+  const editId = search.edit ?? "";
+  const { data: editing } = useCreditNote(editId);
+  const [hydrated, setHydrated] = useState(false);
 
   const [customerId, setCustomerId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [reason, setReason] = useState("");
   const [lines, setLines] = useState<Line[]>([newLine()]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editing || hydrated) return;
+    setCustomerId(editing.customers?.id ?? "");
+    setDate(editing.credit_note_date);
+    setReason(editing.reason ?? "");
+    setLines(
+      editing.credit_note_items.map((i) => ({
+        key: i.id,
+        productId: i.product_id,
+        description: i.description,
+        quantity: Number(i.quantity ?? 1),
+        unitPrice: Number(i.unit_price),
+      })),
+    );
+    setHydrated(true);
+  }, [editing, hydrated]);
 
   const setLine = (key: string, patch: Partial<Line>) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -81,7 +105,7 @@ function NewCreditNotePage() {
     }
     setSaving(true);
     try {
-      const note = await createCreditNote({
+      const payload = {
         customerId,
         salesReturnId: null,
         creditNoteDate: date,
@@ -95,10 +119,13 @@ function NewCreditNotePage() {
           quantity: l.quantity,
           unitPrice: l.unitPrice,
         })),
-      });
+      };
+      const noteId = editId
+        ? (await updateCreditNote({ creditNoteId: editId, ...payload })).id
+        : (await createCreditNote(payload)).id;
       queryClient.invalidateQueries();
-      toast.success(`Credit note ${note.credit_note_number ?? ""} created`);
-      void navigate({ to: "/credit-notes/$creditNoteId", params: { creditNoteId: note.id } });
+      toast.success(editId ? "Credit note updated" : "Credit note created");
+      void navigate({ to: "/credit-notes/$creditNoteId", params: { creditNoteId: noteId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create the credit note");
     } finally {
@@ -116,25 +143,14 @@ function NewCreditNotePage() {
       </Button>
 
       <PageHeader
-        title="New Credit Note"
+        title={editId ? `Edit ${editing?.credit_note_number ?? "Credit Note"}` : "New Credit Note"}
         description="Issue credit for a goodwill adjustment or billing correction."
       />
 
       <div className="surface-card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-1.5">
           <Label>Customer</Label>
-          <Select value={customerId} onValueChange={setCustomerId}>
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select customer" />
-            </SelectTrigger>
-            <SelectContent>
-              {customers.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CustomerPicker allowWalkIn={false} value={customerId} onChange={setCustomerId} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="cn-date">Credit note date</Label>
@@ -253,7 +269,7 @@ function NewCreditNotePage() {
           <p className="numeric text-2xl font-bold">{formatMoney(total)}</p>
         </div>
         <Button className="h-11" disabled={saving} onClick={save}>
-          {saving ? "Saving…" : "Create Credit Note"}
+          {saving ? "Saving…" : editId ? "Save Changes" : "Create Credit Note"}
         </Button>
       </div>
     </div>
