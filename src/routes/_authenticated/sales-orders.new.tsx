@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus, Search, Trash2, Package } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
+import { CustomerPicker } from "@/components/CustomerPicker";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,20 +267,12 @@ function SalesOrderBuilder() {
                   + New Customer
                 </button>
               </div>
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger id="so-customer" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                      {c.phone ? ` · ${c.phone}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomerPicker
+                id="so-customer"
+                value={customerId}
+                onChange={setCustomerId}
+                onCreateNew={() => setCustomerDialog(true)}
+              />
             </div>
 
             <div className="space-y-2">

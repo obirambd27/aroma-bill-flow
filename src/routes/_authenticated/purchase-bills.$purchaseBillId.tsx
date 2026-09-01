@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, Download, Printer, RotateCcw, Wallet } from "lucide-react";
+import { ArrowLeft, Ban, Download, Pencil, Printer, RotateCcw, Wallet } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   DocFooter,
@@ -138,6 +138,16 @@ function PurchaseBillDetail() {
             <Button
               variant="outline"
               className="h-11"
+              onClick={() => navigate({ to: "/purchase-bills/new", search: { edit: bill.id } })}
+            >
+              <Pencil />
+              Edit
+            </Button>
+          )}
+          {bill.status === "Finalized" && (
+            <Button
+              variant="outline"
+              className="h-11"
               onClick={() =>
                 navigate({ to: "/purchase-returns/new", search: { purchaseBillId: bill.id } })
               }
@@ -210,6 +220,9 @@ function PurchaseBillDetail() {
           rows={[
             { label: "Subtotal", value: formatMoney(bill.subtotal) },
             { label: "Tax", value: formatMoney(bill.tax_amount) },
+            ...(Number(bill.discount_amount ?? 0) > 0
+              ? [{ label: "Discount", value: `−${formatMoney(bill.discount_amount)}` }]
+              : []),
             { label: "Paid", value: formatMoney(bill.amount_paid) },
             { label: "Balance due", value: formatMoney(balanceDue) },
           ]}
