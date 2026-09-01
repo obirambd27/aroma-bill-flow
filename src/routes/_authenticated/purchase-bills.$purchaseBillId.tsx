@@ -138,6 +138,16 @@ function PurchaseBillDetail() {
             <Button
               variant="outline"
               className="h-11"
+              onClick={() => navigate({ to: "/purchase-bills/new", search: { edit: bill.id } })}
+            >
+              <Pencil />
+              Edit
+            </Button>
+          )}
+          {bill.status === "Finalized" && (
+            <Button
+              variant="outline"
+              className="h-11"
               onClick={() =>
                 navigate({ to: "/purchase-returns/new", search: { purchaseBillId: bill.id } })
               }
