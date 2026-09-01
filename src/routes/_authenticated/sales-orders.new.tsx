@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus, Search, Trash2, Package } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CustomerFormDialog } from "@/components/CustomerFormDialog";
+import { CustomerPicker } from "@/components/CustomerPicker";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
