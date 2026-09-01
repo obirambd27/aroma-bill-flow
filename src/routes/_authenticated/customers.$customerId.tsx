@@ -447,6 +447,10 @@ function CustomerDetailPage() {
         payment={paymentToDelete}
         onOpenChange={(o) => !o && setPaymentToDelete(null)}
       />
+      <BillPreviewSheet
+        billId={previewBillId}
+        onOpenChange={(o) => !o && setPreviewBillId(null)}
+      />
 
     </div>
   );
