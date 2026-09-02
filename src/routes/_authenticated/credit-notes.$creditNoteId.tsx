@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, Pencil, Printer, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ApplyCreditDialog } from "@/components/ApplyCreditDialog";
