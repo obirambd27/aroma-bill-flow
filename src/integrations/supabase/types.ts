@@ -1153,11 +1153,13 @@ export type Database = {
           event_role: string
           id: string
           payment_ref: string | null
+          related_advance_id: string | null
           related_bill_id: string | null
           related_expense_id: string | null
           related_payment_id: string | null
           related_purchase_id: string | null
           related_return_id: string | null
+          related_salary_payment_id: string | null
           reverses_entry_id: string | null
         }
         Insert: {
@@ -1170,11 +1172,13 @@ export type Database = {
           event_role?: string
           id?: string
           payment_ref?: string | null
+          related_advance_id?: string | null
           related_bill_id?: string | null
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
           related_return_id?: string | null
+          related_salary_payment_id?: string | null
           reverses_entry_id?: string | null
         }
         Update: {
@@ -1187,11 +1191,13 @@ export type Database = {
           event_role?: string
           id?: string
           payment_ref?: string | null
+          related_advance_id?: string | null
           related_bill_id?: string | null
           related_expense_id?: string | null
           related_payment_id?: string | null
           related_purchase_id?: string | null
           related_return_id?: string | null
+          related_salary_payment_id?: string | null
           reverses_entry_id?: string | null
         }
         Relationships: [
@@ -1210,6 +1216,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ledger_entries_related_advance_id_fkey"
+            columns: ["related_advance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_advances"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ledger_entries_related_bill_id_fkey"
             columns: ["related_bill_id"]
             isOneToOne: false
@@ -1221,6 +1234,13 @@ export type Database = {
             columns: ["related_payment_id"]
             isOneToOne: false
             referencedRelation: "payments_received"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_related_salary_payment_id_fkey"
+            columns: ["related_salary_payment_id"]
+            isOneToOne: false
+            referencedRelation: "salary_payments"
             referencedColumns: ["id"]
           },
           {
