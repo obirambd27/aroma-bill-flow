@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_salary_payment_number() FROM PUBLIC, anon, authenticated;
