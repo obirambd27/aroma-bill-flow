@@ -69,6 +69,16 @@ function CreditNoteDetail() {
             <Printer />
             Print / PDF
           </Button>
+          {note.status === "Open" && Number(note.amount_applied) <= 0 && !note.sales_return_id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: "/credit-notes/new", search: { edit: note.id } })}
+            >
+              <Pencil />
+              Edit Note
+            </Button>
+          )}
           {remaining > 0.001 && note.customers && (
             <Button size="sm" onClick={() => setApplyOpen(true)}>
               <Wallet />
