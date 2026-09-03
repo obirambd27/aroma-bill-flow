@@ -548,6 +548,7 @@ export function useDayBook(date: string) {
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
+        totalSalaries: round2(totalSalaries),
         todaysSales: round2(netSalesInvoices),
         paymentsCollected: round2(receivedTotal),
         inHandCash: override ? round2(openingCash + todaysCashMovement) : cashBalanceNow,
