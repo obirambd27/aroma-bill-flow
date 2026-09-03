@@ -264,15 +264,29 @@ async function sumPurchases(range: { from: string; to: string }) {
 }
 
 async function sumExpenses(range: { from: string; to: string }) {
-  const rows = await fetchAll<{ amount: number }>((f, t) =>
-    supabase
-      .from("expenses")
-      .select("amount")
-      .gte("expense_date", range.from)
-      .lte("expense_date", range.to)
-      .range(f, t),
+  const [rows, salaries] = await Promise.all([
+    fetchAll<{ amount: number }>((f, t) =>
+      supabase
+        .from("expenses")
+        .select("amount")
+        .gte("expense_date", range.from)
+        .lte("expense_date", range.to)
+        .range(f, t),
+    ),
+    // Salaries actually disbursed in the period are a running cost too.
+    fetchAll<{ amount_paid: number }>((f, t) =>
+      supabase
+        .from("salary_payments")
+        .select("amount_paid")
+        .gte("payment_date", range.from)
+        .lte("payment_date", range.to)
+        .range(f, t),
+    ),
+  ]);
+  return (
+    rows.reduce((s, r) => s + Number(r.amount ?? 0), 0) +
+    salaries.reduce((s, r) => s + Number(r.amount_paid ?? 0), 0)
   );
-  return rows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
 }
 
 
