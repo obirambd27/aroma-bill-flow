@@ -498,9 +498,42 @@ export function useDayBook(date: string) {
         });
       }
 
+      let totalSalaries = 0;
+      for (const s of (salariesRes.data ?? []) as unknown as Row[]) {
+        totalSalaries += num(s["amount_paid"]);
+        vouchers.push({
+          key: `salary-${s["id"]}`,
+          date: String(s["payment_date"]),
+          at: ts(String(s["payment_date"]), s["created_at"]),
+          type: "Salary Payment",
+          number: (s["payment_number"] as string) ?? "—",
+          party: (s["employees"] as { name: string } | null)?.name ?? "—",
+          reference: (s["period_label"] as string) ?? "—",
+          amount: num(s["amount_paid"]),
+          status: String(s["payment_status"] ?? ""),
+        });
+      }
+
+      for (const a of (advancesRes.data ?? []) as unknown as Row[]) {
+        totalSalaries += num(a["amount"]);
+        vouchers.push({
+          key: `advance-${a["id"]}`,
+          date: String(a["advance_date"]),
+          at: ts(String(a["advance_date"]), a["created_at"]),
+          type: "Employee Advance",
+          number: "—",
+          party: (a["employees"] as { name: string } | null)?.name ?? "—",
+          reference: (a["reason"] as string) || "—",
+          amount: num(a["amount"]),
+          status: String(a["status"] ?? ""),
+        });
+      }
+
       const totalCollected = round2(Object.values(collection).reduce((s, v) => s + v, 0));
-      // Money out = purchase settlements + standalone vendor payments + expenses.
-      const totalOut = round2(purchaseUpfront + totalPaymentsMade + totalExpenses);
+      // Money out = purchase settlements + vendor payments + expenses + payroll.
+      const totalOut = round2(
+        purchaseUpfront + totalPaymentsMade + totalExpenses + totalSalaries,
+      );
 
       return {
         date,
