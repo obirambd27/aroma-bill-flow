@@ -23,6 +23,8 @@ export const VOUCHER_TYPES = [
   "Purchase Return",
   "Credit Note",
   "Fund Transfer",
+  "Salary Payment",
+  "Employee Advance",
 ] as const;
 export type VoucherType = (typeof VOUCHER_TYPES)[number];
 
