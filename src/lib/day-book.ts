@@ -172,6 +172,8 @@ export function useDayBook(date: string) {
         creditNotesRes,
         expensesRes,
         transfersRes,
+        salariesRes,
+        advancesRes,
       ] = await Promise.all([
         supabase.from("accounts").select("id, name, account_type, opening_balance, current_balance"),
         supabase.from("day_book_overrides").select("opening_cash").eq("book_date", date).maybeSingle(),
