@@ -75,6 +75,7 @@ export type DayBook = {
   totalCollected: number;
   totalPurchaseBills: number;
   totalExpenses: number;
+  totalSalaries: number;
   todaysSales: number;
   paymentsCollected: number;
   inHandCash: number;
