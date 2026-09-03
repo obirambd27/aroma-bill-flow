@@ -223,6 +223,16 @@ export function useDayBook(date: string) {
           .from("fund_transfers")
           .select("id, transfer_date, created_at, amount, notes, from_account_id, to_account_id")
           .eq("transfer_date", date),
+        supabase
+          .from("salary_payments")
+          .select(
+            "id, payment_number, payment_date, created_at, net_amount, amount_paid, period_label, payment_method, payment_status, employees(name)",
+          )
+          .eq("payment_date", date),
+        supabase
+          .from("employee_advances")
+          .select("id, advance_date, created_at, amount, reason, status, employees(name)")
+          .eq("advance_date", date),
       ]);
 
       const accounts = (accountsRes.data ?? []) as unknown as Row[];
