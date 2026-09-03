@@ -39,6 +39,8 @@ export function voucherTone(type: VoucherType): VoucherTone {
     case "Payment Made":
       return "warning";
     case "Expense":
+    case "Salary Payment":
+    case "Employee Advance":
       return "error";
     case "Sales Return":
     case "Purchase Return":
