@@ -23,6 +23,8 @@ export const VOUCHER_TYPES = [
   "Purchase Return",
   "Credit Note",
   "Fund Transfer",
+  "Salary Payment",
+  "Employee Advance",
 ] as const;
 export type VoucherType = (typeof VOUCHER_TYPES)[number];
 
@@ -37,6 +39,8 @@ export function voucherTone(type: VoucherType): VoucherTone {
     case "Payment Made":
       return "warning";
     case "Expense":
+    case "Salary Payment":
+    case "Employee Advance":
       return "error";
     case "Sales Return":
     case "Purchase Return":
@@ -71,6 +75,7 @@ export type DayBook = {
   totalCollected: number;
   totalPurchaseBills: number;
   totalExpenses: number;
+  totalSalaries: number;
   todaysSales: number;
   paymentsCollected: number;
   inHandCash: number;
@@ -168,6 +173,8 @@ export function useDayBook(date: string) {
         creditNotesRes,
         expensesRes,
         transfersRes,
+        salariesRes,
+        advancesRes,
       ] = await Promise.all([
         supabase.from("accounts").select("id, name, account_type, opening_balance, current_balance"),
         supabase.from("day_book_overrides").select("opening_cash").eq("book_date", date).maybeSingle(),
@@ -219,6 +226,16 @@ export function useDayBook(date: string) {
           .from("fund_transfers")
           .select("id, transfer_date, created_at, amount, notes, from_account_id, to_account_id")
           .eq("transfer_date", date),
+        supabase
+          .from("salary_payments")
+          .select(
+            "id, payment_number, payment_date, created_at, net_amount, amount_paid, period_label, payment_method, payment_status, employees(name)",
+          )
+          .eq("payment_date", date),
+        supabase
+          .from("employee_advances")
+          .select("id, advance_date, created_at, amount, reason, status, employees(name)")
+          .eq("advance_date", date),
       ]);
 
       const accounts = (accountsRes.data ?? []) as unknown as Row[];
@@ -482,9 +499,42 @@ export function useDayBook(date: string) {
         });
       }
 
+      let totalSalaries = 0;
+      for (const s of (salariesRes.data ?? []) as unknown as Row[]) {
+        totalSalaries += num(s["amount_paid"]);
+        vouchers.push({
+          key: `salary-${s["id"]}`,
+          date: String(s["payment_date"]),
+          at: ts(String(s["payment_date"]), s["created_at"]),
+          type: "Salary Payment",
+          number: (s["payment_number"] as string) ?? "—",
+          party: (s["employees"] as { name: string } | null)?.name ?? "—",
+          reference: (s["period_label"] as string) ?? "—",
+          amount: num(s["amount_paid"]),
+          status: String(s["payment_status"] ?? ""),
+        });
+      }
+
+      for (const a of (advancesRes.data ?? []) as unknown as Row[]) {
+        totalSalaries += num(a["amount"]);
+        vouchers.push({
+          key: `advance-${a["id"]}`,
+          date: String(a["advance_date"]),
+          at: ts(String(a["advance_date"]), a["created_at"]),
+          type: "Employee Advance",
+          number: "—",
+          party: (a["employees"] as { name: string } | null)?.name ?? "—",
+          reference: (a["reason"] as string) || "—",
+          amount: num(a["amount"]),
+          status: String(a["status"] ?? ""),
+        });
+      }
+
       const totalCollected = round2(Object.values(collection).reduce((s, v) => s + v, 0));
-      // Money out = purchase settlements + standalone vendor payments + expenses.
-      const totalOut = round2(purchaseUpfront + totalPaymentsMade + totalExpenses);
+      // Money out = purchase settlements + vendor payments + expenses + payroll.
+      const totalOut = round2(
+        purchaseUpfront + totalPaymentsMade + totalExpenses + totalSalaries,
+      );
 
       return {
         date,
@@ -499,6 +549,7 @@ export function useDayBook(date: string) {
         totalCollected,
         totalPurchaseBills: round2(totalPurchaseBills),
         totalExpenses: round2(totalExpenses),
+        totalSalaries: round2(totalSalaries),
         todaysSales: round2(netSalesInvoices),
         paymentsCollected: round2(receivedTotal),
         inHandCash: override ? round2(openingCash + todaysCashMovement) : cashBalanceNow,
