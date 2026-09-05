@@ -1,0 +1,1 @@
+ALTER FUNCTION public.audit_stock_ledger(boolean) SECURITY INVOKER;
