@@ -52,6 +52,7 @@ const NAV = [
   { to: "/products", label: "Products", icon: Package, group: "Inventory" },
   { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
   { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
+  { to: "/staff", label: "Staff", icon: Users, group: "Staff" },
   { to: "/payments", label: "Payments", icon: Wallet, group: "Finance" },
   { to: "/expenses", label: "Expenses", icon: Receipt, group: "Finance" },
   { to: "/cash-bank", label: "Cash & Bank", icon: Landmark, group: "Finance" },
