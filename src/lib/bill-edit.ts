@@ -122,26 +122,6 @@ export function describeChanges(row: BillEditHistoryRow, money: (n: number) => s
   return out.length > 0 ? out : ["Bill details updated"];
 }
 
-/** Add stock back to a warehouse row, creating it if needed. */
-async function addStock(productId: string, warehouseId: string, delta: number) {
-  const { data: row } = await supabase
-    .from("product_stock")
-    .select("id, stock_on_hand")
-    .eq("product_id", productId)
-    .eq("warehouse_id", warehouseId)
-    .maybeSingle();
-  if (row) {
-    await supabase
-      .from("product_stock")
-      .update({ stock_on_hand: Number(row.stock_on_hand) + delta })
-      .eq("id", row.id);
-  } else {
-    await supabase
-      .from("product_stock")
-      .insert({ product_id: productId, warehouse_id: warehouseId, stock_on_hand: delta });
-  }
-}
-
 /**
  * Deletes every ledger entry this bill created itself (sale, receivable and the
  * counter payment), leaving entries owned by the Payments Received module.
@@ -186,29 +166,33 @@ export async function applyBillEdit(input: ApplyEditInput) {
   const wasFinalized = input.originalStatus === "Finalized";
 
   if (wasFinalized) {
-    // 1. Reverse original stock effects.
-    for (const item of input.originalItems) {
-      if (!item.product_id || !item.warehouse_id) continue;
-      await addStock(item.product_id, item.warehouse_id, Number(item.quantity));
-      await supabase.from("stock_movements").insert({
-        product_id: item.product_id,
-        warehouse_id: item.warehouse_id,
-        movement_type: "Edit Reversal",
-        quantity_change: Number(item.quantity),
-        related_bill_id: input.billId,
-        reason: `Edit of ${input.billNumber ?? "bill"}`,
-      });
+    // Reverse only the stock effects that actually exist, validate the new
+    // quantities against post-reversal availability, then re-apply — all in
+    // one database transaction. Identical re-saves write nothing at all.
+    const { data: stockResult, error: stockError } = await supabase.rpc("apply_bill_edit_stock", {
+      p_bill_id: input.billId,
+      p_lines: input.lines.map((l) => ({
+        product_id: l.productId,
+        warehouse_id: l.warehouseId || null,
+        quantity: l.quantity,
+      })) as unknown as Json,
+    });
+    if (stockError) throw new Error(stockError.message);
+    const flags = (stockResult as { flags?: { product?: string; warehouse?: string }[] } | null)
+      ?.flags;
+    if (flags && flags.length > 0) {
+      console.warn("Stock integrity issue while editing bill", input.billNumber, flags);
     }
 
-    // 2. Remove the bill's own ledger effects (revenue, receivable and the
-    //    Sale Payment taken at the counter) so they can be re-applied cleanly.
-    //    Entries created by the Payments Received module carry a
-    //    related_payment_id and are left untouched.
+    // Remove the bill's own ledger effects (revenue, receivable and the
+    // Sale Payment taken at the counter) so they can be re-applied cleanly.
+    // Entries created by the Payments Received module carry a
+    // related_payment_id and are left untouched.
     await clearBillLedgerEntries(input.billId);
   }
 
 
-  // 3. Replace line items and bill header.
+  // Replace line items and bill header.
   await supabase.from("bill_items").delete().eq("bill_id", input.billId);
   const { error: itemsError } = await supabase.from("bill_items").insert(
     input.lines.map((l) => ({
@@ -231,19 +215,7 @@ export async function applyBillEdit(input: ApplyEditInput) {
   if (billError) throw billError;
 
   if (wasFinalized) {
-    // 4. Re-apply stock + ledger for the new line items.
-    for (const l of input.lines) {
-      if (!l.warehouseId) continue;
-      await addStock(l.productId, l.warehouseId, -l.quantity);
-      await supabase.from("stock_movements").insert({
-        product_id: l.productId,
-        warehouse_id: l.warehouseId,
-        movement_type: "Sale",
-        quantity_change: -l.quantity,
-        related_bill_id: input.billId,
-        reason: `Edit of ${input.billNumber ?? "bill"}`,
-      });
-    }
+
 
     const total = input.after.total;
     const revenueId = await accountIdByName("Sales Revenue");

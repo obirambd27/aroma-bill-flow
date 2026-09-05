@@ -113,59 +113,20 @@ export function StockTransferDialog({
     }
 
     setSaving(true);
-    const { data: transfer, error } = await supabase
-      .from("stock_transfers")
-      .insert({
-        product_id: productId,
-        from_warehouse_id: fromId,
-        to_warehouse_id: toId,
-        quantity,
-        notes: notes.trim() || null,
-      })
-      .select()
-      .single();
+    const { error } = await supabase.rpc("create_stock_transfer", {
+      p_product_id: productId,
+      p_from_warehouse_id: fromId,
+      p_to_warehouse_id: toId,
+      p_quantity: quantity,
+      ...(notes.trim() ? { p_notes: notes.trim() } : {}),
+    });
 
-    if (error || !transfer) {
+    if (error) {
       setSaving(false);
-      toast.error(error?.message ?? "Could not create the transfer");
+      toast.error(error.message ?? "Could not create the transfer");
       return;
     }
 
-    const source = stockRows.find((r) => r.product_id === productId && r.warehouse_id === fromId);
-    const dest = stockRows.find((r) => r.product_id === productId && r.warehouse_id === toId);
-
-    await supabase.from("product_stock").upsert(
-      [
-        {
-          product_id: productId,
-          warehouse_id: fromId,
-          stock_on_hand: Number(source?.stock_on_hand ?? 0) - quantity,
-        },
-        {
-          product_id: productId,
-          warehouse_id: toId,
-          stock_on_hand: Number(dest?.stock_on_hand ?? 0) + quantity,
-        },
-      ],
-      { onConflict: "product_id,warehouse_id" },
-    );
-
-    await supabase.from("stock_movements").insert([
-      {
-        product_id: productId,
-        warehouse_id: fromId,
-        movement_type: "Transfer Out",
-        quantity_change: -quantity,
-        reason: notes.trim() || "Stock transfer",
-      },
-      {
-        product_id: productId,
-        warehouse_id: toId,
-        movement_type: "Transfer In",
-        quantity_change: quantity,
-        reason: notes.trim() || "Stock transfer",
-      },
-    ]);
 
     setSaving(false);
     queryClient.invalidateQueries();

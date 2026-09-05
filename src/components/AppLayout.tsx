@@ -29,6 +29,7 @@ import {
   Tags,
 
   ShoppingBag,
+  ScanSearch,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ const NAV = [
   { to: "/price-lists", label: "Price Lists", icon: Tags, group: "Inventory" },
   { to: "/products", label: "Products", icon: Package, group: "Inventory" },
   { to: "/warehouses", label: "Warehouses", icon: Warehouse, group: "Inventory" },
+  { to: "/stock-audit", label: "Stock Audit", icon: ScanSearch, group: "Inventory" },
   { to: "/customers", label: "Customers", icon: Users, group: "Inventory" },
   { to: "/staff", label: "Staff", icon: Users, group: "Staff" },
   { to: "/payments", label: "Payments", icon: Wallet, group: "Finance" },

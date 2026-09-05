@@ -23,6 +23,8 @@ import {
   useSettings,
   useStockTotals,
   useWarehouses,
+  useAllWarehouses,
+  useProductStock,
   type Product,
 } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
@@ -50,6 +52,25 @@ function ProductsPage() {
   const { data: settings } = useSettings();
   const { data: stockTotals = {} } = useStockTotals();
   const { data: warehouses = [] } = useWarehouses();
+  const { data: allWarehouses = [] } = useAllWarehouses();
+  const { data: stockRows = [] } = useProductStock();
+
+  /** Per-warehouse stock per product, including inactive locations. */
+  const breakdown = useMemo(() => {
+    const byWarehouse = new Map(allWarehouses.map((w) => [w.id, w]));
+    const map: Record<string, { name: string; qty: number; inactive: boolean }[]> = {};
+    for (const row of stockRows) {
+      const qty = Number(row.stock_on_hand ?? 0);
+      if (qty === 0) continue;
+      const w = byWarehouse.get(row.warehouse_id);
+      (map[row.product_id] ??= []).push({
+        name: w?.name ?? "Unknown warehouse",
+        qty,
+        inactive: w ? !w.is_active : false,
+      });
+    }
+    return map;
+  }, [stockRows, allWarehouses]);
 
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
@@ -299,7 +320,7 @@ function ProductsPage() {
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3 text-right">Cost</th>
                   <th className="px-4 py-3 text-right">Price</th>
-                  <th className="px-4 py-3 text-right">Stock</th>
+                  <th className="px-4 py-3 text-right">Total stock</th>
                   <th className="px-4 py-3 text-right">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -346,8 +367,18 @@ function ProductsPage() {
                       <td className="numeric px-4 py-3 text-right text-sm font-semibold">
                         {formatMoney(p.price)}
                       </td>
-                      <td className="numeric px-4 py-3 text-right text-sm font-semibold">
-                        {stockTotals[p.id] ?? 0}
+                      <td className="px-4 py-3 text-right">
+                        <p className="numeric text-sm font-semibold">{stockTotals[p.id] ?? 0}</p>
+                        <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+                          {(breakdown[p.id] ?? []).length === 0
+                            ? "No warehouse stock"
+                            : (breakdown[p.id] ?? [])
+                                .map(
+                                  (b) =>
+                                    `${b.name}${b.inactive ? " (Inactive)" : ""}: ${b.qty}`,
+                                )
+                                .join(" · ")}
+                        </p>
                       </td>
                       <td className="px-4 py-3 text-right">
                         {p.is_active ? (
@@ -419,9 +450,16 @@ function ProductsPage() {
                         <span className="numeric text-sm font-semibold text-foreground">
                           {stockTotals[p.id] ?? 0}
                         </span>{" "}
-                        in stock
+                        total stock
                       </p>
                     </div>
+                    <p className="mt-2 text-[11px] leading-tight text-muted-foreground">
+                      {(breakdown[p.id] ?? []).length === 0
+                        ? "No warehouse stock"
+                        : (breakdown[p.id] ?? [])
+                            .map((b) => `${b.name}${b.inactive ? " (Inactive)" : ""}: ${b.qty}`)
+                            .join(" · ")}
+                    </p>
                     <div className="mt-3 flex gap-2">
                       <Button
                         variant="outline"

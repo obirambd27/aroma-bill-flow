@@ -31,6 +31,7 @@ import {
   Warehouse as WarehouseIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { StockDiscrepancyAlert } from "@/components/StockDiscrepancyAlert";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -435,6 +436,10 @@ function DashboardPage() {
         title={settings?.business_name ?? "Dashboard"}
         description="Sales, purchases, stock and follow-ups at a glance."
       />
+
+      <StockDiscrepancyAlert />
+
+
 
       {/* Quick actions */}
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
