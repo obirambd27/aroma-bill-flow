@@ -2253,6 +2253,42 @@ export type Database = {
           },
         ]
       }
+      reconcile_runs: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          issues_corrected: number
+          issues_found: number
+          kind: string
+          success: boolean
+          summary: string | null
+          trigger: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          issues_corrected?: number
+          issues_found?: number
+          kind: string
+          success?: boolean
+          summary?: string | null
+          trigger: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          issues_corrected?: number
+          issues_found?: number
+          kind?: string
+          success?: boolean
+          summary?: string | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       salary_payments: {
         Row: {
           account_id: string | null
