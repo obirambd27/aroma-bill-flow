@@ -41,6 +41,8 @@ export type AllocationInput = {
   method?: string | null;
   date?: string | null;
   reference?: string | null;
+  paymentId?: string | null;
+  accountName?: string | null;
 };
 
 export type PaymentLine = {
@@ -50,6 +52,9 @@ export type PaymentLine = {
   amount: number;
   reference: string | null;
   source: "billing" | "payment";
+  /** Only set for lines sourced from a real payment record. */
+  paymentId?: string | null;
+  accountName?: string | null;
 };
 
 export type BillPaymentBreakdown = {
@@ -113,6 +118,8 @@ export function buildPaymentBreakdown(
       amount,
       reference: a.reference ?? null,
       source: "payment",
+      paymentId: a.paymentId ?? null,
+      accountName: a.accountName ?? null,
     });
   });
 
@@ -139,9 +146,11 @@ type AllocRow = {
   bill_id: string;
   amount_allocated: number;
   payments_received: {
+    id: string;
     payment_date: string;
     payment_method: string | null;
     reference_number: string | null;
+    accounts: { name: string } | null;
   } | null;
 };
 
@@ -149,7 +158,7 @@ async function fetchAllocations(billId?: string) {
   let q = supabase
     .from("payment_allocations")
     .select(
-      "bill_id, amount_allocated, payments_received(payment_date, payment_method, reference_number)",
+      "bill_id, amount_allocated, payments_received(id, payment_date, payment_method, reference_number, accounts(name))",
     );
   if (billId) q = q.eq("bill_id", billId);
   const { data, error } = await q;
@@ -163,6 +172,8 @@ function toInputs(rows: AllocRow[]): AllocationInput[] {
     method: r.payments_received?.payment_method ?? null,
     date: r.payments_received?.payment_date ?? null,
     reference: r.payments_received?.reference_number ?? null,
+    paymentId: r.payments_received?.id ?? null,
+    accountName: r.payments_received?.accounts?.name ?? null,
   }));
 }
 
