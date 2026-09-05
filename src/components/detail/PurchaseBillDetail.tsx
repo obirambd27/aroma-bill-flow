@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Ban, Download, Pencil, Printer, RotateCcw, Wallet } from "lucide-react";
@@ -75,6 +76,16 @@ export function PurchaseBillDetail({ purchaseBillId }: { purchaseBillId: string 
 
   return (
     <div className="space-y-6">
+      <div className="print:hidden">
+        <Link
+          to="/purchase-bills"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Purchase Bills
+        </Link>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="min-w-0">
           <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
