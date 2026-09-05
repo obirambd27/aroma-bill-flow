@@ -121,6 +121,7 @@ function NewBillPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const validateBillPayment = useValidateBillPayment();
+  const reconcileBill = useReconcileBill();
   const search = Route.useSearch();
   const { data: products = [] } = useProducts();
   const { data: customers = [] } = useCustomers();
@@ -564,6 +565,10 @@ function NewBillPage() {
         // this same save, so a duplicate payment can never survive an edit.
         // A failure here aborts the save with an error instead of passing
         // silently, and is written to the reconcile audit trail.
+        const hadPayment =
+          Number(editingBill.amount_paid ?? 0) > 0 ||
+          editingBill.payment_status === "Paid" ||
+          editingBill.payment_status === "Partial";
         if (hadPayment || keptPaid > 0) {
           try {
             const outcome = await reconcileBill.mutateAsync(editingBill.id);
