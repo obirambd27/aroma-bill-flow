@@ -18,7 +18,7 @@ export type StockTransfer = Tables<"stock_transfers">;
 /** Total stock per product, summed across every warehouse. */
 export function useStockTotals() {
   return useQuery({
-    queryKey: ["stock-totals"],
+    queryKey: ["stock-totals-live-v2"],
     queryFn: async () => {
       const data = await fetchAll<{ product_id: string; stock_on_hand: number; committed_stock: number }>(
         (f, t) =>
@@ -126,7 +126,7 @@ export function defaultWarehouseId(warehouses: Warehouse[]): string {
 /** All per-warehouse stock rows, keyed lookup done in the component. */
 export function useProductStock() {
   return useQuery({
-    queryKey: ["product_stock"],
+    queryKey: ["product-stock-live-v2"],
     queryFn: async () => {
       const data = await fetchAll<ProductStock>((f, t) =>
         supabase.from("product_stock").select("*").order("id", { ascending: true }).range(f, t),
@@ -286,7 +286,7 @@ export function useWarehouseStock(warehouseId: string) {
 /** Stock rows for one product across every warehouse. */
 export function useProductStockRows(productId: string) {
   return useQuery({
-    queryKey: ["product-stock-rows", productId],
+    queryKey: ["product-stock-rows-live-v2", productId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_stock")
@@ -308,7 +308,7 @@ export type MovementRow = StockMovement & {
 
 export function useStockMovements(filter: { warehouseId?: string; productId?: string }) {
   return useQuery({
-    queryKey: ["stock-movements", filter.warehouseId ?? null, filter.productId ?? null],
+    queryKey: ["stock-movements-live-v2", filter.warehouseId ?? null, filter.productId ?? null],
     queryFn: async () => {
       let q = supabase
         .from("stock_movements")
