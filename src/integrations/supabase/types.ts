@@ -2253,6 +2253,42 @@ export type Database = {
           },
         ]
       }
+      reconcile_runs: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          issues_corrected: number
+          issues_found: number
+          kind: string
+          success: boolean
+          summary: string | null
+          trigger: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          issues_corrected?: number
+          issues_found?: number
+          kind: string
+          success?: boolean
+          summary?: string | null
+          trigger: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          issues_corrected?: number
+          issues_found?: number
+          kind?: string
+          success?: boolean
+          summary?: string | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       salary_payments: {
         Row: {
           account_id: string | null
@@ -2942,7 +2978,12 @@ export type Database = {
         Returns: Json
       }
       audit_ledger_integrity: { Args: { p_repair?: boolean }; Returns: Json }
-      audit_stock_ledger: { Args: { p_repair?: boolean }; Returns: Json }
+      audit_stock_ledger:
+        | { Args: { p_repair?: boolean }; Returns: Json }
+        | {
+            Args: { p_repair?: boolean; p_skip_transfer_repair?: boolean }
+            Returns: Json
+          }
       convert_price_list_order: {
         Args: { p_bill_id: string; p_order_id: string }
         Returns: Json
