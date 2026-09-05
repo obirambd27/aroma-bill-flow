@@ -157,7 +157,7 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
   }
 
   if (!customer) {
-    if (mergeInfo) {
+    if (mergeInfo?.surviving_customer_id) {
       return (
         <div className="surface-card p-8 text-center">
           <p className="text-sm text-muted-foreground">
