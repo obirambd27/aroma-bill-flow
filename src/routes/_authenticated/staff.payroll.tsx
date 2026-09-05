@@ -31,7 +31,9 @@ export const Route = createFileRoute("/_authenticated/staff/payroll")({
 });
 
 function monthBounds(month: string) {
-  const [y, m] = month.split("-").map(Number);
+  const parts = month.split("-").map(Number);
+  const y = parts[0] ?? 1970;
+  const m = parts[1] ?? 1;
   const from = new Date(y, m - 1, 1);
   const to = new Date(y, m, 0);
   const iso = (d: Date) =>
