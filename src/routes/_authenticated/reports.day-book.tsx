@@ -313,8 +313,11 @@ function DayBookPage() {
         <Card className="p-6 text-sm text-muted-foreground">Loading day book…</Card>
       ) : (
         <>
+          <ReconciliationTools />
+
           <section className="space-y-3">
             <h2 className="text-sm font-semibold">Executive summary</h2>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="Opening Cash"
