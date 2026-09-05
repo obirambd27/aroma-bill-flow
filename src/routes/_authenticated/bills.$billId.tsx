@@ -45,7 +45,6 @@ import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { buildPaymentBreakdown, useBillAllocations } from "@/lib/bill-payments";
-import { useReconcileBill } from "@/lib/reconcile";
 
 type PrintView = "a4" | "thermal";
 /** Session-level memory of the last chosen print view. */
@@ -76,20 +75,6 @@ function BillDetailPage() {
   const { billId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const reconcile = useReconcileBill();
-
-  const handleReconcile = async (billId: string) => {
-    try {
-      const result = await reconcile.mutateAsync(billId);
-      toast.success(
-        result.changed
-          ? result.message
-          : "Already in sync — nothing needed fixing.",
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not reconcile this bill");
-    }
-  };
   const { data: bill, isLoading } = useBill(billId);
   const { data: settings } = useSettings();
   const { data: outstanding = {} } = useCustomerOutstanding();
@@ -364,17 +349,6 @@ function BillDetailPage() {
               >
                 <Truck className="h-4 w-4" />
                 Convert to Delivery Note
-              </Button>
-            )}
-            {bill.status === "Finalized" && Number(bill.amount_paid) > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleReconcile(bill.id)}
-                disabled={reconcile.isPending}
-              >
-                <Wrench className="h-4 w-4" />
-                {reconcile.isPending ? "Reconciling…" : "Reconcile Paid Bill"}
               </Button>
             )}
             {bill.status === "Finalized" && (
