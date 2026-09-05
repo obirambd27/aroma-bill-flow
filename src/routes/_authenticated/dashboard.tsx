@@ -31,6 +31,7 @@ import {
   Warehouse as WarehouseIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { StockDiscrepancyAlert } from "@/components/StockDiscrepancyAlert";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
