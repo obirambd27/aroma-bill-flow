@@ -1,0 +1,371 @@
+import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Package, Search, ArrowUpDown, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
+import { Pagination, usePaged } from "@/components/Pagination";
+import { StatusBadge, stockTone } from "@/components/StatusBadge";
+import { ProductFormDialog } from "@/components/ProductFormDialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  useAllProducts,
+  useSettings,
+  useStockTotals,
+  useWarehouses,
+  useAllWarehouses,
+  useProductStock,
+  type Product,
+} from "@/lib/data";
+import { formatMoney } from "@/lib/format";
+
+type SortKey = "name-asc" | "name-desc" | "price-asc" | "price-desc" | "stock-asc" | "stock-desc";
+
+export function ProductsList({ selectedId }: { selectedId?: string }) {
+  const queryClient = useQueryClient();
+  const { data: products = [], isLoading } = useAllProducts();
+  const { data: settings } = useSettings();
+  const { data: stockTotals = {} } = useStockTotals();
+  const { data: warehouses = [] } = useWarehouses();
+  const { data: allWarehouses = [] } = useAllWarehouses();
+  const { data: stockRows = [] } = useProductStock();
+
+  /** Per-warehouse stock per product, including inactive locations. */
+  const breakdown = useMemo(() => {
+    const byWarehouse = new Map(allWarehouses.map((w) => [w.id, w]));
+    const map: Record<string, { name: string; qty: number; inactive: boolean }[]> = {};
+    for (const row of stockRows) {
+      const qty = Number(row.stock_on_hand ?? 0);
+      if (qty === 0) continue;
+      const w = byWarehouse.get(row.warehouse_id);
+      (map[row.product_id] ??= []).push({
+        name: w?.name ?? "Unknown warehouse",
+        qty,
+        inactive: w ? !w.is_active : false,
+      });
+    }
+    return map;
+  }, [stockRows, allWarehouses]);
+
+  const [query, setQuery] = useState("");
+  const [brand, setBrand] = useState("all");
+  const [category, setCategory] = useState("all");
+  const [stockStatus, setStockStatus] = useState("all");
+  const [sort, setSort] = useState<SortKey>("name-asc");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
+
+  const globalThreshold = Number(settings?.low_stock_threshold ?? 5);
+
+  const brands = useMemo(
+    () => [...new Set(products.map((p) => p.brand).filter(Boolean) as string[])].sort(),
+    [products],
+  );
+  const categories = useMemo(
+    () => [...new Set(products.map((p) => p.category).filter(Boolean) as string[])].sort(),
+    [products],
+  );
+
+  const statusOf = (p: Product) => {
+    const total = stockTotals[p.id] ?? 0;
+    const threshold = Number(p.low_stock_threshold ?? globalThreshold);
+    return stockTone(total, threshold);
+  };
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = products.filter((p) => {
+      if (
+        q &&
+        !p.name.toLowerCase().includes(q) &&
+        !(p.sku ?? "").toLowerCase().includes(q) &&
+        !(p.brand ?? "").toLowerCase().includes(q)
+      )
+        return false;
+      if (brand !== "all" && p.brand !== brand) return false;
+      if (category !== "all" && p.category !== category) return false;
+      if (stockStatus !== "all") {
+        const total = stockTotals[p.id] ?? 0;
+        const threshold = Number(p.low_stock_threshold ?? globalThreshold);
+        if (stockStatus === "out" && total > 0) return false;
+        if (stockStatus === "low" && !(total > 0 && total <= threshold)) return false;
+        if (stockStatus === "in" && total <= threshold) return false;
+      }
+      return true;
+    });
+    const [key, dir] = sort.split("-") as ["name" | "price" | "stock", "asc" | "desc"];
+    const sorted = [...filtered].sort((a, b) => {
+      if (key === "name") return a.name.localeCompare(b.name);
+      if (key === "price") return Number(a.price) - Number(b.price);
+      return (stockTotals[a.id] ?? 0) - (stockTotals[b.id] ?? 0);
+    });
+    return dir === "desc" ? sorted.reverse() : sorted;
+  }, [products, query, brand, category, stockStatus, sort, stockTotals, globalThreshold]);
+
+  const { pageItems: paged, props: pageProps } = usePaged(visible, 50);
+
+  const inventory = useMemo(() => {
+    let qty = 0;
+    let value = 0;
+    let missingCost = 0;
+    for (const p of products) {
+      const q = stockTotals[p.id] ?? 0;
+      if (q <= 0) continue;
+      qty += q;
+      const cost = p.cost_price != null ? Number(p.cost_price) : null;
+      if (cost == null) missingCost += 1;
+      value += q * (cost ?? 0);
+    }
+    return { qty, value, missingCost };
+  }, [products, stockTotals]);
+
+  const openNew = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+
+  const remove = async (p: Product) => {
+    const { count, error: countError } = await supabase
+      .from("bill_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", p.id);
+    if (countError) {
+      toast.error(countError.message);
+      return;
+    }
+    if ((count ?? 0) > 0) {
+      toast.error("This product appears on bills. Mark it inactive instead of deleting.");
+      return;
+    }
+    if (!confirm(`Delete ${p.name}? This cannot be undone.`)) return;
+    await supabase.from("stock_movements").delete().eq("product_id", p.id);
+    await supabase.from("product_stock").delete().eq("product_id", p.id);
+    const { error } = await supabase.from("products").delete().eq("id", p.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    queryClient.invalidateQueries();
+    toast.success("Product deleted");
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Products"
+        description="Catalogue, pricing and stock levels."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/import-export">
+                <FileSpreadsheet /> Import / Export
+              </Link>
+            </Button>
+            <Button className="h-11" onClick={openNew}>
+              <Plus /> New Product
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Products</p>
+          <p className="numeric mt-1 text-2xl font-bold">{products.length}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Units in stock</p>
+          <p className="numeric mt-1 text-2xl font-bold">{inventory.qty}</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="text-xs text-muted-foreground">Total stock value (at cost)</p>
+          <p className="numeric mt-1 text-2xl font-bold">{formatMoney(inventory.value)}</p>
+          {inventory.missingCost > 0 && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {inventory.missingCost} in-stock product{inventory.missingCost === 1 ? "" : "s"} have
+              no cost price
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="surface-card overflow-hidden">
+        <div className="space-y-3 border-b border-border p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-11 pl-9"
+                placeholder="Search by name, SKU or brand"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="h-11 w-[170px]">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name-asc">Name A–Z</SelectItem>
+                  <SelectItem value="name-desc">Name Z–A</SelectItem>
+                  <SelectItem value="price-asc">Price low–high</SelectItem>
+                  <SelectItem value="price-desc">Price high–low</SelectItem>
+                  <SelectItem value="stock-asc">Stock low–high</SelectItem>
+                  <SelectItem value="stock-desc">Stock high–low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Select value={brand} onValueChange={setBrand}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All brands</SelectItem>
+                {brands.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={stockStatus} onValueChange={setStockStatus}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Stock status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All stock levels</SelectItem>
+                <SelectItem value="in">In stock</SelectItem>
+                <SelectItem value="low">Low stock</SelectItem>
+                <SelectItem value="out">Out of stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading products…</p>
+        ) : products.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="No products yet"
+            description="Add your first product to start building your perfume catalogue."
+          />
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No matches"
+            description="No products match your filters. Try a different search."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 p-4">
+              {paged.map((p) => {
+                const s = statusOf(p);
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "rounded-xl border border-border p-4",
+                      selectedId === p.id && "bg-muted/60",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        to="/products/$productId"
+                        params={{ productId: p.id }}
+                        className="min-w-0"
+                      >
+                        <p className="truncate text-sm font-semibold">{p.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {p.sku ?? "No SKU"} · {p.brand ?? "No brand"}
+                        </p>
+                      </Link>
+                      {p.is_active ? (
+                        <StatusBadge tone={s.tone}>{s.label}</StatusBadge>
+                      ) : (
+                        <StatusBadge tone="neutral">Inactive</StatusBadge>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-end justify-between">
+                      <p className="numeric text-xl font-bold">{formatMoney(p.price)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="numeric text-sm font-semibold text-foreground">
+                          {stockTotals[p.id] ?? 0}
+                        </span>{" "}
+                        total stock
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-tight text-muted-foreground">
+                      {(breakdown[p.id] ?? []).length === 0
+                        ? "No warehouse stock"
+                        : (breakdown[p.id] ?? [])
+                            .map((b) => `${b.name}${b.inactive ? " (Inactive)" : ""}: ${b.qty}`)
+                            .join(" · ")}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="h-11 flex-1"
+                        onClick={() => {
+                          setEditing(p);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11"
+                        aria-label="Delete"
+                        onClick={() => remove(p)}
+                      >
+                        <Trash2 className="text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <Pagination {...pageProps} label="products" />
+          </>
+        )}
+      </div>
+
+      <ProductFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        warehouses={warehouses}
+        product={editing}
+      />
+    </div>
+  );
+}

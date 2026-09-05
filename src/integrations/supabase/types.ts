@@ -543,6 +543,45 @@ export type Database = {
           },
         ]
       }
+      customer_merge_log: {
+        Row: {
+          created_at: string
+          field_choices: Json
+          id: string
+          merged_customer_email: string | null
+          merged_customer_id: string | null
+          merged_customer_name: string | null
+          merged_customer_phone: string | null
+          moved_counts: Json
+          surviving_customer_id: string | null
+          surviving_customer_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_choices?: Json
+          id?: string
+          merged_customer_email?: string | null
+          merged_customer_id?: string | null
+          merged_customer_name?: string | null
+          merged_customer_phone?: string | null
+          moved_counts?: Json
+          surviving_customer_id?: string | null
+          surviving_customer_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_choices?: Json
+          id?: string
+          merged_customer_email?: string | null
+          merged_customer_id?: string | null
+          merged_customer_name?: string | null
+          merged_customer_phone?: string | null
+          moved_counts?: Json
+          surviving_customer_id?: string | null
+          surviving_customer_name?: string | null
+        }
+        Relationships: []
+      }
       customer_reminders: {
         Row: {
           completed_at: string | null
@@ -3000,6 +3039,10 @@ export type Database = {
       }
       delete_payment_received: {
         Args: { p_payment_id: string; p_reason?: string }
+        Returns: Json
+      }
+      merge_customers: {
+        Args: { p_duplicate_id: string; p_final?: Json; p_survivor_id: string }
         Returns: Json
       }
       recalc_account_balances: { Args: never; Returns: number }
