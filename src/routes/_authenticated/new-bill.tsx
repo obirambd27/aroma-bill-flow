@@ -656,27 +656,20 @@ function NewBillPage() {
     }
 
 
-    // Deduct stock per warehouse and log a stock movement for each line.
-    for (const l of lines) {
-      const row = stock.find(
-        (s) => s.product_id === l.productId && s.warehouse_id === l.warehouseId,
-      );
-      if (row) {
-        await supabase
-          .from("product_stock")
-          .update({ stock_on_hand: Number(row.stock_on_hand) - l.quantity })
-          .eq("id", row.id);
-      }
-      if (l.warehouseId) {
-        await supabase.from("stock_movements").insert({
-          product_id: l.productId,
-          warehouse_id: l.warehouseId,
-          movement_type: "Sale",
-          quantity_change: -l.quantity,
-          related_bill_id: bill.id,
-        });
-      }
+    // Deduct stock per warehouse atomically; the routine asserts a Sale
+    // movement exists for every line before it commits.
+    const { error: stockError } = await supabase.rpc("apply_bill_stock", {
+      p_bill_id: bill.id,
+    });
+    if (stockError) {
+      setSaving(false);
+      queryClient.invalidateQueries();
+      toast.error(`Stock was not recorded for this bill: ${stockError.message}`, {
+        duration: 15000,
+      });
+      return;
     }
+
 
     const customerName = isWalkIn
       ? "Walk-in customer"
