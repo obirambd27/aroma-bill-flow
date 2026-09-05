@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedImportExportRouteImport } from './routes/_authenticated/import-export'
 import { Route as AuthenticatedNewBillRouteImport } from './routes/_authenticated/new-bill'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStockAuditRouteImport } from './routes/_authenticated/stock-audit'
 import { Route as OrderTokenRouteImport } from './routes/order.$token'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsAccountIdRouteImport } from './routes/_authenticated/accounts.$accountId'
@@ -117,6 +118,11 @@ const AuthenticatedNewBillRoute = AuthenticatedNewBillRouteImport.update({
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStockAuditRoute = AuthenticatedStockAuditRouteImport.update({
+  id: '/stock-audit',
+  path: '/stock-audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const OrderTokenRoute = OrderTokenRouteImport.update({
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/stock-audit': typeof AuthenticatedStockAuditRoute
   '/order/$token': typeof OrderTokenRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
@@ -521,6 +528,7 @@ export interface FileRoutesByTo {
   '/import-export': typeof AuthenticatedImportExportRoute
   '/new-bill': typeof AuthenticatedNewBillRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/stock-audit': typeof AuthenticatedStockAuditRoute
   '/order/$token': typeof OrderTokenRoute
   '/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
@@ -588,6 +596,7 @@ export interface FileRoutesById {
   '/_authenticated/import-export': typeof AuthenticatedImportExportRoute
   '/_authenticated/new-bill': typeof AuthenticatedNewBillRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/stock-audit': typeof AuthenticatedStockAuditRoute
   '/order/$token': typeof OrderTokenRoute
   '/_authenticated/accounts/$accountId': typeof AuthenticatedAccountsAccountIdRoute
   '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
@@ -655,6 +664,7 @@ export interface FileRouteTypes {
     | '/import-export'
     | '/new-bill'
     | '/settings'
+    | '/stock-audit'
     | '/order/$token'
     | '/accounts/$accountId'
     | '/bills/$billId'
@@ -720,6 +730,7 @@ export interface FileRouteTypes {
     | '/import-export'
     | '/new-bill'
     | '/settings'
+    | '/stock-audit'
     | '/order/$token'
     | '/accounts/$accountId'
     | '/bills/$billId'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/_authenticated/import-export'
     | '/_authenticated/new-bill'
     | '/_authenticated/settings'
+    | '/_authenticated/stock-audit'
     | '/order/$token'
     | '/_authenticated/accounts/$accountId'
     | '/_authenticated/bills/$billId'
@@ -914,6 +926,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/stock-audit': {
+      id: '/_authenticated/stock-audit'
+      path: '/stock-audit'
+      fullPath: '/stock-audit'
+      preLoaderRoute: typeof AuthenticatedStockAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/order/$token': {
@@ -1310,6 +1329,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImportExportRoute: typeof AuthenticatedImportExportRoute
   AuthenticatedNewBillRoute: typeof AuthenticatedNewBillRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStockAuditRoute: typeof AuthenticatedStockAuditRoute
   AuthenticatedAccountsAccountIdRoute: typeof AuthenticatedAccountsAccountIdRoute
   AuthenticatedBillsBillIdRoute: typeof AuthenticatedBillsBillIdRoute
   AuthenticatedBillsDeletedRoute: typeof AuthenticatedBillsDeletedRoute
@@ -1372,6 +1392,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImportExportRoute: AuthenticatedImportExportRoute,
   AuthenticatedNewBillRoute: AuthenticatedNewBillRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStockAuditRoute: AuthenticatedStockAuditRoute,
   AuthenticatedAccountsAccountIdRoute: AuthenticatedAccountsAccountIdRoute,
   AuthenticatedBillsBillIdRoute: AuthenticatedBillsBillIdRoute,
   AuthenticatedBillsDeletedRoute: AuthenticatedBillsDeletedRoute,
