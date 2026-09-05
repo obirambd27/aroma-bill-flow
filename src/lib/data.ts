@@ -22,7 +22,11 @@ export function useStockTotals() {
     queryFn: async () => {
       const data = await fetchAll<{ product_id: string; stock_on_hand: number; committed_stock: number }>(
         (f, t) =>
-          supabase.from("product_stock").select("product_id, stock_on_hand, committed_stock").range(f, t),
+          supabase
+            .from("product_stock")
+            .select("product_id, stock_on_hand, committed_stock")
+            .order("id", { ascending: true })
+            .range(f, t),
       );
       const totals: Record<string, number> = {};
       for (const row of data ?? []) {
@@ -30,6 +34,8 @@ export function useStockTotals() {
       }
       return totals;
     },
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -123,10 +129,12 @@ export function useProductStock() {
     queryKey: ["product_stock"],
     queryFn: async () => {
       const data = await fetchAll<ProductStock>((f, t) =>
-        supabase.from("product_stock").select("*").range(f, t),
+        supabase.from("product_stock").select("*").order("id", { ascending: true }).range(f, t),
       );
       return data;
     },
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -287,6 +295,8 @@ export function useProductStockRows(productId: string) {
       if (error) throw error;
       return data as (ProductStock & { warehouses: { name: string } | null })[];
     },
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -311,6 +321,8 @@ export function useStockMovements(filter: { warehouseId?: string; productId?: st
       if (error) throw error;
       return data as unknown as MovementRow[];
     },
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
