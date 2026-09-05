@@ -2978,7 +2978,12 @@ export type Database = {
         Returns: Json
       }
       audit_ledger_integrity: { Args: { p_repair?: boolean }; Returns: Json }
-      audit_stock_ledger: { Args: { p_repair?: boolean }; Returns: Json }
+      audit_stock_ledger:
+        | { Args: { p_repair?: boolean }; Returns: Json }
+        | {
+            Args: { p_repair?: boolean; p_skip_transfer_repair?: boolean }
+            Returns: Json
+          }
       convert_price_list_order: {
         Args: { p_bill_id: string; p_order_id: string }
         Returns: Json
