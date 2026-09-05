@@ -436,6 +436,10 @@ function DashboardPage() {
         description="Sales, purchases, stock and follow-ups at a glance."
       />
 
+      <StockDiscrepancyAlert />
+
+
+
       {/* Quick actions */}
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
         <div className="flex w-max items-center gap-2 sm:w-auto sm:flex-wrap">
