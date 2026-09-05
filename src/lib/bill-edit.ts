@@ -122,26 +122,6 @@ export function describeChanges(row: BillEditHistoryRow, money: (n: number) => s
   return out.length > 0 ? out : ["Bill details updated"];
 }
 
-/** Add stock back to a warehouse row, creating it if needed. */
-async function addStock(productId: string, warehouseId: string, delta: number) {
-  const { data: row } = await supabase
-    .from("product_stock")
-    .select("id, stock_on_hand")
-    .eq("product_id", productId)
-    .eq("warehouse_id", warehouseId)
-    .maybeSingle();
-  if (row) {
-    await supabase
-      .from("product_stock")
-      .update({ stock_on_hand: Number(row.stock_on_hand) + delta })
-      .eq("id", row.id);
-  } else {
-    await supabase
-      .from("product_stock")
-      .insert({ product_id: productId, warehouse_id: warehouseId, stock_on_hand: delta });
-  }
-}
-
 /**
  * Deletes every ledger entry this bill created itself (sale, receivable and the
  * counter payment), leaving entries owned by the Payments Received module.
