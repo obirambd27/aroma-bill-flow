@@ -57,40 +57,6 @@ import { cn } from "@/lib/utils";
 type SortKey = "name" | "spend" | "outstanding" | "last" | "aging";
 type OutstandingFilter = "all" | "has" | "none";
 
-function SortHeader({
-  label,
-  column,
-  sort,
-  dir,
-  onSort,
-  className,
-}: {
-  label: string;
-  column: SortKey;
-  sort: SortKey;
-  dir: "asc" | "desc";
-  onSort: (c: SortKey) => void;
-  className?: string;
-}) {
-  const active = sort === column;
-  return (
-    <th className={cn("px-4 py-3", className)}>
-      <button
-        type="button"
-        onClick={() => onSort(column)}
-        className={cn(
-          "inline-flex items-center gap-1 uppercase tracking-wide transition-colors hover:text-foreground",
-          active && "text-foreground",
-        )}
-      >
-        {label}
-        {active &&
-          (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
-      </button>
-    </th>
-  );
-}
-
 export function CustomersList({ selectedId }: { selectedId?: string }) {
   const { data: customers = [], isLoading } = useCustomers();
   const { data: totals = {} } = useCustomerTotals();
@@ -195,14 +161,6 @@ export function CustomersList({ selectedId }: { selectedId?: string }) {
 
   const toggleTag = (id: string) =>
     setSelectedTags((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
-
-  const onSort = (c: SortKey) => {
-    if (sort === c) setDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSort(c);
-      setDir(c === "name" ? "asc" : "desc");
-    }
-  };
 
   const hasFilters =
     selectedTags.length > 0 || remindersOnly || outstandingFilter !== "all" || agingFilter !== "all";
@@ -393,6 +351,31 @@ export function CustomersList({ selectedId }: { selectedId?: string }) {
               </SelectContent>
             </Select>
 
+            <Select
+              value={sort}
+              onValueChange={(v) => setSort(v as SortKey)}
+            >
+              <SelectTrigger className="h-10 w-[150px]">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="spend">Total spend</SelectItem>
+                <SelectItem value="outstanding">Outstanding</SelectItem>
+                <SelectItem value="aging">Aging</SelectItem>
+                <SelectItem value="last">Last purchase</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              className="h-10"
+              onClick={() => setDir((d) => (d === "asc" ? "desc" : "asc"))}
+              aria-label="Toggle sort direction"
+            >
+              {dir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </Button>
+
             <Select value={agingFilter} onValueChange={(v) => setAgingFilter(v as AgingBucket | "all")}>
               <SelectTrigger className="h-10 w-[160px]">
                 <SelectValue placeholder="Aging" />
@@ -416,6 +399,21 @@ export function CustomersList({ selectedId }: { selectedId?: string }) {
               {dueReminders.length > 0 && (
                 <span className="numeric ml-1 text-xs">({dueReminders.length})</span>
               )}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-10"
+              onClick={() =>
+                setSelected((prev) =>
+                  allPagedSelected
+                    ? prev.filter((id) => !paged.some((r) => r.customer.id === id))
+                    : Array.from(new Set([...prev, ...paged.map((r) => r.customer.id)])),
+                )
+              }
+            >
+              <Check className="h-4 w-4" />
+              {allPagedSelected ? "Unselect page" : "Select page"}
             </Button>
 
             <ExportMenu onExport={handleExport} disabled={visible.length === 0} />
