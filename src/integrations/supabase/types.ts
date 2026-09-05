@@ -2689,6 +2689,39 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_audit_runs: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          mismatch_count: number
+          missing_deduction_count: number
+          mode: string
+          products_affected: number
+          transfer_asymmetry_count: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          mismatch_count?: number
+          missing_deduction_count?: number
+          mode?: string
+          products_affected?: number
+          transfer_asymmetry_count?: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          mismatch_count?: number
+          missing_deduction_count?: number
+          mode?: string
+          products_affected?: number
+          transfer_asymmetry_count?: number
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -2699,6 +2732,7 @@ export type Database = {
           reason: string | null
           related_bill_id: string | null
           related_purchase_id: string | null
+          related_transfer_id: string | null
           warehouse_id: string
         }
         Insert: {
@@ -2710,6 +2744,7 @@ export type Database = {
           reason?: string | null
           related_bill_id?: string | null
           related_purchase_id?: string | null
+          related_transfer_id?: string | null
           warehouse_id: string
         }
         Update: {
@@ -2721,6 +2756,7 @@ export type Database = {
           reason?: string | null
           related_bill_id?: string | null
           related_purchase_id?: string | null
+          related_transfer_id?: string | null
           warehouse_id?: string
         }
         Relationships: [
@@ -2743,6 +2779,13 @@ export type Database = {
             columns: ["related_bill_id"]
             isOneToOne: false
             referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_related_transfer_id_fkey"
+            columns: ["related_transfer_id"]
+            isOneToOne: false
+            referencedRelation: "stock_transfers"
             referencedColumns: ["id"]
           },
           {
@@ -2880,9 +2923,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_stock_on_hand: {
+        Args: { p_delta: number; p_product_id: string; p_warehouse_id: string }
+        Returns: number
+      }
+      apply_bill_edit_stock: {
+        Args: { p_bill_id: string; p_lines: Json }
+        Returns: Json
+      }
+      apply_bill_stock: { Args: { p_bill_id: string }; Returns: Json }
+      apply_stock_correction: {
+        Args: {
+          p_counted?: number
+          p_mode: string
+          p_product_id: string
+          p_warehouse_id: string
+        }
+        Returns: Json
+      }
       audit_ledger_integrity: { Args: { p_repair?: boolean }; Returns: Json }
+      audit_stock_ledger: { Args: { p_repair?: boolean }; Returns: Json }
       convert_price_list_order: {
         Args: { p_bill_id: string; p_order_id: string }
+        Returns: Json
+      }
+      create_stock_transfer: {
+        Args: {
+          p_from_warehouse_id: string
+          p_notes?: string
+          p_product_id: string
+          p_quantity: number
+          p_to_warehouse_id: string
+        }
         Returns: Json
       }
       delete_payment_received: {
