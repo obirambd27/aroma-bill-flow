@@ -118,7 +118,7 @@ export function StockTransferDialog({
       p_from_warehouse_id: fromId,
       p_to_warehouse_id: toId,
       p_quantity: quantity,
-      p_notes: notes.trim() || null,
+      p_notes: notes.trim() || undefined,
     });
 
     if (error) {
