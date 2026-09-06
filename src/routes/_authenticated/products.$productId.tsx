@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MasterDetail } from "@/components/MasterDetail";
-import { ProductsList } from "@/components/lists/ProductsList";
 import { ProductDetail } from "@/components/detail/ProductDetail";
 
 export const Route = createFileRoute("/_authenticated/products/$productId")({
@@ -29,10 +27,8 @@ export const Route = createFileRoute("/_authenticated/products/$productId")({
 function ProductDetailPage() {
   const { productId } = Route.useParams();
   return (
-    <MasterDetail
-      detailSelected
-      list={<ProductsList selectedId={productId} />}
-      detail={<ProductDetail key={productId} productId={productId} />}
-    />
+    <div className="space-y-6">
+      <ProductDetail productId={productId} />
+    </div>
   );
 }
