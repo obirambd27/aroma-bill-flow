@@ -24,6 +24,9 @@ export function MasterDetail({
 
   if (isMobile) return <>{detailSelected ? detail : list}</>;
 
+  // No record selected: show the plain full-width list, like before the split view.
+  if (!detailSelected) return <div className="min-w-0">{list}</div>;
+
   return (
     <div className="flex min-h-0 items-start gap-4">
       <div className={cn("w-[360px] shrink-0 xl:w-[420px]", listClassName)}>
@@ -32,6 +35,7 @@ export function MasterDetail({
       <div className="min-w-0 flex-1">{detail}</div>
     </div>
   );
+
 }
 
 /** Placeholder shown in the right pane when nothing is selected yet. */
